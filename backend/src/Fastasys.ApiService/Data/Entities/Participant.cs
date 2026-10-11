@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fastasys.ApiService.Data.Entities;
 
-[Table("deltagere")]
+[Table("participants")]
 public class Participant
 {
     public int Id { get; set; }
