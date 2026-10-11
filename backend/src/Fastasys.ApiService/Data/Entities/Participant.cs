@@ -8,6 +8,7 @@ public class Participant
     public int Id { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public string Nickname { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public DateTime BirthDate { get; set; }
@@ -25,4 +26,21 @@ public class Participant
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<ParticipantFood> Foods { get; set; } = new List<ParticipantFood>();
     public virtual ICollection<ParticipantWear> Wears { get; set; } = new List<ParticipantWear>();
+
+    public string DisplayName()
+    {
+        if (Nickname == string.Empty)
+        {
+            return LegalName();
+        }
+        else
+        {
+            return Nickname;
+        }
+    }
+
+    public string LegalName()
+    {
+        return FirstName + " " + LastName;
+    }
 }
