@@ -10,6 +10,7 @@ public record ParticipantDto(
     int Id,
     string FirstName,
     string LastName,
+    string Nickname,
     string Email,
     string PhoneNumber,
     DateTime BirthDate,
@@ -26,6 +27,7 @@ public record ParticipantDto(
 public record CreateParticipantDto(
     string FirstName,
     string LastName,
+    string Nickname,
     string Email,
     string PhoneNumber,
     DateTime BirthDate,
@@ -39,6 +41,7 @@ public record CreateParticipantDto(
 public record UpdateParticipantDto(
     string FirstName,
     string LastName,
+    string Nickname,
     string Email,
     string PhoneNumber,
     DateTime BirthDate,
@@ -71,6 +74,7 @@ public class ParticipantsController : ControllerBase
             query = query.Where(p =>
                 p.FirstName.Contains(search) ||
                 p.LastName.Contains(search) ||
+                p.Nickname.Contains(search) ||
                 p.Email.Contains(search) ||
                 p.Barcode.Contains(search));
         }
@@ -101,6 +105,7 @@ public class ParticipantsController : ControllerBase
         {
             FirstName = dto.FirstName,
             LastName = dto.LastName,
+            Nickname = dto.Nickname,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
             BirthDate = dto.BirthDate,
@@ -128,6 +133,7 @@ public class ParticipantsController : ControllerBase
 
         participant.FirstName = dto.FirstName;
         participant.LastName = dto.LastName;
+        participant.Nickname = dto.Nickname;
         participant.Email = dto.Email;
         participant.PhoneNumber = dto.PhoneNumber;
         participant.BirthDate = dto.BirthDate;
@@ -205,6 +211,7 @@ public class ParticipantsController : ControllerBase
         p.Id,
         p.FirstName,
         p.LastName,
+        p.Nickname,
         p.Email,
         p.PhoneNumber,
         p.BirthDate,
