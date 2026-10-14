@@ -64,7 +64,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("aktiviteter");
+                    b.ToTable("activities");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Boardgame", b =>
@@ -385,7 +385,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("deltagere");
+                    b.ToTable("participants");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>
@@ -671,7 +671,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("afvikling");
+                    b.ToTable("schedule");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupConfig", b =>
