@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Fastasys.ApiService.Data.Entities;
 
-[Table("aktiviteter")]
+[Table("activities")]
 public class Activity
 {
     public int Id { get; set; }
@@ -19,7 +19,7 @@ public class Activity
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 }
 
-[Table("afvikling")]
+[Table("schedule")]
 public class Schedule
 {
     public int Id { get; set; }
