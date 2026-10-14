@@ -1,6 +1,7 @@
 {
   "name": "fastasys",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "build": "ng build",
     "build:prod": "ng build --configuration production",
