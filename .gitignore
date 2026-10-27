@@ -16,3 +16,9 @@ npm-debug.log*
 .env
 .env.*
 !.env.example
+
+# Personal VS Code debug configuration
+.vscode/launch.json
+
+# AI agent instructions
+CLAUDE.md
