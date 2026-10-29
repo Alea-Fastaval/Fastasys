@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@shared/guards';
 import { ActivitiesComponent } from './features/activities/activities';
+import { ActivityDetailComponent } from './features/activities/activity-detail/activity-detail';
+import { ActivityFormComponent } from './features/activities/activity-form/activity-form';
 import { BoardgamesComponent } from './features/boardgames/boardgames';
 import { CommunicationsComponent } from './features/communications/communications';
 import { HeroForceComponent } from './features/hero-force/hero-force';
@@ -20,6 +22,9 @@ export const routes: Routes = [
   { path: 'signup', component: SignupComponent },
   { path: 'participants', component: ParticipantsComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
+  { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
+  { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },
+  { path: 'activities/:id/edit', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'hero-force', component: HeroForceComponent, canActivate: [authGuard] },
   { path: 'shop', component: ShopComponent, canActivate: [authGuard] },
   { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },

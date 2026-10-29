@@ -17,7 +17,7 @@ namespace Fastasys.ApiService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,35 +32,100 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
-                    b.Property<string>("Category")
+                    b.Property<string>("AutoSignupCategory")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("CanSignUp")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("DurationMinutes")
+                    b.Property<string>("DescriptionEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("DurationHours")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<string>("GameMasterLanguage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("GameMastersPerTeam")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("IsHidden")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("MaxParticipants")
+                    b.Property<bool>("IsReplayable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRoomExclusive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTimeExclusive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("KarmaType")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MinParticipants")
+                    b.Property<int>("MaxPlayersPerTeam")
                         .HasColumnType("integer");
+
+                    b.Property<int>("MaxSignups")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MinAge")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinPlayersPerTeam")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PlayerLanguage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TeaserDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TeaserEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("TitleEnglish")
                         .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WordPressId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1137,7 +1202,7 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasOne("Fastasys.ApiService.Data.Entities.Activity", "Activity")
                         .WithMany("Schedules")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fastasys.ApiService.Data.Entities.Room", "Room")

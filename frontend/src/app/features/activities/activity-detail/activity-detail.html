@@ -1,0 +1,127 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/activities"><mat-icon>arrow_back</mat-icon> {{ 'nav.activities' | translate }}</a>
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'activities.messages.' + flash.key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
+  } @if (activity(); as a) {
+  <app-card [title]="'activities.detailTitle' | translate">
+    <a mat-stroked-button class="edit-link" [routerLink]="['/activities', a.id, 'edit']">
+      <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
+    </a>
+
+    <dl class="field-list">
+      <div class="wide">
+        <dt>{{ 'activities.fields.id' | translate }}:</dt>
+        <dd>{{ a.id }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.title' | translate }}:</dt>
+        <dd>{{ a.title }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.titleEnglish' | translate }}:</dt>
+        <dd>{{ a.titleEnglish }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.author' | translate }}:</dt>
+        <dd>{{ a.author }}</dd>
+      </div>
+
+      <div>
+        <dt>{{ 'activities.fields.wordPressId' | translate }}:</dt>
+        <dd>{{ a.wordPressId }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.type' | translate }}:</dt>
+        <dd>{{ 'activities.types.' + a.type | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.duration' | translate }}:</dt>
+        <dd>{{ a.durationHours }} {{ 'activities.hours' | translate }}</dd>
+      </div>
+
+      <div>
+        <dt>{{ 'activities.fields.minPlayers' | translate }}:</dt>
+        <dd>{{ a.minPlayersPerTeam }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.maxPlayers' | translate }}:</dt>
+        <dd>{{ a.maxPlayersPerTeam }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.gameMasters' | translate }}:</dt>
+        <dd>{{ a.gameMastersPerTeam }}</dd>
+      </div>
+
+      <div>
+        <dt>{{ 'activities.fields.price' | translate }}:</dt>
+        <dd>{{ a.price }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.canSignUp' | translate }}:</dt>
+        <dd>{{ (a.canSignUp ? 'activities.yes' : 'activities.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.roomExclusive' | translate }}:</dt>
+        <dd>{{ (a.isRoomExclusive ? 'activities.yes' : 'activities.no') | translate }}</dd>
+      </div>
+
+      <div>
+        <dt>{{ 'activities.fields.timeExclusive' | translate }}:</dt>
+        <dd>{{ (a.isTimeExclusive ? 'activities.yes' : 'activities.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.playerLanguage' | translate }}:</dt>
+        <dd>{{ 'activities.languages.' + a.playerLanguage | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.gameMasterLanguage' | translate }}:</dt>
+        <dd>{{ 'activities.languages.' + a.gameMasterLanguage | translate }}</dd>
+      </div>
+
+      <div>
+        <dt>{{ 'activities.fields.replayable' | translate }}:</dt>
+        <dd>{{ (a.isReplayable ? 'activities.yes' : 'activities.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.hidden' | translate }}:</dt>
+        <dd>{{ (a.isHidden ? 'activities.yes' : 'activities.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.karmaType' | translate }}:</dt>
+        <dd>{{ 'activities.karmaTypes.' + a.karmaType | translate }}</dd>
+      </div>
+
+      <div class="double">
+        <dt>{{ 'activities.fields.ageLimit' | translate }}:</dt>
+        <dd>{{ 'activities.fields.ageMin' | translate }}: <strong>{{ a.minAge }}</strong></dd>
+      </div>
+      <div>
+        <dt>{{ 'activities.fields.maxSignups' | translate }}:</dt>
+        <dd>{{ a.maxSignups }}</dd>
+      </div>
+
+      <div class="wide">
+        <dt>{{ 'activities.fields.autoSignup' | translate }}:</dt>
+        <dd>{{ 'activities.autoSignupCategories.' + a.autoSignupCategory | translate }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.note' | translate }}:</dt>
+        <dd class="multiline">{{ a.note }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.description' | translate }}:</dt>
+        <dd class="multiline">{{ a.description }}</dd>
+      </div>
+      <div class="wide">
+        <dt>{{ 'activities.fields.descriptionEnglish' | translate }}:</dt>
+        <dd class="multiline">{{ a.descriptionEnglish }}</dd>
+      </div>
+    </dl>
+  </app-card>
+  }
+</div>
