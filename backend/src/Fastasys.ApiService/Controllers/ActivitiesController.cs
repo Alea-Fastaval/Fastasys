@@ -32,7 +32,6 @@ public record ActivityDto(
     int Price,
     int MaxSignups,
     int? MinAge,
-    int? MaxAge,
     bool CanSignUp,
     bool IsHidden,
     bool IsRoomExclusive,
@@ -62,7 +61,6 @@ public record SaveActivityDto(
     int Price,
     int MaxSignups,
     int? MinAge,
-    int? MaxAge,
     bool CanSignUp,
     bool IsHidden,
     bool IsRoomExclusive,
@@ -98,7 +96,7 @@ public record CreateScheduleDto(
 public class ActivitiesController : ControllerBase
 {
     public const int MaxTextLength = 256;
-    public const int MaxAgeLimit = 200;
+    public const int HighestAllowedAge = 200;
     public const int MaxSignupsLimit = 1000;
 
     private readonly InfosysDbContext _db;
@@ -258,8 +256,7 @@ public class ActivitiesController : ControllerBase
         if (!Enum.IsDefined(dto.KarmaType)) return "Unknown karma type";
         if (!Enum.IsDefined(dto.AutoSignupCategory)) return "Unknown auto signup category";
 
-        if (dto.MinAge is < 0 or > MaxAgeLimit) return $"Minimum age must be between 0 and {MaxAgeLimit}";
-        if (dto.MaxAge is < 0 or > MaxAgeLimit) return $"Maximum age must be between 0 and {MaxAgeLimit}";
+        if (dto.MinAge is < 0 or > HighestAllowedAge) return $"Minimum age must be between 0 and {HighestAllowedAge}";
         if (dto.MaxSignups is < 0 or > MaxSignupsLimit) return $"Max signups must be between 0 and {MaxSignupsLimit}";
 
         return null;
@@ -281,7 +278,6 @@ public class ActivitiesController : ControllerBase
         activity.Price = dto.Price;
         activity.MaxSignups = dto.MaxSignups;
         activity.MinAge = NormalizeAge(dto.MinAge);
-        activity.MaxAge = NormalizeAge(dto.MaxAge);
         activity.CanSignUp = dto.CanSignUp;
         activity.IsHidden = dto.IsHidden;
         activity.IsRoomExclusive = dto.IsRoomExclusive;
@@ -318,7 +314,6 @@ public class ActivitiesController : ControllerBase
         a.Price,
         a.MaxSignups,
         a.MinAge,
-        a.MaxAge,
         a.CanSignUp,
         a.IsHidden,
         a.IsRoomExclusive,

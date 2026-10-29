@@ -20,7 +20,7 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
     }
 
     private static SaveActivityDto NewActivity(string title) => new(
-        title, "", "", ActivityType.Scenario, "", "", "", 4, 3, 5, 1, 30, 0, null, null,
+        title, "", "", ActivityType.Scenario, "", "", "", 4, 3, 5, 1, 30, 0, null,
         true, false, true, true, false, ActivityLanguage.Danish, ActivityLanguage.Danish,
         KarmaType.None, AutoSignupCategory.None, 0);
 
@@ -126,5 +126,23 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         Assert.Equal("Big", json.RootElement.GetProperty("karmaType").GetString());
         Assert.Equal("Danish", json.RootElement.GetProperty("playerLanguage").GetString());
         Assert.Equal("None", json.RootElement.GetProperty("autoSignupCategory").GetString());
+    }
+
+    [Fact]
+    public async Task Activity_HasNoMaximumAge()
+    {
+        // Agreed deviation: Infosys had a maximum age (activityageranges 'max'); Fastasys only keeps the minimum.
+        var client = await CreateClientWithPrivilegeAsync("activities_edit");
+        var ct = TestContext.Current.CancellationToken;
+        var body = JsonSerializer.SerializeToNode(NewActivity("Uden maksimumalder") with { MinAge = 12 },
+            new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+        body["maxAge"] = 17;
+
+        var create = await client.PostAsJsonAsync("/api/activities", body, ct);
+        using var json = JsonDocument.Parse(await create.Content.ReadAsStringAsync(ct));
+
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        Assert.Equal(12, json.RootElement.GetProperty("minAge").GetInt32());
+        Assert.False(json.RootElement.TryGetProperty("maxAge", out _));
     }
 }

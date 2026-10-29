@@ -40,7 +40,6 @@ export interface ActivityForm {
   price: number | null;
   maxSignups: number | null;
   minAge: number | null;
-  maxAge: number | null;
   canSignUp: boolean;
   isHidden: boolean;
   isRoomExclusive: boolean;
@@ -55,6 +54,7 @@ export interface ActivityForm {
 
 // The Infosys create form has no preselected value in its ja/nej and type selects, so the browser shows
 // the first option: 'ja' (also for Skjult and Kan spilles flere gange) and type 'braet'.
+// New activities starting hidden and replayable is intended, not a legacy bug to fix.
 // Sprog radios default to dansk, karmatype to Ingen and max tilmeldinger to 0.
 export function newActivityForm(): ActivityForm {
   return {
@@ -72,7 +72,6 @@ export function newActivityForm(): ActivityForm {
     price: null,
     maxSignups: 0,
     minAge: null,
-    maxAge: null,
     canSignUp: true,
     isHidden: true,
     isRoomExclusive: true,
@@ -102,7 +101,6 @@ export function toForm(activity: Activity): ActivityForm {
     price: activity.price,
     maxSignups: activity.maxSignups,
     minAge: activity.minAge,
-    maxAge: activity.maxAge,
     canSignUp: activity.canSignUp,
     isHidden: activity.isHidden,
     isRoomExclusive: activity.isRoomExclusive,
@@ -116,7 +114,7 @@ export function toForm(activity: Activity): ActivityForm {
   };
 }
 
-// Empty number fields become 0 like PHP intval(''); empty ages mean no age requirement.
+// Empty number fields become 0 like PHP intval(''); an empty age means no age requirement.
 export function toDto(form: ActivityForm): SaveActivityDto {
   return {
     ...form,
@@ -156,7 +154,7 @@ export class ActivityFormComponent implements OnInit {
   public readonly languages = ACTIVITY_LANGUAGES;
   public readonly karmaTypes = KARMA_TYPES;
   public readonly autoSignupCategories = AUTO_SIGNUP_CATEGORIES;
-  public readonly maxAgeLimit = 200;
+  public readonly highestAllowedAge = 200;
   public readonly maxSignupsLimit = 1000;
 
   public readonly activityId = signal<number | null>(null);

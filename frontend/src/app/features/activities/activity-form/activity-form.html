@@ -155,12 +155,15 @@
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'activities.fields.minAge' | translate }}</mat-label>
-          <input matInput type="number" name="minAge" [(ngModel)]="f.minAge" min="0" [max]="maxAgeLimit" step="1" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'activities.fields.maxAge' | translate }}</mat-label>
-          <input matInput type="number" name="maxAge" [(ngModel)]="f.maxAge" min="0" [max]="maxAgeLimit" step="1" />
+          <input
+            matInput
+            type="number"
+            name="minAge"
+            [(ngModel)]="f.minAge"
+            min="0"
+            [max]="highestAllowedAge"
+            step="1"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline">

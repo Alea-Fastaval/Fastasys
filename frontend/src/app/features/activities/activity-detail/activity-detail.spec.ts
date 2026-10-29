@@ -24,7 +24,6 @@ const activity: Activity = {
   price: 30,
   maxSignups: 0,
   minAge: 13,
-  maxAge: null,
   canSignUp: true,
   isHidden: false,
   isRoomExclusive: true,
@@ -77,6 +76,7 @@ describe('ActivityDetailComponent', () => {
     expect(text).toContain('activities.types.Scenario');
     expect(text).toContain('activities.karmaTypes.Big');
     expect(text).toContain('activities.autoSignupCategories.Author');
+    expect(text).not.toContain('ageMax');
   });
 
   it('shows the Infosys not-found text for an unknown id', () => {

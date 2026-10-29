@@ -49,9 +49,8 @@ public class Activity
     // 0 means no limit
     public int MaxSignups { get; set; }
 
-    // null means no requirement
+    // null means no requirement. Infosys also had a maximum age; dropping it was agreed.
     public int? MinAge { get; set; }
-    public int? MaxAge { get; set; }
 
     public bool CanSignUp { get; set; } = true;
     public bool IsHidden { get; set; }

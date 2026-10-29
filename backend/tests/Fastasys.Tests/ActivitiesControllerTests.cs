@@ -38,7 +38,6 @@ public class ActivitiesControllerTests
         Price: 30,
         MaxSignups: 40,
         MinAge: 13,
-        MaxAge: 17,
         CanSignUp: true,
         IsHidden: false,
         IsRoomExclusive: true,
@@ -123,7 +122,6 @@ public class ActivitiesControllerTests
         Assert.Equal(30, stored.Price);
         Assert.Equal(40, stored.MaxSignups);
         Assert.Equal(13, stored.MinAge);
-        Assert.Equal(17, stored.MaxAge);
         Assert.True(stored.CanSignUp);
         Assert.False(stored.IsHidden);
         Assert.True(stored.IsRoomExclusive);
@@ -171,11 +169,10 @@ public class ActivitiesControllerTests
         // Infosys: empty($post->min_age) removes the requirement, and empty("0") is true.
         using var db = CreateDbContext();
 
-        await CreateController(db).Create(ValidDto() with { MinAge = posted, MaxAge = posted });
+        await CreateController(db).Create(ValidDto() with { MinAge = posted });
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(expected, stored.MinAge);
-        Assert.Equal(expected, stored.MaxAge);
     }
 
     [Theory]
@@ -183,12 +180,12 @@ public class ActivitiesControllerTests
     [InlineData(201)]
     public async Task Create_RejectsAgeOutsideFormLimits(int age)
     {
-        // The Infosys form uses <input type="number" min="0" max="200"> for both ages.
+        // The Infosys form uses <input type="number" min="0" max="200"> for the age.
         using var db = CreateDbContext();
-        var controller = CreateController(db);
 
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { MinAge = age })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { MaxAge = age })).Result);
+        var result = await CreateController(db).Create(ValidDto() with { MinAge = age });
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Empty(db.Activities);
     }
 
@@ -285,18 +282,17 @@ public class ActivitiesControllerTests
     }
 
     [Fact]
-    public async Task Update_EmptyAgesRemoveExistingRequirement()
+    public async Task Update_EmptyAgeRemovesExistingRequirement()
     {
         using var db = CreateDbContext();
-        var activity = new Activity { Title = "Med alder", MinAge = 15, MaxAge = 18 };
+        var activity = new Activity { Title = "Med alder", MinAge = 15 };
         db.Activities.Add(activity);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await CreateController(db).Update(activity.Id, ValidDto() with { MinAge = 0, MaxAge = null });
+        await CreateController(db).Update(activity.Id, ValidDto() with { MinAge = 0 });
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Null(stored.MinAge);
-        Assert.Null(stored.MaxAge);
     }
 
     [Fact]

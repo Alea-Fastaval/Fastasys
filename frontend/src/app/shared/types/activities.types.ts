@@ -37,7 +37,6 @@ export interface Activity {
   price: number;
   maxSignups: number;
   minAge: number | null;
-  maxAge: number | null;
   canSignUp: boolean;
   isHidden: boolean;
   isRoomExclusive: boolean;
@@ -66,7 +65,6 @@ export interface SaveActivityDto {
   price: number;
   maxSignups: number;
   minAge: number | null;
-  maxAge: number | null;
   canSignUp: boolean;
   isHidden: boolean;
   isRoomExclusive: boolean;

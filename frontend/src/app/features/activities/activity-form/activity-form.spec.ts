@@ -25,7 +25,6 @@ const existing: Activity = {
   price: 0,
   maxSignups: 0,
   minAge: null,
-  maxAge: null,
   canSignUp: false,
   isHidden: false,
   isRoomExclusive: false,
@@ -41,6 +40,7 @@ const existing: Activity = {
 
 describe('newActivityForm', () => {
   it('starts with the values the Infosys create form submits when untouched', () => {
+    // Starting hidden and replayable is intended
     expect(newActivityForm()).toMatchObject({
       type: 'BoardGame',
       canSignUp: true,
@@ -54,13 +54,12 @@ describe('newActivityForm', () => {
       autoSignupCategory: 'None',
       maxSignups: 0,
       minAge: null,
-      maxAge: null,
     });
   });
 });
 
 describe('toDto', () => {
-  it('sends empty number fields as 0 and empty ages as no requirement', () => {
+  it('sends empty number fields as 0 and an empty age as no requirement', () => {
     expect(toDto(newActivityForm())).toMatchObject({
       durationHours: 0,
       minPlayersPerTeam: 0,
@@ -70,7 +69,6 @@ describe('toDto', () => {
       maxSignups: 0,
       wordPressId: 0,
       minAge: null,
-      maxAge: null,
     });
   });
 
@@ -78,6 +76,10 @@ describe('toDto', () => {
     const dto = toDto(toForm(existing));
     expect(dto).not.toHaveProperty('teaserDanish');
     expect(dto).not.toHaveProperty('teaserEnglish');
+  });
+
+  it('does not send a maximum age, which was removed from Fastasys', () => {
+    expect(toDto(newActivityForm())).not.toHaveProperty('maxAge');
   });
 });
 

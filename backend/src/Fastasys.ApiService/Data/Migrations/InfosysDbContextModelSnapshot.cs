@@ -76,9 +76,6 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<int>("KarmaType")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("MaxAge")
-                        .HasColumnType("integer");
-
                     b.Property<int>("MaxPlayersPerTeam")
                         .HasColumnType("integer");
 
