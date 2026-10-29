@@ -13,11 +13,11 @@ public class WebTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task GetActivities_ReturnsSuccessStatusCode()
+    public async Task GetHealth_ReturnsSuccessStatusCode()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/activities", cancellationToken);
+        var response = await client.GetAsync("/health", cancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }

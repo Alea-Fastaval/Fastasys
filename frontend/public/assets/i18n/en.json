@@ -89,14 +89,89 @@
     "checkedInAt": "Checked in at"
   },
   "activities": {
-    "title": "Activity & Event Management",
-    "subtitle": "Manage roleplaying scenarios, board game tournaments, and convention events.",
-    "searchPlaceholder": "Search activities by title, author, or category...",
-    "category": "Category",
-    "author": "Author / Creator",
-    "players": "Min/Max Players",
-    "duration": "Duration",
-    "allCategories": "All Categories"
+    "title": "Activities",
+    "create": "Create activity",
+    "createTitle": "Create Activity",
+    "editTitle": "Update Activity",
+    "detailTitle": "Activity",
+    "editDelete": "Edit/delete",
+    "hours": "hours",
+    "yes": "yes",
+    "no": "no",
+    "deleteConfirmTitle": "Delete activity?",
+    "deleteConfirm": "Are you sure you want to delete",
+    "fields": {
+      "id": "Id",
+      "title": "Title",
+      "titleEnglish": "English title",
+      "author": "Author(s)",
+      "wordPressId": "WP id",
+      "type": "Game type",
+      "duration": "Duration",
+      "minPlayers": "Min players",
+      "maxPlayers": "Max players",
+      "gameMasters": "Game masters",
+      "price": "Price",
+      "canSignUp": "Open for signup",
+      "roomExclusive": "Fills the room",
+      "timeExclusive": "Excludes simultaneous activities",
+      "playerLanguage": "Language",
+      "gameMasterLanguage": "Game master language",
+      "replayable": "Can be played more than once",
+      "hidden": "Hidden",
+      "karmaType": "Karma type",
+      "minAge": "Minimum age",
+      "maxAge": "Maximum age",
+      "ageLimit": "Age limit",
+      "ageMin": "Min",
+      "ageMax": "max",
+      "maxSignups": "Max signups",
+      "autoSignup": "Automatic signup",
+      "note": "Note",
+      "description": "Description",
+      "descriptionEnglish": "English description"
+    },
+    "types": {
+      "Scenario": "Scenario",
+      "Quest": "Quest",
+      "BoardGame": "Board game",
+      "Junior": "Junior",
+      "System": "System"
+    },
+    "languages": {
+      "Danish": "Danish",
+      "English": "English",
+      "DanishAndEnglish": "Danish and English"
+    },
+    "karmaTypes": {
+      "None": "None",
+      "Small": "Small",
+      "Medium": "Medium",
+      "Big": "Big"
+    },
+    "autoSignupCategories": {
+      "None": "None",
+      "All": "All",
+      "Organizer": "Organizers",
+      "Author": "Authors",
+      "Designer": "Designers"
+    },
+    "buttons": {
+      "create": "Create",
+      "update": "Update",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "messages": {
+      "created": "The activity was created.",
+      "createFailed": "Could not create the activity.",
+      "updated": "The activity was updated.",
+      "updateFailed": "Could not update the activity.",
+      "notUpdated": "The activity was not updated.",
+      "deleted": "The activity was deleted.",
+      "deleteFailed": "The activity could not be deleted.",
+      "notFound": "Could not find an activity with that id."
+    }
   },
   "heroForce": {
     "title": "Hero Force Shift Management",

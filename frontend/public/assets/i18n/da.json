@@ -89,14 +89,89 @@
     "checkedInAt": "Tjekket ind kl."
   },
   "activities": {
-    "title": "Aktiviteter & Rollespil (Aktiviteter)",
-    "subtitle": "Administrer scenarier, brætspilsturneringer og konventser arrangementer.",
-    "searchPlaceholder": "Søg aktiviteter på titel, forfatter eller kategori...",
-    "category": "Kategori",
-    "author": "Forfatter / Arrangør",
-    "players": "Min/Max spillere",
-    "duration": "Varighed",
-    "allCategories": "Alle kategorier"
+    "title": "Aktiviteter",
+    "create": "Opret aktivitet",
+    "createTitle": "Opret Aktivitet",
+    "editTitle": "Opdater Aktivitet",
+    "detailTitle": "Aktivitet",
+    "editDelete": "Ret/slet",
+    "hours": "timer",
+    "yes": "ja",
+    "no": "nej",
+    "deleteConfirmTitle": "Slet aktivitet?",
+    "deleteConfirm": "Er du sikker på du vil slette",
+    "fields": {
+      "id": "Id",
+      "title": "Titel",
+      "titleEnglish": "Engelsk titel",
+      "author": "Forfatter(e)",
+      "wordPressId": "WP id",
+      "type": "Spiltype",
+      "duration": "Varighed",
+      "minPlayers": "Min Spillere",
+      "maxPlayers": "Max Spillere",
+      "gameMasters": "Spilledere",
+      "price": "Pris",
+      "canSignUp": "Kan tilmeldes",
+      "roomExclusive": "Fylder lokale",
+      "timeExclusive": "Udelukker samtidige aktiviteter",
+      "playerLanguage": "Sprog",
+      "gameMasterLanguage": "Sprog spilledere",
+      "replayable": "Kan spilles flere gange",
+      "hidden": "Skjult",
+      "karmaType": "Karmatype",
+      "minAge": "Minimum Alder",
+      "maxAge": "Maksimum Alder",
+      "ageLimit": "Aldersbegrænsning",
+      "ageMin": "Min",
+      "ageMax": "max",
+      "maxSignups": "Max tilmeldinger",
+      "autoSignup": "Automatisk tilmelding",
+      "note": "Note",
+      "description": "Foromtale",
+      "descriptionEnglish": "Engelsk foromtale"
+    },
+    "types": {
+      "Scenario": "Scenarie",
+      "Quest": "Quest",
+      "BoardGame": "Brætspil",
+      "Junior": "Junior",
+      "System": "System"
+    },
+    "languages": {
+      "Danish": "dansk",
+      "English": "engelsk",
+      "DanishAndEnglish": "dansk og engelsk"
+    },
+    "karmaTypes": {
+      "None": "Ingen",
+      "Small": "Lille",
+      "Medium": "Medium",
+      "Big": "Stor"
+    },
+    "autoSignupCategories": {
+      "None": "Ingen",
+      "All": "Alle",
+      "Organizer": "Arrangører",
+      "Author": "Forfattere",
+      "Designer": "Designere"
+    },
+    "buttons": {
+      "create": "Opret",
+      "update": "Opdater",
+      "cancel": "Fortryd",
+      "delete": "Slet"
+    },
+    "messages": {
+      "created": "Aktiviteten blev oprettet.",
+      "createFailed": "Kunne ikke oprette aktiviteten.",
+      "updated": "Aktiviteten blev opdateret.",
+      "updateFailed": "Kunne ikke opdatere aktiviteten.",
+      "notUpdated": "Aktiviteten blev ikke opdateret.",
+      "deleted": "Aktiviteten blev slettet.",
+      "deleteFailed": "Aktiviteten kunne ikke slettes.",
+      "notFound": "Kunne ikke finde en aktivitet med det id."
+    }
   },
   "heroForce": {
     "title": "Hero Force Vagtstyring (GDS Vakter)",

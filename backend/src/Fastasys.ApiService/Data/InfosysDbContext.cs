@@ -65,6 +65,21 @@ public class InfosysDbContext : DbContext
         modelBuilder.Entity<ParticipantSchedule>()
             .HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
 
+        modelBuilder.Entity<Activity>(activity =>
+        {
+            activity.Property(a => a.Type).HasConversion<string>();
+            activity.Property(a => a.PlayerLanguage).HasConversion<string>();
+            activity.Property(a => a.GameMasterLanguage).HasConversion<string>();
+            activity.Property(a => a.AutoSignupCategory).HasConversion<string>();
+        });
+
+        // Infosys refuses to delete an activity that still has runs (afviklinger FK without cascade)
+        modelBuilder.Entity<Schedule>()
+            .HasOne(s => s.Activity)
+            .WithMany(a => a.Schedules)
+            .HasForeignKey(s => s.ActivityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<HeroForceShiftParticipant>()
             .HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
 

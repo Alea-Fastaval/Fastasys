@@ -1,0 +1,218 @@
+<div class="page-container">
+  @if (notFound()) {
+  <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'activities.deleteConfirmTitle' | translate">
+    <p>{{ 'activities.deleteConfirm' | translate }} <i>{{ activityTitle() }}</i>?</p>
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="saving()" (click)="confirmDelete()">
+        {{ 'activities.buttons.delete' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">{{ 'activities.buttons.cancel' | translate }}</button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card [title]="(activityId() === null ? 'activities.createTitle' : 'activities.editTitle') | translate">
+    @if (errorKey(); as key) {
+    <p class="flash error">{{ 'activities.messages.' + key | translate }}</p>
+    }
+
+    <form #activityForm="ngForm" (ngSubmit)="save()">
+      @if (activityId() !== null) {
+      <p><strong>{{ 'activities.fields.id' | translate }}:</strong> {{ activityId() }}</p>
+      }
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.title' | translate }}</mat-label>
+          <input matInput name="title" [(ngModel)]="f.title" maxlength="256" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.titleEnglish' | translate }}</mat-label>
+          <input matInput name="titleEnglish" [(ngModel)]="f.titleEnglish" maxlength="256" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.author' | translate }}</mat-label>
+          <input matInput name="author" [(ngModel)]="f.author" maxlength="256" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.wordPressId' | translate }}</mat-label>
+          <input matInput type="number" name="wordPressId" [(ngModel)]="f.wordPressId" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.type' | translate }}</mat-label>
+          <mat-select name="type" [(ngModel)]="f.type">
+            @for (type of types; track type) {
+            <mat-option [value]="type">{{ 'activities.types.' + type | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.duration' | translate }}</mat-label>
+          <input matInput type="number" name="durationHours" [(ngModel)]="f.durationHours" />
+          <span matTextSuffix>{{ 'activities.hours' | translate }}</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.minPlayers' | translate }}</mat-label>
+          <input matInput type="number" name="minPlayersPerTeam" [(ngModel)]="f.minPlayersPerTeam" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.maxPlayers' | translate }}</mat-label>
+          <input matInput type="number" name="maxPlayersPerTeam" [(ngModel)]="f.maxPlayersPerTeam" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.gameMasters' | translate }}</mat-label>
+          <input matInput type="number" name="gameMastersPerTeam" [(ngModel)]="f.gameMastersPerTeam" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.price' | translate }}</mat-label>
+          <input matInput type="number" name="price" [(ngModel)]="f.price" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.canSignUp' | translate }}</mat-label>
+          <mat-select name="canSignUp" [(ngModel)]="f.canSignUp">
+            <mat-option [value]="true">{{ 'activities.yes' | translate }}</mat-option>
+            <mat-option [value]="false">{{ 'activities.no' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.roomExclusive' | translate }}</mat-label>
+          <mat-select name="isRoomExclusive" [(ngModel)]="f.isRoomExclusive">
+            <mat-option [value]="true">{{ 'activities.yes' | translate }}</mat-option>
+            <mat-option [value]="false">{{ 'activities.no' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.timeExclusive' | translate }}</mat-label>
+          <mat-select name="isTimeExclusive" [(ngModel)]="f.isTimeExclusive">
+            <mat-option [value]="true">{{ 'activities.yes' | translate }}</mat-option>
+            <mat-option [value]="false">{{ 'activities.no' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="radio-field wide">
+          <span class="field-label" id="player-language-label"
+            >{{ 'activities.fields.playerLanguage' | translate }}</span
+          >
+          <mat-radio-group aria-labelledby="player-language-label" name="playerLanguage" [(ngModel)]="f.playerLanguage">
+            @for (language of languages; track language) {
+            <mat-radio-button [value]="language">{{ 'activities.languages.' + language | translate }}</mat-radio-button>
+            }
+          </mat-radio-group>
+        </div>
+
+        <div class="radio-field wide">
+          <span class="field-label" id="gm-language-label"
+            >{{ 'activities.fields.gameMasterLanguage' | translate }}</span
+          >
+          <mat-radio-group
+            aria-labelledby="gm-language-label"
+            name="gameMasterLanguage"
+            [(ngModel)]="f.gameMasterLanguage"
+          >
+            @for (language of languages; track language) {
+            <mat-radio-button [value]="language">{{ 'activities.languages.' + language | translate }}</mat-radio-button>
+            }
+          </mat-radio-group>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.replayable' | translate }}</mat-label>
+          <mat-select name="isReplayable" [(ngModel)]="f.isReplayable">
+            <mat-option [value]="true">{{ 'activities.yes' | translate }}</mat-option>
+            <mat-option [value]="false">{{ 'activities.no' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.hidden' | translate }}</mat-label>
+          <mat-select name="isHidden" [(ngModel)]="f.isHidden">
+            <mat-option [value]="true">{{ 'activities.yes' | translate }}</mat-option>
+            <mat-option [value]="false">{{ 'activities.no' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.karmaType' | translate }}</mat-label>
+          <mat-select name="karmaType" [(ngModel)]="f.karmaType">
+            @for (karmaType of karmaTypes; track karmaType) {
+            <mat-option [value]="karmaType">{{ 'activities.karmaTypes.' + karmaType | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.minAge' | translate }}</mat-label>
+          <input matInput type="number" name="minAge" [(ngModel)]="f.minAge" min="0" [max]="maxAgeLimit" step="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.maxAge' | translate }}</mat-label>
+          <input matInput type="number" name="maxAge" [(ngModel)]="f.maxAge" min="0" [max]="maxAgeLimit" step="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.maxSignups' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="maxSignups"
+            [(ngModel)]="f.maxSignups"
+            min="0"
+            [max]="maxSignupsLimit"
+            step="1"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.fields.autoSignup' | translate }}</mat-label>
+          <mat-select name="autoSignupCategory" [(ngModel)]="f.autoSignupCategory">
+            @for (category of autoSignupCategories; track category) {
+            <mat-option [value]="category">{{ 'activities.autoSignupCategories.' + category | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.note' | translate }}</mat-label>
+          <textarea matInput name="note" rows="3" [(ngModel)]="f.note"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.description' | translate }}</mat-label>
+          <textarea matInput name="description" rows="5" [(ngModel)]="f.description"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'activities.fields.descriptionEnglish' | translate }}</mat-label>
+          <textarea matInput name="descriptionEnglish" rows="5" [(ngModel)]="f.descriptionEnglish"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="saving() || activityForm.invalid">
+          {{ (activityId() === null ? 'activities.buttons.create' : 'activities.buttons.update') | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancel()">{{ 'activities.buttons.cancel' | translate }}</button>
+        @if (activityId() !== null) {
+        <button mat-button color="warn" type="button" (click)="askDelete()">
+          {{ 'activities.buttons.delete' | translate }}
+        </button>
+        }
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

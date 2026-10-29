@@ -146,28 +146,41 @@ public static class DbSeeder
             // Demo Activities
             var act1 = new Activity
             {
-                Title = "Shadows Over Fastaval",
+                Title = "Skygger over Fastaval",
                 TitleEnglish = "Shadows Over Fastaval",
-                Description = "An immersive Call of Cthulhu RPG scenario set in 1920s Arkham.",
+                Description = "Et stemningsfuldt rædselsscenarie i 1920'ernes Arkham.",
+                DescriptionEnglish = "An immersive horror scenario set in 1920s Arkham.",
                 Author = "Lars Jensen",
-                Category = "RPG",
-                MinParticipants = 3,
-                MaxParticipants = 6,
-                DurationMinutes = 240,
-                IsActive = true
+                Type = ActivityType.Scenario,
+                DurationHours = 4,
+                MinPlayersPerTeam = 3,
+                MaxPlayersPerTeam = 5,
+                GameMastersPerTeam = 1,
+                Price = 30,
+                MinAge = 15,
+                KarmaType = KarmaType.Big,
+                PlayerLanguage = ActivityLanguage.Danish,
+                GameMasterLanguage = ActivityLanguage.DanishAndEnglish
             };
 
             var act2 = new Activity
             {
-                Title = "Fastaval Board Game Championship",
+                Title = "Fastaval Brætspilsmesterskab",
                 TitleEnglish = "Fastaval Board Game Championship",
-                Description = "Competitive board gaming tournament featuring strategy classics.",
+                Description = "Turnering i klassiske strategispil.",
+                DescriptionEnglish = "Competitive board gaming tournament featuring strategy classics.",
                 Author = "Fastaval Board Game Team",
-                Category = "Board Game",
-                MinParticipants = 4,
-                MaxParticipants = 16,
-                DurationMinutes = 180,
-                IsActive = true
+                Type = ActivityType.BoardGame,
+                DurationHours = 3,
+                MinPlayersPerTeam = 4,
+                MaxPlayersPerTeam = 16,
+                GameMastersPerTeam = 1,
+                Price = 20,
+                MaxSignups = 64,
+                IsReplayable = true,
+                KarmaType = KarmaType.Small,
+                PlayerLanguage = ActivityLanguage.DanishAndEnglish,
+                GameMasterLanguage = ActivityLanguage.DanishAndEnglish
             };
 
             db.Activities.AddRange(act1, act2);
