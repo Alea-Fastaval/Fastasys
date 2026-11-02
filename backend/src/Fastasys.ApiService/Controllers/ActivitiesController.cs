@@ -143,8 +143,8 @@ public class ActivitiesController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<ActivityDto>> Create([FromBody] CreateActivityDto dto)
     {
-        var error = Validate(dto);
-        if (error != null) return BadRequest(new { message = error });
+        var (isValid, error) = Validate(dto);
+        if (!isValid) return BadRequest(new { message = error });
 
         var activity = new Activity();
         Apply(activity, dto);
@@ -164,8 +164,8 @@ public class ActivitiesController : ControllerBase
         var activity = await _db.Activities.FindAsync(id);
         if (activity == null) return NotFound(new { message = "Activity not found" });
 
-        var error = Validate(dto);
-        if (error != null) return BadRequest(new { message = error });
+        var (isValid, error) = Validate(dto);
+        if (!isValid) return BadRequest(new { message = error });
 
         Apply(activity, dto);
         await _db.SaveChangesAsync();
@@ -249,22 +249,23 @@ public class ActivitiesController : ControllerBase
     }
 
     // Infosys only validates in the browser (number inputs with min/max); the same limits are enforced here.
-    private static string? Validate(ActivityFieldsDto dto)
+    // Returns whether the input is valid and, if not, why. Invalid input is expected, so it never throws.
+    private static (bool IsValid, string Error) Validate(ActivityFieldsDto dto)
     {
-        if ((dto.Title?.Length ?? 0) > MaxTextLength) return $"Title can be at most {MaxTextLength} characters";
-        if ((dto.TitleEnglish?.Length ?? 0) > MaxTextLength) return $"English title can be at most {MaxTextLength} characters";
-        if ((dto.Author?.Length ?? 0) > MaxTextLength) return $"Author can be at most {MaxTextLength} characters";
+        if ((dto.Title?.Length ?? 0) > MaxTextLength) return (false, $"Title can be at most {MaxTextLength} characters");
+        if ((dto.TitleEnglish?.Length ?? 0) > MaxTextLength) return (false, $"English title can be at most {MaxTextLength} characters");
+        if ((dto.Author?.Length ?? 0) > MaxTextLength) return (false, $"Author can be at most {MaxTextLength} characters");
 
-        if (!Enum.IsDefined(dto.Type)) return "Unknown activity type";
-        if (!Enum.IsDefined(dto.PlayerLanguage)) return "Unknown player language";
-        if (!Enum.IsDefined(dto.GameMasterLanguage)) return "Unknown game master language";
-        if (!Enum.IsDefined(dto.KarmaType)) return "Unknown karma type";
-        if (!Enum.IsDefined(dto.AutoSignupCategory)) return "Unknown auto signup category";
+        if (!Enum.IsDefined(dto.Type)) return (false, "Unknown activity type");
+        if (!Enum.IsDefined(dto.PlayerLanguage)) return (false, "Unknown player language");
+        if (!Enum.IsDefined(dto.GameMasterLanguage)) return (false, "Unknown game master language");
+        if (!Enum.IsDefined(dto.KarmaType)) return (false, "Unknown karma type");
+        if (!Enum.IsDefined(dto.AutoSignupCategory)) return (false, "Unknown auto signup category");
 
-        if (dto.MinAge is < 0 or > HighestAllowedAge) return $"Minimum age must be between 0 and {HighestAllowedAge}";
-        if (dto.MaxSignups is < 0 or > MaxSignupsLimit) return $"Max signups must be between 0 and {MaxSignupsLimit}";
+        if (dto.MinAge is < 0 or > HighestAllowedAge) return (false, $"Minimum age must be between 0 and {HighestAllowedAge}");
+        if (dto.MaxSignups is < 0 or > MaxSignupsLimit) return (false, $"Max signups must be between 0 and {MaxSignupsLimit}");
 
-        return null;
+        return (true, string.Empty);
     }
 
     private static void Apply(Activity activity, ActivityFieldsDto dto)
