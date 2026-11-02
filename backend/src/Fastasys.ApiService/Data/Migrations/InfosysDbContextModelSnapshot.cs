@@ -42,7 +42,7 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<bool>("CanSignUp")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Description")
+                    b.Property<string>("DescriptionDanish")
                         .IsRequired()
                         .HasColumnType("text");
 

@@ -32,7 +32,7 @@ export interface ActivityForm {
   titleEnglish: string;
   author: string;
   type: ActivityType;
-  description: string;
+  descriptionDanish: string;
   descriptionEnglish: string;
   note: string;
   durationHours: number | null;
@@ -64,7 +64,7 @@ export function newActivityForm(): ActivityForm {
     titleEnglish: '',
     author: '',
     type: 'BoardGame',
-    description: '',
+    descriptionDanish: '',
     descriptionEnglish: '',
     note: '',
     durationHours: null,
@@ -93,7 +93,7 @@ export function toForm(activity: Activity): ActivityForm {
     titleEnglish: activity.titleEnglish,
     author: activity.author,
     type: activity.type,
-    description: activity.description,
+    descriptionDanish: activity.descriptionDanish,
     descriptionEnglish: activity.descriptionEnglish,
     note: activity.note,
     durationHours: activity.durationHours,

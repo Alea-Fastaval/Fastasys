@@ -20,7 +20,7 @@ public record ActivityDto(
     string TitleEnglish,
     string Author,
     ActivityType Type,
-    string Description,
+    string DescriptionDanish,
     string DescriptionEnglish,
     string TeaserDanish,
     string TeaserEnglish,
@@ -52,7 +52,7 @@ public abstract record ActivityFieldsDto
     public string? TitleEnglish { get; init; }
     public string? Author { get; init; }
     public ActivityType Type { get; init; }
-    public string? Description { get; init; }
+    public string? DescriptionDanish { get; init; }
     public string? DescriptionEnglish { get; init; }
     public string? Note { get; init; }
     public decimal DurationHours { get; init; }
@@ -274,7 +274,7 @@ public class ActivitiesController : ControllerBase
         activity.TitleEnglish = dto.TitleEnglish ?? string.Empty;
         activity.Author = dto.Author ?? string.Empty;
         activity.Type = dto.Type;
-        activity.Description = dto.Description ?? string.Empty;
+        activity.DescriptionDanish = dto.DescriptionDanish ?? string.Empty;
         activity.DescriptionEnglish = dto.DescriptionEnglish ?? string.Empty;
         activity.Note = dto.Note ?? string.Empty;
         activity.DurationHours = dto.DurationHours;
@@ -308,7 +308,7 @@ public class ActivitiesController : ControllerBase
         a.TitleEnglish,
         a.Author,
         a.Type,
-        a.Description,
+        a.DescriptionDanish,
         a.DescriptionEnglish,
         a.TeaserDanish,
         a.TeaserEnglish,

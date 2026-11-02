@@ -25,7 +25,7 @@ export interface Activity {
   titleEnglish: string;
   author: string;
   type: ActivityType;
-  description: string;
+  descriptionDanish: string;
   descriptionEnglish: string;
   teaserDanish: string;
   teaserEnglish: string;
@@ -56,7 +56,7 @@ export interface ActivityFieldsDto {
   titleEnglish: string;
   author: string;
   type: ActivityType;
-  description: string;
+  descriptionDanish: string;
   descriptionEnglish: string;
   note: string;
   durationHours: number;

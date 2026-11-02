@@ -29,7 +29,7 @@ public class ActivitiesControllerTests
         TitleEnglish = "Test scenario",
         Author = "Test Forfatter",
         Type = ActivityType.Scenario,
-        Description = "Dansk foromtale",
+        DescriptionDanish = "Dansk foromtale",
         DescriptionEnglish = "English blurb",
         Note = "Intern note",
         DurationHours = 4.5m,
@@ -117,7 +117,7 @@ public class ActivitiesControllerTests
         Assert.Equal("Test scenario", stored.TitleEnglish);
         Assert.Equal("Test Forfatter", stored.Author);
         Assert.Equal(ActivityType.Scenario, stored.Type);
-        Assert.Equal("Dansk foromtale", stored.Description);
+        Assert.Equal("Dansk foromtale", stored.DescriptionDanish);
         Assert.Equal("English blurb", stored.DescriptionEnglish);
         Assert.Equal("Intern note", stored.Note);
         Assert.Equal(4.5m, stored.DurationHours);
@@ -224,7 +224,7 @@ public class ActivitiesControllerTests
     {
         // Infosys has no required fields on the activity form.
         using var db = CreateDbContext();
-        var dto = ValidCreate() with { Title = null, TitleEnglish = "", Author = null, Description = null, DescriptionEnglish = null, Note = null };
+        var dto = ValidCreate() with { Title = null, TitleEnglish = "", Author = null, DescriptionDanish = null, DescriptionEnglish = null, Note = null };
 
         var result = await CreateController(db).Create(dto);
 

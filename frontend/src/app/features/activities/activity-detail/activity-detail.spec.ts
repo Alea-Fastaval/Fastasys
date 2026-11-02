@@ -12,7 +12,7 @@ const activity: Activity = {
   titleEnglish: 'Test scenario',
   author: 'Test Forfatter',
   type: 'Scenario',
-  description: 'Linje 1\nLinje 2',
+  descriptionDanish: 'Linje 1\nLinje 2',
   descriptionEnglish: '',
   teaserDanish: '',
   teaserEnglish: '',

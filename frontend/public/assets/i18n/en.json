@@ -126,7 +126,7 @@
       "maxSignups": "Max signups",
       "autoSignup": "Automatic signup",
       "note": "Note",
-      "description": "Description",
+      "descriptionDanish": "Description",
       "descriptionEnglish": "English description"
     },
     "types": {

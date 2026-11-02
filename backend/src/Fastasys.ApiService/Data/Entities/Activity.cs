@@ -26,7 +26,7 @@ public class Activity
     public ActivityType Type { get; set; } = ActivityType.BoardGame;
 
     // Infosys: foromtale / description_en
-    public string Description { get; set; } = string.Empty;
+    public string DescriptionDanish { get; set; } = string.Empty;
     public string DescriptionEnglish { get; set; } = string.Empty;
 
     // Infosys: teaser_dk / teaser_en. Not editable in the admin UI, only sent to the external APIs.

@@ -148,7 +148,7 @@ public static class DbSeeder
             {
                 Title = "Skygger over Fastaval",
                 TitleEnglish = "Shadows Over Fastaval",
-                Description = "Et stemningsfuldt rædselsscenarie i 1920'ernes Arkham.",
+                DescriptionDanish = "Et stemningsfuldt rædselsscenarie i 1920'ernes Arkham.",
                 DescriptionEnglish = "An immersive horror scenario set in 1920s Arkham.",
                 Author = "Lars Jensen",
                 Type = ActivityType.Scenario,
@@ -167,7 +167,7 @@ public static class DbSeeder
             {
                 Title = "Fastaval Brætspilsmesterskab",
                 TitleEnglish = "Fastaval Board Game Championship",
-                Description = "Turnering i klassiske strategispil.",
+                DescriptionDanish = "Turnering i klassiske strategispil.",
                 DescriptionEnglish = "Competitive board gaming tournament featuring strategy classics.",
                 Author = "Fastaval Board Game Team",
                 Type = ActivityType.BoardGame,

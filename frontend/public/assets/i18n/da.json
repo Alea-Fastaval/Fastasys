@@ -126,7 +126,7 @@
       "maxSignups": "Max tilmeldinger",
       "autoSignup": "Automatisk tilmelding",
       "note": "Note",
-      "description": "Foromtale",
+      "descriptionDanish": "Foromtale",
       "descriptionEnglish": "Engelsk foromtale"
     },
     "types": {

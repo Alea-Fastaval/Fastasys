@@ -13,7 +13,7 @@ const existing: Activity = {
   titleEnglish: 'Old title',
   author: '',
   type: 'Quest',
-  description: '',
+  descriptionDanish: '',
   descriptionEnglish: '',
   teaserDanish: 'Teaser',
   teaserEnglish: '',
