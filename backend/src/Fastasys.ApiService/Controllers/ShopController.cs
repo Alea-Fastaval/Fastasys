@@ -94,7 +94,7 @@ public class ShopController : ControllerBase
                 s.Quantity,
                 s.TotalAmount,
                 s.SaleDate,
-                ParticipantName = s.Participant != null ? s.Participant.FirstName + " " + s.Participant.LastName : "Guest"
+                ParticipantName = s.Participant != null ? s.Participant.DisplayName() : "Guest"
             })
             .ToListAsync();
 

@@ -41,7 +41,7 @@ public class BoardgamesController : ControllerBase
                 l.BoardgameId,
                 BoardgameTitle = l.Boardgame.Title,
                 l.ParticipantId,
-                ParticipantName = l.Participant.FirstName + " " + l.Participant.LastName,
+                ParticipantName = l.Participant.DisplayName(),
                 l.LoanedAt,
                 l.ReturnedAt
             })

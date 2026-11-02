@@ -2,6 +2,7 @@ export interface Participant {
   id: number;
   firstName: string;
   lastName: string;
+  nickname: string;
   email: string;
   phoneNumber: string;
   birthDate?: string;
@@ -19,6 +20,7 @@ export interface Participant {
 export interface CreateParticipantDto {
   firstName: string;
   lastName: string;
+  nickname: string;
   email: string;
   phoneNumber: string;
   birthDate: string;
