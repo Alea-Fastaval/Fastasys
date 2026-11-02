@@ -124,7 +124,7 @@ describe('ActivityFormComponent', () => {
     const { component, navigate, flash } = await setup(null);
     loadedForm(component).title = 'Nyt spil';
 
-    component.save();
+    component.submit();
 
     const req = httpMock.expectOne('/api/activities');
     expect(req.request.method).toBe('POST');
@@ -138,11 +138,11 @@ describe('ActivityFormComponent', () => {
   it('stays on the form with an error when the create fails', async () => {
     const { component, navigate } = await setup(null);
 
-    component.save();
+    component.submit();
     httpMock.expectOne('/api/activities').flush({ message: 'bad' }, { status: 400, statusText: 'Bad Request' });
 
     expect(component.errorKey()).toBe('createFailed');
-    expect(component.saving()).toBe(false);
+    expect(component.busy()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
   });
 
@@ -155,13 +155,13 @@ describe('ActivityFormComponent', () => {
     expect(flash.take()).toEqual({ type: 'error', key: 'notUpdated' });
   });
 
-  it('loads an existing activity and saves the changes', async () => {
+  it('loads an existing activity and updates it', async () => {
     const { component, navigate, flash } = await setup('5');
     httpMock.expectOne('/api/activities/5').flush(existing);
 
     expect(component.form()).toMatchObject({ title: 'Gammel titel', type: 'Quest', wordPressId: 77 });
     loadedForm(component).title = 'Ny titel';
-    component.save();
+    component.submit();
 
     const req = httpMock.expectOne('/api/activities/5');
     expect(req.request.method).toBe('PUT');

@@ -5,7 +5,7 @@
   <app-card [title]="'activities.deleteConfirmTitle' | translate">
     <p>{{ 'activities.deleteConfirm' | translate }} <i>{{ activityTitle() }}</i>?</p>
     <div class="form-actions">
-      <button mat-raised-button color="warn" type="button" [disabled]="saving()" (click)="confirmDelete()">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
         {{ 'activities.buttons.delete' | translate }}
       </button>
       <button mat-button type="button" (click)="cancelDelete()">{{ 'activities.buttons.cancel' | translate }}</button>
@@ -17,7 +17,7 @@
     <p class="flash error">{{ 'activities.messages.' + key | translate }}</p>
     }
 
-    <form #activityForm="ngForm" (ngSubmit)="save()">
+    <form #activityForm="ngForm" (ngSubmit)="submit()">
       @if (activityId() !== null) {
       <p><strong>{{ 'activities.fields.id' | translate }}:</strong> {{ activityId() }}</p>
       }
@@ -205,7 +205,7 @@
       </div>
 
       <div class="form-actions">
-        <button mat-raised-button color="primary" type="submit" [disabled]="saving() || activityForm.invalid">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy() || activityForm.invalid">
           {{ (activityId() === null ? 'activities.buttons.create' : 'activities.buttons.update') | translate }}
         </button>
         <button mat-button type="button" (click)="cancel()">{{ 'activities.buttons.cancel' | translate }}</button>

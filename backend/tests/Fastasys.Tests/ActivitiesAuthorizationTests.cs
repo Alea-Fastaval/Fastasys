@@ -19,10 +19,23 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         _factory = factory;
     }
 
-    private static SaveActivityDto NewActivity(string title) => new(
-        title, "", "", ActivityType.Scenario, "", "", "", 4, 3, 5, 1, 30, 0, null,
-        true, false, true, true, false, ActivityLanguage.Danish, ActivityLanguage.Danish,
-        KarmaType.None, AutoSignupCategory.None, 0);
+    private static T NewActivity<T>(string title) where T : ActivityFieldsDto, new() => new T
+    {
+        Title = title,
+        Type = ActivityType.Scenario,
+        DurationHours = 4,
+        MinPlayersPerTeam = 3,
+        MaxPlayersPerTeam = 5,
+        GameMastersPerTeam = 1,
+        Price = 30,
+        CanSignUp = true,
+        IsRoomExclusive = true,
+        IsTimeExclusive = true,
+        PlayerLanguage = ActivityLanguage.Danish,
+        GameMasterLanguage = ActivityLanguage.Danish,
+        KarmaType = KarmaType.None,
+        AutoSignupCategory = AutoSignupCategory.None
+    };
 
     private async Task<HttpClient> CreateClientWithPrivilegeAsync(string privilegeKey)
     {
@@ -83,8 +96,8 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         var ct = TestContext.Current.CancellationToken;
 
         var list = await client.GetAsync("/api/activities", ct);
-        var create = await client.PostAsJsonAsync("/api/activities", NewActivity("Kun læse"), ct);
-        var update = await client.PutAsJsonAsync("/api/activities/1", NewActivity("Kun læse"), ct);
+        var create = await client.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Kun læse"), ct);
+        var update = await client.PutAsJsonAsync("/api/activities/1", NewActivity<UpdateActivityDto>("Kun læse"), ct);
         var delete = await client.DeleteAsync("/api/activities/1", ct);
 
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
@@ -99,13 +112,13 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         var client = await CreateClientWithPrivilegeAsync("activities_edit");
         var ct = TestContext.Current.CancellationToken;
 
-        var create = await client.PostAsJsonAsync("/api/activities", NewActivity("Redigerbar"), ct);
+        var create = await client.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Redigerbar"), ct);
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         var created = await create.Content.ReadFromJsonAsync<ActivityDto>(ct);
         Assert.NotNull(created);
 
         var get = await client.GetAsync($"/api/activities/{created.Id}", ct);
-        var update = await client.PutAsJsonAsync($"/api/activities/{created.Id}", NewActivity("Redigeret"), ct);
+        var update = await client.PutAsJsonAsync($"/api/activities/{created.Id}", NewActivity<UpdateActivityDto>("Redigeret"), ct);
         var delete = await client.DeleteAsync($"/api/activities/{created.Id}", ct);
 
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
@@ -119,7 +132,7 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         var client = await CreateClientWithPrivilegeAsync("activities_edit");
         var ct = TestContext.Current.CancellationToken;
 
-        var create = await client.PostAsJsonAsync("/api/activities", NewActivity("Enum-navne") with { KarmaType = KarmaType.Big }, ct);
+        var create = await client.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Enum-navne") with { KarmaType = KarmaType.Big }, ct);
         using var json = JsonDocument.Parse(await create.Content.ReadAsStringAsync(ct));
 
         Assert.Equal("Scenario", json.RootElement.GetProperty("type").GetString());
@@ -134,7 +147,7 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         // Agreed deviation: Infosys had a maximum age (activityageranges 'max'); Fastasys only keeps the minimum.
         var client = await CreateClientWithPrivilegeAsync("activities_edit");
         var ct = TestContext.Current.CancellationToken;
-        var body = JsonSerializer.SerializeToNode(NewActivity("Uden maksimumalder") with { MinAge = 12 },
+        var body = JsonSerializer.SerializeToNode(NewActivity<CreateActivityDto>("Uden maksimumalder") with { MinAge = 12 },
             new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
         body["maxAge"] = 17;
 

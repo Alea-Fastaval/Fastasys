@@ -45,33 +45,38 @@ public record ActivityDto(
     DateTimeOffset UpdatedAt
 );
 
-// The fields of the Infosys create/edit form. Teasers are not part of it.
-public record SaveActivityDto(
-    string? Title,
-    string? TitleEnglish,
-    string? Author,
-    ActivityType Type,
-    string? Description,
-    string? DescriptionEnglish,
-    string? Note,
-    decimal DurationHours,
-    int MinPlayersPerTeam,
-    int MaxPlayersPerTeam,
-    int GameMastersPerTeam,
-    int Price,
-    int MaxSignups,
-    int? MinAge,
-    bool CanSignUp,
-    bool IsHidden,
-    bool IsRoomExclusive,
-    bool IsTimeExclusive,
-    bool IsReplayable,
-    ActivityLanguage PlayerLanguage,
-    ActivityLanguage GameMasterLanguage,
-    KarmaType KarmaType,
-    AutoSignupCategory AutoSignupCategory,
-    int WordPressId
-);
+// The fields of the Infosys create and edit forms, which are the same. Teasers are not part of them.
+public abstract record ActivityFieldsDto
+{
+    public string? Title { get; init; }
+    public string? TitleEnglish { get; init; }
+    public string? Author { get; init; }
+    public ActivityType Type { get; init; }
+    public string? Description { get; init; }
+    public string? DescriptionEnglish { get; init; }
+    public string? Note { get; init; }
+    public decimal DurationHours { get; init; }
+    public int MinPlayersPerTeam { get; init; }
+    public int MaxPlayersPerTeam { get; init; }
+    public int GameMastersPerTeam { get; init; }
+    public int Price { get; init; }
+    public int MaxSignups { get; init; }
+    public int? MinAge { get; init; }
+    public bool CanSignUp { get; init; }
+    public bool IsHidden { get; init; }
+    public bool IsRoomExclusive { get; init; }
+    public bool IsTimeExclusive { get; init; }
+    public bool IsReplayable { get; init; }
+    public ActivityLanguage PlayerLanguage { get; init; }
+    public ActivityLanguage GameMasterLanguage { get; init; }
+    public KarmaType KarmaType { get; init; }
+    public AutoSignupCategory AutoSignupCategory { get; init; }
+    public int WordPressId { get; init; }
+}
+
+public record CreateActivityDto : ActivityFieldsDto;
+
+public record UpdateActivityDto : ActivityFieldsDto;
 
 public record ScheduleDto(
     int Id,
@@ -136,7 +141,7 @@ public class ActivitiesController : ControllerBase
 
     [HttpPost]
     [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ActivityDto>> Create([FromBody] SaveActivityDto dto)
+    public async Task<ActionResult<ActivityDto>> Create([FromBody] CreateActivityDto dto)
     {
         var error = Validate(dto);
         if (error != null) return BadRequest(new { message = error });
@@ -154,7 +159,7 @@ public class ActivitiesController : ControllerBase
 
     [HttpPut("{id:int}")]
     [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ActivityDto>> Update(int id, [FromBody] SaveActivityDto dto)
+    public async Task<ActionResult<ActivityDto>> Update(int id, [FromBody] UpdateActivityDto dto)
     {
         var activity = await _db.Activities.FindAsync(id);
         if (activity == null) return NotFound(new { message = "Activity not found" });
@@ -244,7 +249,7 @@ public class ActivitiesController : ControllerBase
     }
 
     // Infosys only validates in the browser (number inputs with min/max); the same limits are enforced here.
-    private static string? Validate(SaveActivityDto dto)
+    private static string? Validate(ActivityFieldsDto dto)
     {
         if ((dto.Title?.Length ?? 0) > MaxTextLength) return $"Title can be at most {MaxTextLength} characters";
         if ((dto.TitleEnglish?.Length ?? 0) > MaxTextLength) return $"English title can be at most {MaxTextLength} characters";
@@ -262,7 +267,7 @@ public class ActivitiesController : ControllerBase
         return null;
     }
 
-    private static void Apply(Activity activity, SaveActivityDto dto)
+    private static void Apply(Activity activity, ActivityFieldsDto dto)
     {
         activity.Title = dto.Title ?? string.Empty;
         activity.TitleEnglish = dto.TitleEnglish ?? string.Empty;

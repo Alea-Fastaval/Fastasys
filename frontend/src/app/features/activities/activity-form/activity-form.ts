@@ -14,11 +14,13 @@ import {
   AUTO_SIGNUP_CATEGORIES,
   KARMA_TYPES,
   Activity,
+  ActivityFieldsDto,
   ActivityLanguage,
   ActivityType,
   AutoSignupCategory,
+  CreateActivityDto,
   KarmaType,
-  SaveActivityDto,
+  UpdateActivityDto,
 } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
@@ -115,7 +117,7 @@ export function toForm(activity: Activity): ActivityForm {
 }
 
 // Empty number fields become 0 like PHP intval(''); an empty age means no age requirement.
-export function toDto(form: ActivityForm): SaveActivityDto {
+export function toDto(form: ActivityForm): ActivityFieldsDto {
   return {
     ...form,
     durationHours: form.durationHours ?? 0,
@@ -161,7 +163,7 @@ export class ActivityFormComponent implements OnInit {
   public readonly activityTitle = signal('');
   public readonly form = signal<ActivityForm | null>(null);
   public readonly notFound = signal(false);
-  public readonly saving = signal(false);
+  public readonly busy = signal(false);
   public readonly errorKey = signal<string | null>(null);
   public readonly confirmingDelete = signal(false);
 
@@ -182,31 +184,18 @@ export class ActivityFormComponent implements OnInit {
     });
   }
 
-  public save(): void {
+  public submit(): void {
     const form = this.form();
     if (!form) return;
 
     const id = this.activityId();
-    const dto = toDto(form);
-    this.saving.set(true);
+    this.busy.set(true);
     this.errorKey.set(null);
 
     if (id === null) {
-      this.http.post<Activity>('/api/activities', dto).subscribe({
-        next: created => {
-          this.flash.set('success', 'created');
-          this.router.navigate(['/activities', created.id]);
-        },
-        error: () => this.fail('createFailed'),
-      });
+      this.create(toDto(form));
     } else {
-      this.http.put<Activity>(`/api/activities/${id}`, dto).subscribe({
-        next: () => {
-          this.flash.set('success', 'updated');
-          this.router.navigate(['/activities', id]);
-        },
-        error: () => this.fail('updateFailed'),
-      });
+      this.update(id, toDto(form));
     }
   }
 
@@ -225,7 +214,7 @@ export class ActivityFormComponent implements OnInit {
     const id = this.activityId();
     if (id === null) return;
 
-    this.saving.set(true);
+    this.busy.set(true);
     this.http.delete(`/api/activities/${id}`).subscribe({
       next: () => {
         this.flash.set('success', 'deleted');
@@ -243,8 +232,28 @@ export class ActivityFormComponent implements OnInit {
     this.router.navigate(['/activities']);
   }
 
+  private create(dto: CreateActivityDto): void {
+    this.http.post<Activity>('/api/activities', dto).subscribe({
+      next: created => {
+        this.flash.set('success', 'created');
+        this.router.navigate(['/activities', created.id]);
+      },
+      error: () => this.fail('createFailed'),
+    });
+  }
+
+  private update(id: number, dto: UpdateActivityDto): void {
+    this.http.put<Activity>(`/api/activities/${id}`, dto).subscribe({
+      next: () => {
+        this.flash.set('success', 'updated');
+        this.router.navigate(['/activities', id]);
+      },
+      error: () => this.fail('updateFailed'),
+    });
+  }
+
   private fail(key: string): void {
-    this.saving.set(false);
+    this.busy.set(false);
     this.errorKey.set(key);
   }
 }

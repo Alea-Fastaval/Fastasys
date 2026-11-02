@@ -50,7 +50,8 @@ export interface Activity {
   updatedAt: string;
 }
 
-export interface SaveActivityDto {
+// The fields of the create and edit forms, which are the same
+export interface ActivityFieldsDto {
   title: string;
   titleEnglish: string;
   author: string;
@@ -76,6 +77,10 @@ export interface SaveActivityDto {
   autoSignupCategory: AutoSignupCategory;
   wordPressId: number;
 }
+
+export type CreateActivityDto = ActivityFieldsDto;
+
+export type UpdateActivityDto = ActivityFieldsDto;
 
 export interface ActivitySchedule {
   id: number;

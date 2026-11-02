@@ -23,32 +23,37 @@ public class ActivitiesControllerTests
     private static ActivitiesController CreateController(InfosysDbContext db) =>
         new(db, NullLogger<ActivitiesController>.Instance);
 
-    private static SaveActivityDto ValidDto() => new(
-        Title: "Testscenarie",
-        TitleEnglish: "Test scenario",
-        Author: "Test Forfatter",
-        Type: ActivityType.Scenario,
-        Description: "Dansk foromtale",
-        DescriptionEnglish: "English blurb",
-        Note: "Intern note",
-        DurationHours: 4.5m,
-        MinPlayersPerTeam: 3,
-        MaxPlayersPerTeam: 5,
-        GameMastersPerTeam: 1,
-        Price: 30,
-        MaxSignups: 40,
-        MinAge: 13,
-        CanSignUp: true,
-        IsHidden: false,
-        IsRoomExclusive: true,
-        IsTimeExclusive: false,
-        IsReplayable: false,
-        PlayerLanguage: ActivityLanguage.DanishAndEnglish,
-        GameMasterLanguage: ActivityLanguage.English,
-        KarmaType: KarmaType.Medium,
-        AutoSignupCategory: AutoSignupCategory.Author,
-        WordPressId: 1234
-    );
+    private static T ValidDto<T>() where T : ActivityFieldsDto, new() => new T
+    {
+        Title = "Testscenarie",
+        TitleEnglish = "Test scenario",
+        Author = "Test Forfatter",
+        Type = ActivityType.Scenario,
+        Description = "Dansk foromtale",
+        DescriptionEnglish = "English blurb",
+        Note = "Intern note",
+        DurationHours = 4.5m,
+        MinPlayersPerTeam = 3,
+        MaxPlayersPerTeam = 5,
+        GameMastersPerTeam = 1,
+        Price = 30,
+        MaxSignups = 40,
+        MinAge = 13,
+        CanSignUp = true,
+        IsHidden = false,
+        IsRoomExclusive = true,
+        IsTimeExclusive = false,
+        IsReplayable = false,
+        PlayerLanguage = ActivityLanguage.DanishAndEnglish,
+        GameMasterLanguage = ActivityLanguage.English,
+        KarmaType = KarmaType.Medium,
+        AutoSignupCategory = AutoSignupCategory.Author,
+        WordPressId = 1234
+    };
+
+    private static CreateActivityDto ValidCreate() => ValidDto<CreateActivityDto>();
+
+    private static UpdateActivityDto ValidUpdate() => ValidDto<UpdateActivityDto>();
 
     [Fact]
     public async Task GetAll_ReturnsHiddenActivitiesToo()
@@ -99,7 +104,7 @@ public class ActivitiesControllerTests
     public async Task Create_StoresEveryFormField()
     {
         using var db = CreateDbContext();
-        var dto = ValidDto();
+        var dto = ValidCreate();
 
         var result = await CreateController(db).Create(dto);
 
@@ -140,7 +145,7 @@ public class ActivitiesControllerTests
         using var db = CreateDbContext();
         var before = DateTimeOffset.UtcNow;
 
-        await CreateController(db).Create(ValidDto());
+        await CreateController(db).Create(ValidCreate());
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.InRange(stored.UpdatedAt, before, DateTimeOffset.UtcNow);
@@ -152,7 +157,7 @@ public class ActivitiesControllerTests
         // Teasers are not on the Infosys form; opretAktivitet sets them to ''.
         using var db = CreateDbContext();
 
-        await CreateController(db).Create(ValidDto());
+        await CreateController(db).Create(ValidCreate());
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(string.Empty, stored.TeaserDanish);
@@ -169,7 +174,7 @@ public class ActivitiesControllerTests
         // Infosys: empty($post->min_age) removes the requirement, and empty("0") is true.
         using var db = CreateDbContext();
 
-        await CreateController(db).Create(ValidDto() with { MinAge = posted });
+        await CreateController(db).Create(ValidCreate() with { MinAge = posted });
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(expected, stored.MinAge);
@@ -183,7 +188,7 @@ public class ActivitiesControllerTests
         // The Infosys form uses <input type="number" min="0" max="200"> for the age.
         using var db = CreateDbContext();
 
-        var result = await CreateController(db).Create(ValidDto() with { MinAge = age });
+        var result = await CreateController(db).Create(ValidCreate() with { MinAge = age });
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Empty(db.Activities);
@@ -196,7 +201,7 @@ public class ActivitiesControllerTests
     {
         using var db = CreateDbContext();
 
-        var result = await CreateController(db).Create(ValidDto() with { MaxSignups = maxSignups });
+        var result = await CreateController(db).Create(ValidCreate() with { MaxSignups = maxSignups });
 
         Assert.IsType<CreatedAtActionResult>(result.Result);
     }
@@ -209,7 +214,7 @@ public class ActivitiesControllerTests
         // The Infosys form uses <input type="number" min="0" max="1000"> for max tilmeldinger.
         using var db = CreateDbContext();
 
-        var result = await CreateController(db).Create(ValidDto() with { MaxSignups = maxSignups });
+        var result = await CreateController(db).Create(ValidCreate() with { MaxSignups = maxSignups });
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
     }
@@ -219,7 +224,7 @@ public class ActivitiesControllerTests
     {
         // Infosys has no required fields on the activity form.
         using var db = CreateDbContext();
-        var dto = ValidDto() with { Title = null, TitleEnglish = "", Author = null, Description = null, DescriptionEnglish = null, Note = null };
+        var dto = ValidCreate() with { Title = null, TitleEnglish = "", Author = null, Description = null, DescriptionEnglish = null, Note = null };
 
         var result = await CreateController(db).Create(dto);
 
@@ -237,10 +242,10 @@ public class ActivitiesControllerTests
         var controller = CreateController(db);
         var tooLong = new string('x', 257);
 
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { Title = tooLong })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { TitleEnglish = tooLong })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { Author = tooLong })).Result);
-        Assert.IsType<CreatedAtActionResult>((await controller.Create(ValidDto() with { Title = new string('x', 256) })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { Title = tooLong })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { TitleEnglish = tooLong })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { Author = tooLong })).Result);
+        Assert.IsType<CreatedAtActionResult>((await controller.Create(ValidCreate() with { Title = new string('x', 256) })).Result);
     }
 
     [Fact]
@@ -249,10 +254,10 @@ public class ActivitiesControllerTests
         using var db = CreateDbContext();
         var controller = CreateController(db);
 
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { Type = (ActivityType)99 })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { KarmaType = (KarmaType)4 })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { PlayerLanguage = (ActivityLanguage)9 })).Result);
-        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidDto() with { AutoSignupCategory = (AutoSignupCategory)9 })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { Type = (ActivityType)99 })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { KarmaType = (KarmaType)4 })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { PlayerLanguage = (ActivityLanguage)9 })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { AutoSignupCategory = (AutoSignupCategory)9 })).Result);
     }
 
     [Fact]
@@ -270,7 +275,7 @@ public class ActivitiesControllerTests
         db.Activities.Add(activity);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await CreateController(db).Update(activity.Id, ValidDto() with { Title = "Ny titel", Type = ActivityType.Quest });
+        var result = await CreateController(db).Update(activity.Id, ValidUpdate() with { Title = "Ny titel", Type = ActivityType.Quest });
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var returned = Assert.IsType<ActivityDto>(ok.Value);
@@ -289,7 +294,7 @@ public class ActivitiesControllerTests
         db.Activities.Add(activity);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await CreateController(db).Update(activity.Id, ValidDto() with { MinAge = 0 });
+        await CreateController(db).Update(activity.Id, ValidUpdate() with { MinAge = 0 });
 
         var stored = await db.Activities.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Null(stored.MinAge);
@@ -300,7 +305,7 @@ public class ActivitiesControllerTests
     {
         using var db = CreateDbContext();
 
-        var result = await CreateController(db).Update(999, ValidDto());
+        var result = await CreateController(db).Update(999, ValidUpdate());
 
         Assert.IsType<NotFoundObjectResult>(result.Result);
     }
@@ -313,7 +318,7 @@ public class ActivitiesControllerTests
         db.Activities.Add(activity);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var result = await CreateController(db).Update(activity.Id, ValidDto() with { Title = "Ændret", MaxSignups = 5000 });
+        var result = await CreateController(db).Update(activity.Id, ValidUpdate() with { Title = "Ændret", MaxSignups = 5000 });
 
         Assert.IsType<BadRequestObjectResult>(result.Result);
         var stored = await db.Activities.AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
