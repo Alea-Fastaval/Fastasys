@@ -37,20 +37,57 @@ export class RolesComponent implements OnInit {
   public readonly selectedRole = signal<Role | null>(null);
   public readonly showRoleModal = signal<boolean>(false);
 
-  public systemDomains: SystemDomain[] = [
-    { key: 'users', name: 'Users' },
-    { key: 'boardgames', name: 'Boardgames' },
-    { key: 'participants', name: 'Participants' },
-    { key: 'activities', name: 'Activities' },
-    { key: 'hero_force', name: 'Hero Force' },
-    { key: 'food', name: 'Food' },
-    { key: 'wear', name: 'Wear' },
-    { key: 'rooms', name: 'Rooms' },
-  ];
+  // todo: Better and more systematic names
+  // todo: make the the table still work, when there are hidden elements
+  // todo: more domain icons
 
-  // todo: get all the new cool roles to appear in the matrix,
-  // by naming them consistently, and creating more SystemDomains
-  // perhaps we need a third col of the matrix.
+  public systemDomains: SystemDomain[] = [
+    { key: 'accounting', name: 'Accounting' },
+    { key: 'activity', name: 'Activity' },
+    { key: 'activity_leader_list', name: 'Activity Leader List' },
+    { key: 'boardgame', name: 'Boardgame' },
+    { key: 'boardgame_distribute', name: 'Distribute Boardgame' },
+    { key: 'checkin_stats', name: 'Check-in Statistics' },
+    { key: 'entrance', name: 'Entrance' },
+    { key: 'entrance_assignment_reset', name: 'Reset Entrance Assignments' },
+    { key: 'entrance_participant', name: 'Assign entrance to participant' },
+    { key: 'food', name: 'Food' },
+    { key: 'food_distribute', name: 'Distribute Food' },
+    { key: 'food_distribute_reset', name: 'Reset Food Distributions' },
+    { key: 'food_marketplace', name: 'Food Marketplace' },
+    { key: 'food_participant', name: 'Assign food to participant' },
+    { key: 'food_stats', name: 'Food statistics' },
+    { key: 'hero_force', name: 'Hero Force' },
+    { key: 'hero_force_participant', name: 'Hero Force Shifts' },
+    { key: 'hero_force_participant_list', name: 'Hero Force Assignments' },
+    { key: 'karma_list', name: 'Karma list' },
+    { key: 'nametag_participant', name: 'Name Tag for Participant' },
+    { key: 'participant', name: 'Participant' },
+    { key: 'participant_list', name: 'Participant list' },
+    { key: 'participant_schedule', name: 'Participant schedule' },
+    { key: 'payment_participant', name: 'Participant payments' },
+    { key: 'role', name: 'Role' },
+    { key: 'role_user', name: 'Assign Role' },
+    { key: 'room', name: 'Room' },
+    { key: 'room_assignment', name: 'Assign Room' },
+    { key: 'run', name: 'Run' },
+    { key: 'run_participant', name: 'Assign Run' },
+    { key: 'run_start', name: 'Start Run' },
+    { key: 'send_participant_email', name: 'Email to Participant' },
+    { key: 'send_participant_notification', name: 'Notification to Participant' },
+    { key: 'signup_form', name: 'Signup form' },
+    { key: 'signup_stats', name: 'Signup Statistics' },
+    { key: 'sleeping_assignment', name: 'Sleeping Assignments' },
+    { key: 'sleeping_participant', name: 'Participant sleeping arrangement' },
+    { key: 'syslog', name: 'System log' },
+    { key: 'tag_template', name: 'Name tag Template' },
+    { key: 'user', name: 'User' },
+    { key: 'vote_list', name: 'Game Votes' },
+    { key: 'wear', name: 'Wear' },
+    { key: 'wear_distribute', name: 'Distribute wear' },
+    { key: 'wear_list', name: 'Full Wear List' },
+    { key: 'wear_participant', name: 'Wear for Participant' },
+  ];
 
   public formRole: CreateRoleDto = {
     name: '',
@@ -99,6 +136,7 @@ export class RolesComponent implements OnInit {
       case 'hero_force':
         return 'calendar_today';
       case 'food':
+      case 'food_distribute':
         return 'restaurant';
       case 'wear':
         return 'checkroom';
@@ -109,11 +147,14 @@ export class RolesComponent implements OnInit {
     }
   }
 
+  public existsPrivilege(key: string): boolean {
+    return this.allPrivileges().find(value => value.key === key) != undefined;
+  }
+
   public hasPrivilege(role: Role, privilegeKey: string): boolean {
     if (role.name === 'Admin') return true;
     return role.privileges.some(p => p.key === privilegeKey);
   }
-
   public togglePrivilege(role: Role, privilegeKey: string, checked: boolean): void {
     const priv = this.allPrivileges().find(p => p.key === privilegeKey);
     if (!priv) return;

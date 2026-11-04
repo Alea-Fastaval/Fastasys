@@ -65,7 +65,7 @@
                   </div>
                 </div>
               </td>
-              <td class="text-center">
+              <td class="text-center" [hidden]="!existsPrivilege(domain.key + '_view')">
                 <mat-checkbox
                   [checked]="hasPrivilege(role, domain.key + '_view')"
                   [disabled]="role.name === 'Admin'"
@@ -74,7 +74,7 @@
                   View {{ domain.name }}
                 </mat-checkbox>
               </td>
-              <td class="text-center">
+              <td class="text-center" [hidden]="!existsPrivilege(domain.key + '_edit')">
                 <mat-checkbox
                   [checked]="hasPrivilege(role, domain.key + '_edit')"
                   [disabled]="role.name === 'Admin'"
