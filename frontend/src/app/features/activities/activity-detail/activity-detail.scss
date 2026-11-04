@@ -20,8 +20,79 @@
   }
 }
 
-.edit-link {
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+app-card {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.schedule-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+
+  .form-actions {
+    flex-basis: 100%;
+    display: flex;
+    gap: 0.75rem;
+  }
+}
+
+.meeting-room {
+  margin-top: 0;
+}
+
+.runs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.run {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.run-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+
+  a {
+    font-weight: 600;
+    color: inherit;
+  }
+}
+
+// Infosys marks what a team is missing with a red background
+.missing {
+  background: #fecaca;
+  padding: 0 0.3rem;
+}
+
+.seats {
+  width: 100%;
+  margin-top: 0.5rem;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.2rem 0.4rem;
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .role {
+    width: 2.5rem;
+    font-weight: 600;
+  }
 }
 
 .field-list {

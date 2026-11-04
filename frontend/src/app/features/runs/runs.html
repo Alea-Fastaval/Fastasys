@@ -1,0 +1,43 @@
+<div class="page-container">
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'runs.messages.' + flash.key | translate }}</p>
+  } @if (runs(); as list) { @if (list.length === 0) {
+  <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
+  } @else {
+  <h1>{{ 'runs.listTitle' | translate: { count: list.length.toString() } }}</h1>
+  <table class="runs-table">
+    <thead>
+      <tr>
+        <th>{{ 'common.id' | translate }}</th>
+        <th>{{ 'runs.fields.activity' | translate }}</th>
+        <th>{{ 'runs.fields.time' | translate }}</th>
+        <th>{{ 'runs.fields.number' | translate }}</th>
+        <th>{{ 'runs.fields.room' | translate }}</th>
+        <th>{{ 'runs.fields.needsPlayers' | translate }}</th>
+        <th>{{ 'runs.fields.needsGameMasters' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (run of list; track run.id) {
+      <tr>
+        <td>
+          <a [routerLink]="['/runs', run.id]">{{ run.id }}</a>
+        </td>
+        <td>
+          <a [routerLink]="['/activities', run.activityId]">{{ run.activityTitle }}</a>
+        </td>
+        <td>{{ run.startTime | timeSpan: run.endTime }}</td>
+        <td>{{ run.number }}</td>
+        <td>{{ run.roomName }}</td>
+        <td [class.missing]="run.needsPlayers">
+          {{ (run.needsPlayers ? 'activities.yes' : 'activities.no') | translate }}
+        </td>
+        <td [class.missing]="run.needsGameMasters">
+          {{ (run.needsGameMasters ? 'activities.yes' : 'activities.no') | translate }}
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } }
+</div>

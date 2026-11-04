@@ -113,16 +113,26 @@ public enum AutoSignupCategory
     Designer
 }
 
+/// <summary>
+/// A schedule (Infosys: afvikling) is one time slot of an activity. Its room is the meeting room;
+/// the teams playing it are its <see cref="Run"/>s, each in its own room.
+/// </summary>
 [Table("schedule")]
 public class Schedule
 {
     public int Id { get; set; }
     public int ActivityId { get; set; }
     public virtual Activity Activity { get; set; } = null!;
+
+    // Stored in UTC
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+
+    // Meeting room; null means none (Infosys shows "Mødested: spørg venligst i informationen.")
     public int? RoomId { get; set; }
     public virtual Room? Room { get; set; }
+
+    public virtual ICollection<Run> Runs { get; set; } = new List<Run>();
 
     public virtual ICollection<ParticipantSchedule> ParticipantSchedules { get; set; } = new List<ParticipantSchedule>();
 }

@@ -1,0 +1,104 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/runs"><mat-icon>arrow_back</mat-icon> {{ 'runs.allRuns' | translate }}</a>
+  </header>
+
+  @if (flash(); as f) {
+  <p class="flash" [class.error]="f.type === 'error'">{{ 'runs.messages.' + f.key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
+  } @if (run(); as r) {
+  <app-card [title]="'runs.detailTitle' | translate">
+    <a mat-stroked-button class="edit-link" [routerLink]="['/runs', r.id, 'edit']">
+      <mat-icon>edit</mat-icon> {{ 'runs.editDelete' | translate }}
+    </a>
+
+    <dl class="field-list">
+      <div>
+        <dt>{{ 'runs.fields.id' | translate }}:</dt>
+        <dd>{{ r.id }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.number' | translate }}:</dt>
+        <dd>{{ r.number }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.activity' | translate }}:</dt>
+        <dd>
+          <a [routerLink]="['/activities', r.activityId]">{{ r.activityTitle }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.time' | translate }}:</dt>
+        <dd>{{ r.startTime | timeSpan: r.endTime }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.room' | translate }}:</dt>
+        <dd>{{ r.roomName }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.needsPlayers' | translate }}:</dt>
+        <dd [class.missing]="r.needsPlayers">
+          {{ (r.needsPlayers ? 'activities.yes' : 'activities.no') | translate }}
+        </dd>
+      </div>
+      <div>
+        <dt>{{ 'runs.fields.needsGameMasters' | translate }}:</dt>
+        <dd [class.missing]="r.needsGameMasters">
+          {{ (r.needsGameMasters ? 'activities.yes' : 'activities.no') | translate }}
+        </dd>
+      </div>
+    </dl>
+  </app-card>
+
+  <app-card [title]="'runs.participantsTitle' | translate">
+    <table class="seats-table">
+      <thead>
+        <tr>
+          <th>{{ 'runs.fields.id' | translate }}</th>
+          <th>{{ 'runs.fields.name' | translate }}</th>
+          <th>{{ 'runs.fields.karma' | translate }}</th>
+          <th>{{ 'runs.fields.role' | translate }}</th>
+          <th><span class="visually-hidden">{{ 'runs.buttons.remove' | translate }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (seat of r.seats; track seat.seatNumber) {
+        <tr>
+          <td>{{ seat.participantId }}</td>
+          <td>{{ seat.participantName }}</td>
+          <td class="karma">{{ seat.karma }}</td>
+          <td>{{ 'runs.roles.' + seat.role | translate }}</td>
+          <td>
+            <button mat-button color="warn" type="button" [disabled]="busy()" (click)="delete(seat.participantId)">
+              {{ 'runs.buttons.remove' | translate }}
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+
+    <form class="add-participant" #seatForm="ngForm" (ngSubmit)="create()">
+      <h4>{{ 'runs.addParticipant' | translate }}</h4>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'runs.fields.participantId' | translate }}</mat-label>
+        <input matInput type="number" name="participantId" min="1" required [(ngModel)]="participantId" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'runs.chooseRole' | translate }}</mat-label>
+        <mat-select name="role" required [(ngModel)]="role">
+          @for (option of roles; track option) {
+          <mat-option [value]="option" [disabled]="!canAdd(r, option)">
+            {{ 'runs.roleOptions.' + option | translate }}
+          </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button color="primary" type="submit" [disabled]="busy() || seatForm.invalid">
+        {{ 'runs.buttons.add' | translate }}
+      </button>
+    </form>
+  </app-card>
+  }
+</div>

@@ -1,9 +1,12 @@
 <div class="page-container">
   <header class="page-header">
     <h1>{{ 'activities.title' | translate }}</h1>
-    <a mat-raised-button color="primary" routerLink="/activities/new">
-      <mat-icon>add</mat-icon> {{ 'activities.create' | translate }}
-    </a>
+    <div class="header-actions">
+      <a mat-stroked-button routerLink="/runs"> <mat-icon>groups</mat-icon> {{ 'runs.allRuns' | translate }} </a>
+      <a mat-raised-button color="primary" routerLink="/activities/new">
+        <mat-icon>add</mat-icon> {{ 'activities.create' | translate }}
+      </a>
+    </div>
   </header>
 
   @if (flash) {
