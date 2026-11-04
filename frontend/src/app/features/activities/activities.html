@@ -1,29 +1,30 @@
 <div class="page-container">
   <header class="page-header">
     <h1>{{ 'activities.title' | translate }}</h1>
-    <p>{{ 'activities.subtitle' | translate }}</p>
+    <a mat-raised-button color="primary" routerLink="/activities/new">
+      <mat-icon>add</mat-icon> {{ 'activities.create' | translate }}
+    </a>
   </header>
 
-  <div class="cards-grid">
-    @for (activity of activities(); track activity.id) {
-    <app-card
-      [title]="activity.title"
-      [subtitle]="('activities.author' | translate) + ': ' + activity.author"
-      [hoverable]="true"
-    >
-      <p class="description">{{ activity.description }}</p>
-      <div class="meta-row">
-        <app-badge variant="primary">{{ activity.category }}</app-badge>
-        <span>
-          <mat-icon inline>group</mat-icon>
-          {{ activity.minParticipants }}-{{ activity.maxParticipants }}
-        </span>
-        <span>
-          <mat-icon inline>schedule</mat-icon>
-          {{ activity.durationMinutes }}m
-        </span>
-      </div>
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'activities.messages.' + flash.key | translate }}</p>
+  } @if (activities(); as list) { @if (list.length === 0) {
+  <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
+  }
+  <div class="groups">
+    @for (group of groups(); track group.type) {
+    <app-card [title]="'activities.types.' + group.type | translate">
+      <ul class="activity-list">
+        @for (activity of group.activities; track activity.id) {
+        <li>
+          <a [routerLink]="['/activities', activity.id]">
+            <strong>{{ activity.title }} / {{ activity.titleEnglish }}</strong> - <em>ID {{ activity.id }}</em>
+          </a>
+        </li>
+        }
+      </ul>
     </app-card>
     }
   </div>
+  }
 </div>

@@ -69,8 +69,10 @@ const string PrivilegeClaim = "privilege";
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ParticipantManagement", policy =>
     policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participant_management")))
+    .AddPolicy("ActivityView", policy =>
+    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activities_view") || context.User.HasClaim(PrivilegeClaim, "activities_edit")))
     .AddPolicy("ActivityManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activity_management")))
+    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activities_edit")))
     .AddPolicy("HeroForceManagement", policy =>
     policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "hero_force_management")))
     .AddPolicy("ShopManagement", policy =>

@@ -5,26 +5,44 @@
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
 }
 
-.cards-grid {
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+}
+
+.groups {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 1.5rem;
 }
 
-.description {
-  margin: 1rem 0;
-  color: #374151;
-  font-size: 0.95rem;
-}
+.activity-list {
+  margin: 0;
+  padding-left: 1.25rem;
 
-.meta-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-  font-size: 0.85rem;
+  li {
+    margin: 0.35rem 0;
+  }
+
+  a {
+    color: inherit;
+  }
 }
