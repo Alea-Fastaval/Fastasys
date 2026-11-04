@@ -23,20 +23,67 @@ public static class DbSeeder
         {
             ("View Users", "users_view"),
             ("Edit/Create Users", "users_edit"),
+            ("Delete Users", "users_delete"),
             ("View Boardgames", "boardgames_view"),
             ("Edit/Create Boardgames", "boardgames_edit"),
+            ("Distribute Boardgames", "boardgames_distribute"),
             ("View Participants", "participants_view"),
             ("Edit/Create Participants", "participants_edit"),
+            ("Delete Participants", "participants_delete"),
             ("View Activities", "activities_view"),
             ("Edit/Create Activities", "activities_edit"),
+            ("View Runs", "runs_view"),
+            ("Edit/Create Runs", "runs_edit"),
+            ("Assign Participant to Run", "runs_participant_edit"),
             ("View Hero Force", "hero_force_view"),
             ("Edit/Create Hero Force", "hero_force_edit"),
+            ("View Hero Force assignments", "hero_force_participant_view"),
+            ("Assign Hero Force to Participant", "hero_force_participant_edit"),
             ("View Food", "food_view"),
             ("Edit/Create Food", "food_edit"),
+            ("Distribute Food", "food_distribute"),
+            ("Assign Food to Participant", "food_participant_edit"),
+            ("View Food Statistics", "food_stats_view"),
+            ("View Food marketplace", "food_marketplace_view"),
+            ("Edit/create Food marketplace", "food_marketplace_edit"),
             ("View Wear", "wear_view"),
             ("Edit/Create Wear", "wear_edit"),
+            ("Assign Wear to Participant", "wear_participant_edit"),
+            ("View wear for Participant", "wear_participant_view"),
+            ("Distribute Wear", "wear_distribute"),
             ("View Rooms", "rooms_view"),
-            ("Edit/Create Rooms", "rooms_edit")
+            ("Edit/Create Rooms", "rooms_edit"),
+            ("View System Log", "syslog_view"),
+            ("Export Participant Data", "participant_export"),
+            ("Send email to participant","participant_email"),
+            ("Send notification to participant","participant_notification"),
+            ("Check In Participant", "participant_check_in"),
+            ("View room assignments","room_assignment_view"),
+            ("View sleeping assignments","sleeping_assignment_view"),
+            ("Assign Sleeping to participant","sleeping_assignment_view"),
+            ("View Payments For Participant","payment_participant_view"),
+            ("Assign payments to Participant","payment_participant_edit"),
+            ("View budget and accounting", "accounting_view"),
+            ("Edit budget and accounting", "accounting_edit"),
+            ("View roles and privileges", "role_view"),
+            ("Edit/assign roles and privileges", "role_edit"),
+            ("Edit/create signup form", "signup_edit"),
+            ("View/print participant list", "participant_list_view"),
+            ("View/print wear list", "wear_list_view"),
+            ("View/print activity leader list", "participant_list_view"),
+            ("View/print karma list", "karma_list_view"),
+            ("View/print Participant overview", "participant_overview"),
+            ("View/print name tag for Participant", "nametag_participant_overview"),
+            ("Edit/create name tag template", "nametag_template_edit"),
+            ("View game votes", "vote_list_view"),
+            ("View Checkin Statistics", "checkin_stats_view"),
+            ("View Signup Statistics", "signup_stats_view"),
+            ("Edit/create entrances", "entrance_edit"),
+            ("View entrances", "entrance_view"),
+            ("Assign Entrance to Participant", "entrance_participant_edit"),
+            ("Start run", "run_start"),
+            ("Reset food distribution", "food_distribute_reset"),
+            ("Reset entrance assignments", "entrance_assignment_reset")
         };
 
         foreach (var (name, key) in requiredPrivileges)
@@ -52,35 +99,26 @@ public static class DbSeeder
             if (!db.RolePrivileges.Any(rp => rp.RoleId == adminRole.Id && rp.PrivilegeId == priv.Id))
             {
                 db.RolePrivileges.Add(new RolePrivilege { RoleId = adminRole.Id, PrivilegeId = priv.Id });
+                db.SaveChanges();
             }
         }
 
-        // Seed Organizer Role
-        var organizerRole = db.Roles.FirstOrDefault(r => r.Name == "Organizer");
-        if (organizerRole == null)
-        {
-            organizerRole = new Role
-            {
-                Name = "Organizer",
-                Description = "Event Organizer with view & manage rights for convention operations"
-            };
-            db.Roles.Add(organizerRole);
-            db.SaveChanges();
+        // Default Roles with default privileges
 
-            // Give view rights to Organizer
-            var viewKeys = new[] { "users_view", "boardgames_view", "participants_view", "activities_view", "hero_force_view", "food_view", "wear_view", "rooms_view" };
-            foreach (var vKey in viewKeys)
-            {
-                var p = db.Privileges.FirstOrDefault(pr => pr.Key == vKey);
-                if (p != null)
-                {
-                    db.RolePrivileges.Add(new RolePrivilege { RoleId = organizerRole.Id, PrivilegeId = p.Id });
-                }
-            }
-        }
-        db.SaveChanges();
+        seedRole(db, "Infonaut", "", []);
+        seedRole(db, "Infoboss", "", []);
+        seedRole(db, "Food distribution", "Food distribution role", []);
+        seedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
+        seedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
+        seedRole(db, "Signup", "Sign up", []);
+        seedRole(db, "Hero Force", "Hero Force management", []);
+        seedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
+        seedRole(db, "Boardgame jury", "Jury member for boardgames", []);
+        seedRole(db, "Scenario jury", "Jury member for scenarios", []);
+        seedRole(db, "Read-only", "All reading privileges", []);
+        seedRole(db, "Accounting", "Accounting and budget", ["boardgames_view", "checkin_stats_view"]);
 
-        // Default Admin User
+        // Default Admin User with the special admin role
         var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
         if (adminUser == null)
         {
@@ -248,5 +286,32 @@ public static class DbSeeder
 
             db.SaveChanges();
         }
+    }
+
+    private static void seedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
+    {
+        var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
+        if (role == null)
+        {
+            role = new Role
+            {
+                Name = roleName,
+                Description = roleDescription
+            };
+            db.Roles.Add(role);
+            db.SaveChanges();
+
+            // Give rights/privileges to the role
+            foreach (var pKey in privilegeKeys)
+            {
+                var p = db.Privileges.FirstOrDefault(pr => pr.Key == pKey);
+                if (p != null)
+                {
+                    db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = p.Id });
+                }
+            }
+        }
+        db.SaveChanges();
+
     }
 }

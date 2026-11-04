@@ -48,6 +48,10 @@ export class RolesComponent implements OnInit {
     { key: 'rooms', name: 'Rooms' },
   ];
 
+  // todo: get all the new cool roles to appear in the matrix,
+  // by naming them consistently, and creating more SystemDomains
+  // perhaps we need a third col of the matrix.
+
   public formRole: CreateRoleDto = {
     name: '',
     description: '',

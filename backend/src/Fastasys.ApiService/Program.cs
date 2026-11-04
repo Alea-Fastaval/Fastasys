@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Fastasys.ApiService.helpers;
 
 using Scalar.AspNetCore;
 
@@ -63,25 +64,18 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Authorization Policies
-const string AdminRole = "Admin";
-const string PrivilegeClaim = "privilege";
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("ParticipantManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participant_management")))
-    .AddPolicy("ActivityManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activity_management")))
-    .AddPolicy("HeroForceManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "hero_force_management")))
-    .AddPolicy("ShopManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "shop_management")));
+    .AddPolicy("ParticipantManagement", "participant_management")
+    .AddPolicy("ActivityManagement", "activity_management")
+    .AddPolicy("HeroForceManagement", "hero_force_management")
+    .AddPolicy("ShopManagement", "shop_management");
 
 // Add Controllers, EndpointsApiExplorer & SwaggerGen documentation metadata
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Fastasys.ApiService.Controllers.ParticipantsController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddProblemDetails();
-
 
 builder.Services.AddOpenApi(options =>
 {
