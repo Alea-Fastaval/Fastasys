@@ -169,9 +169,18 @@
     "
   >
     <p class="meeting-room">{{ schedule.roomName ?? ('activities.noMeetingRoom' | translate) }}</p>
-    <button mat-stroked-button type="button" [disabled]="busy()" (click)="createRun(schedule)">
-      <mat-icon>group_add</mat-icon> {{ 'runs.addRun' | translate }}
-    </button>
+    <div class="card-actions">
+      <a
+        mat-stroked-button
+        class="edit-schedule"
+        [routerLink]="['/activities', a.id, 'schedules', schedule.id, 'edit']"
+      >
+        <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
+      </a>
+      <button mat-stroked-button type="button" [disabled]="busy()" (click)="createRun(schedule)">
+        <mat-icon>group_add</mat-icon> {{ 'runs.addRun' | translate }}
+      </button>
+    </div>
 
     <div class="runs">
       @for (run of schedule.runs; track run.id) {

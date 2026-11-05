@@ -111,6 +111,9 @@
     "deleteConfirm": "Are you sure you want to delete",
     "createSchedule": "Create schedule",
     "scheduleLegend": "Schedule: {{time}} (ID: {{id}})",
+    "scheduleEditTitle": "Edit/delete schedule for {{title}} (ID: {{id}})",
+    "scheduleDeleteConfirmTitle": "Delete schedule?",
+    "scheduleDeleteConfirm": "Are you sure you want to delete this schedule?",
     "noMeetingRoom": "Ask at the information for room.",
     "scheduleFields": {
       "start": "Start",
@@ -187,7 +190,13 @@
       "deleteFailed": "The activity could not be deleted.",
       "notFound": "Could not find an activity with that id.",
       "scheduleCreated": "The schedule was created.",
-      "scheduleCreateFailed": "Could not create the schedule."
+      "scheduleCreateFailed": "Could not create the schedule.",
+      "scheduleUpdated": "The schedule was updated.",
+      "scheduleUpdateFailed": "Could not update the schedule.",
+      "scheduleNotUpdated": "The schedule was not updated.",
+      "scheduleDeleted": "The schedule was deleted.",
+      "scheduleDeleteFailed": "The schedule could not be deleted.",
+      "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first."
     }
   },
   "runs": {

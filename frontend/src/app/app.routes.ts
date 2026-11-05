@@ -3,6 +3,7 @@ import { authGuard } from '@shared/guards';
 import { ActivitiesComponent } from './features/activities/activities';
 import { ActivityDetailComponent } from './features/activities/activity-detail/activity-detail';
 import { ActivityFormComponent } from './features/activities/activity-form/activity-form';
+import { ScheduleFormComponent } from './features/activities/schedule-form/schedule-form';
 import { BoardgamesComponent } from './features/boardgames/boardgames';
 import { CommunicationsComponent } from './features/communications/communications';
 import { HeroForceComponent } from './features/hero-force/hero-force';
@@ -28,6 +29,7 @@ export const routes: Routes = [
   { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },
   { path: 'activities/:id/edit', component: ActivityFormComponent, canActivate: [authGuard] },
+  { path: 'activities/:id/schedules/:scheduleId/edit', component: ScheduleFormComponent, canActivate: [authGuard] },
   { path: 'runs', component: RunsComponent, canActivate: [authGuard] },
   { path: 'runs/:id', component: RunDetailComponent, canActivate: [authGuard] },
   { path: 'runs/:id/edit', component: RunFormComponent, canActivate: [authGuard] },

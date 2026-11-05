@@ -101,3 +101,6 @@ export interface CreateScheduleDto {
   endTime: string;
   roomId: number | null;
 }
+
+// Infosys aktivitet/editafvikling: the same fields as creating
+export type UpdateScheduleDto = CreateScheduleDto;

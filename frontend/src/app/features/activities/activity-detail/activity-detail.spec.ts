@@ -148,6 +148,14 @@ describe('ActivityDetailComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.run-header .missing').length).toBe(3);
   });
 
+  it('each schedule links to its "Ret/slet" page', () => {
+    const fixture = renderLoaded();
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('app-card.schedule a.edit-schedule');
+    expect(link.getAttribute('href')).toBe('/activities/5/schedules/9/edit');
+    expect(link.textContent).toContain('activities.editDelete');
+  });
+
   it('"Tilføj hold" creates a run for the schedule and reloads the schedules', () => {
     const fixture = renderLoaded();
     const component = fixture.componentInstance;

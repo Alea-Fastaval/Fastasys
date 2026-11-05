@@ -111,6 +111,9 @@
     "deleteConfirm": "Er du sikker på du vil slette",
     "createSchedule": "Opret afvikling",
     "scheduleLegend": "Afvikling: {{time}} (ID: {{id}})",
+    "scheduleEditTitle": "Ret/slet Afvikling for {{title}} (ID: {{id}})",
+    "scheduleDeleteConfirmTitle": "Slet afvikling?",
+    "scheduleDeleteConfirm": "Er du sikker på du vil slette denne afvikling?",
     "noMeetingRoom": "Mødested: spørg venligst i informationen.",
     "scheduleFields": {
       "start": "Start",
@@ -187,7 +190,13 @@
       "deleteFailed": "Aktiviteten kunne ikke slettes.",
       "notFound": "Kunne ikke finde en aktivitet med det id.",
       "scheduleCreated": "Afviklingen blev oprettet.",
-      "scheduleCreateFailed": "Kunne ikke oprette afviklingen."
+      "scheduleCreateFailed": "Kunne ikke oprette afviklingen.",
+      "scheduleUpdated": "Afviklingen blev opdateret.",
+      "scheduleUpdateFailed": "Kunne ikke opdatere afviklingen.",
+      "scheduleNotUpdated": "Afviklingen blev ikke opdateret.",
+      "scheduleDeleted": "Afviklingen blev slettet.",
+      "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
+      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først."
     }
   },
   "runs": {

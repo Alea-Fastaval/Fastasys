@@ -9,7 +9,8 @@ using Fastasys.ApiService.Services;
 namespace Fastasys.Tests;
 
 // Infosys: viewing a hold needs a role that grants the Groups controller; creating, editing, deleting and
-// placing participants also needs the role Activity-admin, Infonaut or admin.
+// placing participants also needs the role Activity-admin, Infonaut or admin. Creating, editing and deleting an
+// afvikling needs a role that grants those Activity controller methods.
 // Fastasys maps that onto the activities_view / activities_edit privileges.
 public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
 {
@@ -80,6 +81,7 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/runs", ct)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/runs/1", ct)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/activities/1/schedules", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/activities/1/schedules/1", ct)).StatusCode);
     }
 
     [Fact]
@@ -89,7 +91,10 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
         var ct = TestContext.Current.CancellationToken;
 
         var list = await client.GetAsync("/api/runs", ct);
+        var getSchedule = await client.GetAsync("/api/activities/999999/schedules/999999", ct);
         var createSchedule = await client.PostAsJsonAsync("/api/activities/1/schedules", new CreateScheduleDto(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(1), null), ct);
+        var updateSchedule = await client.PutAsJsonAsync("/api/activities/1/schedules/1", new UpdateScheduleDto(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(1), null), ct);
+        var deleteSchedule = await client.DeleteAsync("/api/activities/1/schedules/1", ct);
         var create = await client.PostAsJsonAsync("/api/runs", new CreateRunDto(1), ct);
         var rooms = await client.GetAsync("/api/runs/1/available-rooms", ct);
         var update = await client.PutAsJsonAsync("/api/runs/1", new UpdateRunDto(1), ct);
@@ -98,7 +103,11 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
         var removeSeat = await client.DeleteAsync("/api/runs/1/seats/1", ct);
 
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        // Allowed to read; the schedule doesn't exist
+        Assert.Equal(HttpStatusCode.NotFound, getSchedule.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, createSchedule.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, updateSchedule.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, deleteSchedule.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, rooms.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
@@ -129,6 +138,10 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
         var run = await runResponse.Content.ReadFromJsonAsync<RunDto>(ct);
         Assert.NotNull(run);
 
+        // A schedule with a run cannot be deleted
+        var scheduleUrl = $"/api/activities/{activity.Id}/schedules/{schedule.Id}";
+        Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync(scheduleUrl, ct)).StatusCode);
+
         var addSeat = await client.PostAsJsonAsync($"/api/runs/{run.Id}/seats", new CreateRunSeatDto(participant.Id, RunSeatRole.GameMaster), ct);
         Assert.Equal(HttpStatusCode.OK, addSeat.StatusCode);
 
@@ -155,5 +168,16 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Conflict, deleteRefused.StatusCode);
         Assert.Equal(HttpStatusCode.OK, removeSeat.StatusCode);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+
+        // Without runs the schedule can be edited and deleted
+        var getSchedule = await client.GetAsync(scheduleUrl, ct);
+        var updateSchedule = await client.PutAsJsonAsync(scheduleUrl, new UpdateScheduleDto(start.AddHours(1), start.AddHours(5), null), ct);
+        var deleteSchedule = await client.DeleteAsync(scheduleUrl, ct);
+        var deletedSchedule = await client.GetAsync(scheduleUrl, ct);
+
+        Assert.Equal(HttpStatusCode.OK, getSchedule.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, updateSchedule.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, deleteSchedule.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, deletedSchedule.StatusCode);
     }
 }

@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Fastasys.Tests;
 
-// Pins the Infosys behaviour of aktivitet/opretafvikling and the schedules (afviklinger) on aktivitet/vis.
+// Pins the Infosys behaviour of aktivitet/opretafvikling, aktivitet/editafvikling, aktivitet/sletafvikling and the
+// schedules (afviklinger) on aktivitet/vis.
 public class ActivitySchedulesTests
 {
     // Wednesday 24 March 2027, 10:00-14:00 in Copenhagen (UTC+1)
@@ -230,5 +231,300 @@ public class ActivitySchedulesTests
         var result = await CreateController(db).GetSchedules(999);
 
         Assert.IsType<NotFoundObjectResult>(result.Result);
+    }
+
+    // ---- aktivitet/editafvikling and aktivitet/sletafvikling ----
+
+    // Thursday 25 March 2027, 12:00-15:00 in Copenhagen (still UTC+1)
+    private static readonly DateTimeOffset NewStart = new(2027, 3, 25, 12, 0, 0, TimeSpan.FromHours(1));
+    private static readonly DateTimeOffset NewEnd = NewStart.AddHours(3);
+
+    private static async Task<Schedule> AddScheduleAsync(InfosysDbContext db, Activity activity, DateTimeOffset start, DateTimeOffset end, int? roomId = null)
+    {
+        var schedule = new Schedule { ActivityId = activity.Id, StartTime = start.UtcDateTime, EndTime = end.UtcDateTime, RoomId = roomId };
+        db.Schedules.Add(schedule);
+        await db.SaveChangesAsync(Ct);
+        return schedule;
+    }
+
+    private static async Task<Run> AddRunAsync(InfosysDbContext db, Schedule schedule, Room room, int number = 1)
+    {
+        var run = new Run { ScheduleId = schedule.Id, Number = number, RoomId = room.Id };
+        db.Runs.Add(run);
+        await db.SaveChangesAsync(Ct);
+        return run;
+    }
+
+    private static async Task<Schedule> ReloadAsync(InfosysDbContext db, int scheduleId) =>
+        await db.Schedules.AsNoTracking().SingleAsync(s => s.Id == scheduleId, Ct);
+
+    [Fact]
+    public async Task GetSchedule_ReturnsTheSchedule_WithItsRuns()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End, room.Id);
+        await AddRunAsync(db, schedule, room);
+
+        var result = await CreateController(db).GetSchedule(activity.Id, schedule.Id);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ScheduleDto>(ok.Value);
+        Assert.Equal(schedule.Id, dto.Id);
+        Assert.Equal(activity.Id, dto.ActivityId);
+        Assert.Equal(Start.UtcDateTime, dto.StartTime);
+        Assert.Equal(End.UtcDateTime, dto.EndTime);
+        Assert.Equal(room.Id, dto.RoomId);
+        Assert.Equal("Mødelokale", dto.RoomName);
+        Assert.Equal(1, Assert.Single(dto.Runs).Number);
+    }
+
+    [Fact]
+    public async Task GetSchedule_UnknownOrOfAnotherActivity_ReturnsNotFound()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var other = await AddActivityAsync(db, "Anden");
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var controller = CreateController(db);
+
+        Assert.IsType<NotFoundObjectResult>((await controller.GetSchedule(activity.Id, 999)).Result);
+        Assert.IsType<NotFoundObjectResult>((await controller.GetSchedule(other.Id, schedule.Id)).Result);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_ChangesTimesAndMeetingRoom_StoredInUtc()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var oldRoom = await AddRoomAsync(db, "Gammelt lokale");
+        var newRoom = await AddRoomAsync(db, "Nyt lokale");
+        var schedule = await AddScheduleAsync(db, activity, Start, End, oldRoom.Id);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, newRoom.Id));
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ScheduleDto>(ok.Value);
+        var stored = await ReloadAsync(db, schedule.Id);
+        Assert.Equal(new DateTime(2027, 3, 25, 11, 0, 0, DateTimeKind.Utc), stored.StartTime);
+        Assert.Equal(new DateTime(2027, 3, 25, 14, 0, 0, DateTimeKind.Utc), stored.EndTime);
+        Assert.Equal(newRoom.Id, stored.RoomId);
+        Assert.Equal("Nyt lokale", dto.RoomName);
+        Assert.Equal(stored.StartTime, dto.StartTime);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_RefreshesActivityUpdatedAt()
+    {
+        // Infosys sets aktiviteter.updated when a schedule is updated
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var old = DateTimeOffset.UtcNow.AddDays(-3);
+        activity.UpdatedAt = old;
+        await db.SaveChangesAsync(Ct);
+
+        await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, null));
+
+        var stored = await db.Activities.AsNoTracking().SingleAsync(Ct);
+        Assert.True(stored.UpdatedAt > old);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    public async Task UpdateSchedule_NoRoomOrZero_RemovesTheMeetingRoom(int? roomId)
+    {
+        // Infosys stores intval(lokale_id)
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End, room.Id);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(Start, End, roomId));
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Null((await ReloadAsync(db, schedule.Id)).RoomId);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_KeepingItsOwnTimes_IsAllowed()
+    {
+        // Infosys looks for another afvikling (id != this one) with the same aktivitet_id, start and slut
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(Start, End, room.Id));
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal(room.Id, (await ReloadAsync(db, schedule.Id)).RoomId);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_ToTheTimesOfAnotherScheduleOfTheActivity_IsRefused()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        await AddScheduleAsync(db, activity, NewStart, NewEnd);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart.ToUniversalTime(), NewEnd.ToUniversalTime(), null));
+
+        Assert.IsType<ConflictObjectResult>(result.Result);
+        Assert.Equal(Start.UtcDateTime, (await ReloadAsync(db, schedule.Id)).StartTime);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_ToTheTimesOfAnotherActivitysSchedule_IsAllowed()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var other = await AddActivityAsync(db, "Anden");
+        await AddScheduleAsync(db, other, NewStart, NewEnd);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, null));
+
+        Assert.IsType<OkObjectResult>(result.Result);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task UpdateSchedule_StartMustBeBeforeEnd(int hoursAfterStart)
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewStart.AddHours(hoursAfterStart), null));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(Start.UtcDateTime, (await ReloadAsync(db, schedule.Id)).StartTime);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_RequiresStartAndEnd()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var controller = CreateController(db);
+
+        Assert.IsType<BadRequestObjectResult>((await controller.UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(null, NewEnd, null))).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, null, null))).Result);
+        Assert.Equal(End.UtcDateTime, (await ReloadAsync(db, schedule.Id)).EndTime);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_UnknownRoom_IsRefused()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End, room.Id);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, 999));
+
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(room.Id, (await ReloadAsync(db, schedule.Id)).RoomId);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_UnknownOrOfAnotherActivity_ReturnsNotFound()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var other = await AddActivityAsync(db, "Anden");
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var controller = CreateController(db);
+
+        Assert.IsType<NotFoundObjectResult>((await controller.UpdateSchedule(activity.Id, 999, new UpdateScheduleDto(NewStart, NewEnd, null))).Result);
+        Assert.IsType<NotFoundObjectResult>((await controller.UpdateSchedule(other.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, null))).Result);
+        Assert.Equal(Start.UtcDateTime, (await ReloadAsync(db, schedule.Id)).StartTime);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_KeepsTheRunsAndTheirRooms()
+    {
+        // Infosys only updates the afvikling row; its hold keep their numbers and rooms
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End, room.Id);
+        var run = await AddRunAsync(db, schedule, room, number: 2);
+
+        var result = await CreateController(db).UpdateSchedule(activity.Id, schedule.Id, new UpdateScheduleDto(NewStart, NewEnd, room.Id));
+
+        var dto = Assert.IsType<ScheduleDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
+        var runDto = Assert.Single(dto.Runs);
+        Assert.Equal(run.Id, runDto.Id);
+        Assert.Equal(2, runDto.Number);
+        Assert.Equal(room.Id, runDto.RoomId);
+        Assert.Equal(NewStart.UtcDateTime, runDto.StartTime);
+    }
+
+    [Fact]
+    public async Task DeleteSchedule_WithoutRuns_DeletesIt()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var other = await AddScheduleAsync(db, activity, NewStart, NewEnd);
+
+        var result = await CreateController(db).DeleteSchedule(activity.Id, schedule.Id);
+
+        Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(other.Id, (await db.Schedules.AsNoTracking().SingleAsync(Ct)).Id);
+    }
+
+    [Fact]
+    public async Task DeleteSchedule_WithRuns_IsRefused_AndKeepsEverything()
+    {
+        // Infosys: the hold foreign key has no ON DELETE CASCADE, so the delete fails and nothing is removed
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var room = await AddRoomAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        await AddRunAsync(db, schedule, room);
+
+        var result = await CreateController(db).DeleteSchedule(activity.Id, schedule.Id);
+
+        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Single(db.Schedules);
+        Assert.Single(db.Runs);
+    }
+
+    [Fact]
+    public async Task DeleteSchedule_DoesNotTouchActivityUpdatedAt()
+    {
+        // Infosys deleteAfvikling, unlike opretAfvikling and updateAfvikling, doesn't set aktiviteter.updated
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var old = DateTimeOffset.UtcNow.AddDays(-3);
+        activity.UpdatedAt = old;
+        await db.SaveChangesAsync(Ct);
+
+        await CreateController(db).DeleteSchedule(activity.Id, schedule.Id);
+
+        Assert.Equal(old, (await db.Activities.AsNoTracking().SingleAsync(Ct)).UpdatedAt);
+    }
+
+    [Fact]
+    public async Task DeleteSchedule_UnknownOrOfAnotherActivity_ReturnsNotFound()
+    {
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var other = await AddActivityAsync(db, "Anden");
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        var controller = CreateController(db);
+
+        Assert.IsType<NotFoundObjectResult>(await controller.DeleteSchedule(activity.Id, 999));
+        Assert.IsType<NotFoundObjectResult>(await controller.DeleteSchedule(other.Id, schedule.Id));
+        Assert.Single(db.Schedules);
     }
 }
