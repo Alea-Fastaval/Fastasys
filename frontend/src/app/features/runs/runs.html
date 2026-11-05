@@ -19,16 +19,21 @@
   @if (visibleRuns().length === 0) {
   <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
   } @else {
-  <table class="runs-table">
+  <table
+    class="runs-table"
+    matSort
+    matSortDisableClear
+    [matSortActive]="sort()?.column ?? ''"
+    [matSortDirection]="sort()?.direction ?? ''"
+    (matSortChange)="sortBy($event)"
+  >
     <thead>
       <tr>
-        <th>{{ 'common.id' | translate }}</th>
-        <th>{{ 'runs.fields.activity' | translate }}</th>
-        <th>{{ 'runs.fields.time' | translate }}</th>
-        <th>{{ 'runs.fields.number' | translate }}</th>
-        <th>{{ 'runs.fields.room' | translate }}</th>
-        <th>{{ 'runs.fields.needsPlayers' | translate }}</th>
-        <th>{{ 'runs.fields.needsGameMasters' | translate }}</th>
+        @for (c of columns; track c.column) {
+        <th [mat-sort-header]="c.column" [sortActionDescription]="'runs.sortAction' | translate">
+          {{ c.label | translate }}
+        </th>
+        }
       </tr>
     </thead>
     <tbody>

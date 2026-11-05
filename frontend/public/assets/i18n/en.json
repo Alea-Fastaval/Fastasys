@@ -198,6 +198,7 @@
     "editDelete": "Edit/delete",
     "allRuns": "All runs",
     "allTypes": "All",
+    "sortAction": "Sort",
     "addRun": "Add run",
     "deleteRun": "Delete run",
     "runLink": "Run {{number}}",

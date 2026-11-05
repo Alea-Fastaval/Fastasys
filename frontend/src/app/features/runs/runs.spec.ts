@@ -6,7 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 import { ActivityType, RunSummary } from '@shared/types';
 import { RunFlashService } from './run-flash.service';
-import { RunsComponent, filterByType, parseTypeFilter } from './runs';
+import { RunSortColumn, RunsComponent, filterByType, parseSort, parseTypeFilter, sortRuns } from './runs';
 
 const summary = (id: number, activityType: ActivityType, activityTitle: string, number = 1): RunSummary => ({
   id,
@@ -51,6 +51,92 @@ describe('filterByType', () => {
   it('keeps only the runs of the chosen type, in their original order', () => {
     expect(filterByType(runs, 'BoardGame').map(r => r.id)).toEqual([4, 6]);
     expect(filterByType(runs, 'Quest')).toEqual([]);
+  });
+});
+
+// In id order, as the API returns them. Wednesday 24, Thursday 25 and Friday 26 March 2027.
+const sortable: RunSummary[] = [
+  {
+    ...summary(1, 'Scenario', 'Østerled', 2),
+    startTime: '2027-03-25T17:00:00Z',
+    endTime: '2027-03-25T21:00:00Z',
+    roomName: 'Lokale 10',
+    needsPlayers: false,
+    needsGameMasters: true,
+  },
+  {
+    ...summary(2, 'BoardGame', 'Brætspil', 1),
+    startTime: '2027-03-24T09:00:00Z',
+    endTime: '2027-03-24T13:00:00Z',
+    roomName: 'Lokale 2',
+    needsPlayers: true,
+    needsGameMasters: false,
+  },
+  {
+    ...summary(3, 'Scenario', 'Zombier', 3),
+    startTime: '2027-03-26T08:00:00Z',
+    endTime: '2027-03-26T12:00:00Z',
+    roomName: 'Aula',
+    needsPlayers: true,
+    needsGameMasters: true,
+  },
+  {
+    ...summary(4, 'BoardGame', 'Brætspil', 1),
+    startTime: '2027-03-24T09:00:00Z',
+    endTime: '2027-03-24T11:00:00Z',
+    roomName: 'Lokale 2',
+    needsPlayers: false,
+    needsGameMasters: false,
+  },
+];
+
+describe('parseSort', () => {
+  it('reads the column and the direction', () => {
+    expect(parseSort('activity', 'asc')).toEqual({ column: 'activity', direction: 'asc' });
+    expect(parseSort('room', 'desc')).toEqual({ column: 'room', direction: 'desc' });
+  });
+
+  it('sorts A-Z when the direction is missing or unknown', () => {
+    expect(parseSort('time', null)).toEqual({ column: 'time', direction: 'asc' });
+    expect(parseSort('time', 'up')).toEqual({ column: 'time', direction: 'asc' });
+  });
+
+  it('does not sort when the column is missing or unknown', () => {
+    expect(parseSort(null, 'desc')).toBeNull();
+    expect(parseSort('karma', 'asc')).toBeNull();
+    expect(parseSort('Activity', 'asc')).toBeNull();
+  });
+});
+
+describe('sortRuns', () => {
+  const ids = (list: RunSummary[]) => list.map(r => r.id);
+
+  it.each<[RunSortColumn, number[], number[]]>([
+    // Equal values keep id order in both directions
+    ['id', [1, 2, 3, 4], [4, 3, 2, 1]],
+    // Danish alphabetical order: Ø after Z
+    ['activity', [2, 4, 3, 1], [1, 3, 2, 4]],
+    // Chronological, not by day name; the same start is ordered by end
+    ['time', [4, 2, 1, 3], [3, 1, 2, 4]],
+    ['number', [2, 4, 1, 3], [3, 1, 2, 4]],
+    // Numbers in names in numeric order: Lokale 2 before Lokale 10
+    ['room', [3, 2, 4, 1], [1, 2, 4, 3]],
+    // ja before nej, as in A-Z
+    ['needsPlayers', [2, 3, 1, 4], [1, 4, 2, 3]],
+    ['needsGameMasters', [1, 3, 2, 4], [2, 4, 1, 3]],
+  ])('sorts %s A-Z and Z-A', (column, ascending, descending) => {
+    expect(ids(sortRuns(sortable, { column, direction: 'asc' }))).toEqual(ascending);
+    expect(ids(sortRuns(sortable, { column, direction: 'desc' }))).toEqual(descending);
+  });
+
+  it('keeps the id order when nothing is sorted', () => {
+    expect(ids(sortRuns(sortable, null))).toEqual([1, 2, 3, 4]);
+  });
+
+  it('does not change the list it is given', () => {
+    const list = [...sortable];
+    sortRuns(list, { column: 'id', direction: 'desc' });
+    expect(ids(list)).toEqual([1, 2, 3, 4]);
   });
 });
 
@@ -184,5 +270,94 @@ describe('RunsComponent', () => {
 
     expect(rowIds(element)).toEqual(['3', '4', '6']);
     expect(toggle(element, 'runs.allTypes')?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  // ---- Sorting by clicking a column heading ----
+
+  const header = (element: HTMLElement, label: string) =>
+    Array.from(element.querySelectorAll<HTMLElement>('thead th')).find(th => th.textContent?.trim() === label);
+
+  const sortedBy = (element: HTMLElement) =>
+    Array.from(element.querySelectorAll('thead th'))
+      .map(th => [th.textContent?.trim(), th.getAttribute('aria-sort')])
+      .filter(([, sort]) => sort !== 'none');
+
+  const clickHeader = async (harness: RouterTestingHarness, element: HTMLElement, label: string) => {
+    header(element, label)?.click();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+  };
+
+  it('makes every column heading sortable, with nothing sorted and the runs in id order at first', async () => {
+    const { element } = await open('/runs', sortable);
+
+    const headers = Array.from(element.querySelectorAll('thead th'));
+    expect(headers.map(th => th.textContent?.trim())).toEqual([
+      'common.id',
+      'runs.fields.activity',
+      'runs.fields.time',
+      'runs.fields.number',
+      'runs.fields.room',
+      'runs.fields.needsPlayers',
+      'runs.fields.needsGameMasters',
+    ]);
+    expect(headers.every(th => th.classList.contains('mat-sort-header'))).toBe(true);
+    expect(sortedBy(element)).toEqual([]);
+    expect(rowIds(element)).toEqual(['1', '2', '3', '4']);
+  });
+
+  it('sorts A-Z on the first click and Z-A on the second, and keeps it in the URL', async () => {
+    const { harness, element } = await open('/runs', sortable);
+
+    await clickHeader(harness, element, 'runs.fields.activity');
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=activity&dir=asc');
+    expect(rowIds(element)).toEqual(['2', '4', '3', '1']);
+    expect(sortedBy(element)).toEqual([['runs.fields.activity', 'ascending']]);
+
+    await clickHeader(harness, element, 'runs.fields.activity');
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=activity&dir=desc');
+    expect(rowIds(element)).toEqual(['1', '3', '2', '4']);
+    expect(sortedBy(element)).toEqual([['runs.fields.activity', 'descending']]);
+
+    // A third click goes back to A-Z, never to unsorted
+    await clickHeader(harness, element, 'runs.fields.activity');
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=activity&dir=asc');
+  });
+
+  it('sorts another column A-Z when it is clicked', async () => {
+    const { harness, element } = await open('/runs?sort=activity&dir=desc', sortable);
+
+    await clickHeader(harness, element, 'runs.fields.room');
+
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=room&dir=asc');
+    expect(rowIds(element)).toEqual(['3', '2', '4', '1']);
+    expect(sortedBy(element)).toEqual([['runs.fields.room', 'ascending']]);
+  });
+
+  it('sorts as the URL says when the page is opened', async () => {
+    const { element } = await open('/runs?sort=time&dir=desc', sortable);
+
+    expect(rowIds(element)).toEqual(['3', '1', '2', '4']);
+    expect(sortedBy(element)).toEqual([['runs.fields.time', 'descending']]);
+  });
+
+  it('keeps the id order when the sort column in the URL is unknown', async () => {
+    const { element } = await open('/runs?sort=karma&dir=desc', sortable);
+
+    expect(rowIds(element)).toEqual(['1', '2', '3', '4']);
+    expect(sortedBy(element)).toEqual([]);
+  });
+
+  it('sorts within the type filter, and keeps the sorting when the filter changes', async () => {
+    const { harness, element } = await open('/runs?type=Scenario', sortable);
+    expect(rowIds(element)).toEqual(['1', '3']);
+
+    await clickHeader(harness, element, 'runs.fields.activity');
+    expect(TestBed.inject(Router).url).toBe('/runs?type=Scenario&sort=activity&dir=asc');
+    expect(rowIds(element)).toEqual(['3', '1']);
+
+    await choose(harness, element, 'runs.allTypes');
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=activity&dir=asc');
+    expect(rowIds(element)).toEqual(['2', '4', '3', '1']);
   });
 });

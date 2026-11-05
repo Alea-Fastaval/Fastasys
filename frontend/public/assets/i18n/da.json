@@ -198,6 +198,7 @@
     "editDelete": "Ret/slet",
     "allRuns": "Alle hold",
     "allTypes": "Alle",
+    "sortAction": "Sortér",
     "addRun": "Tilføj hold",
     "deleteRun": "Slet hold",
     "runLink": "Hold {{number}}",
