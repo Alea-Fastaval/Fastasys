@@ -197,6 +197,7 @@
     "editTitle": "Edit run",
     "editDelete": "Edit/delete",
     "allRuns": "All runs",
+    "allTypes": "All",
     "addRun": "Add run",
     "deleteRun": "Delete run",
     "runLink": "Run {{number}}",

@@ -4,7 +4,21 @@
   } @if (runs(); as list) { @if (list.length === 0) {
   <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
   } @else {
-  <h1>{{ 'runs.listTitle' | translate: { count: list.length.toString() } }}</h1>
+  <h1>{{ 'runs.listTitle' | translate: { count: visibleRuns().length.toString() } }}</h1>
+  <mat-button-toggle-group
+    class="type-filter"
+    [attr.aria-label]="'activities.fields.type' | translate"
+    [value]="typeFilter()"
+    (change)="filterBy($event.value)"
+  >
+    <mat-button-toggle [value]="allTypes">{{ 'runs.allTypes' | translate }}</mat-button-toggle>
+    @for (type of activityTypes; track type) {
+    <mat-button-toggle [value]="type">{{ 'activities.types.' + type | translate }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+  @if (visibleRuns().length === 0) {
+  <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
+  } @else {
   <table class="runs-table">
     <thead>
       <tr>
@@ -18,7 +32,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (run of list; track run.id) {
+      @for (run of visibleRuns(); track run.id) {
       <tr>
         <td>
           <a [routerLink]="['/runs', run.id]">{{ run.id }}</a>
@@ -39,5 +53,5 @@
       }
     </tbody>
   </table>
-  } }
+  } } }
 </div>

@@ -348,6 +348,24 @@ public class RunsControllerTests
         Assert.Equal("Lokale 1", runs[1].RoomName);
     }
 
+    [Fact]
+    public async Task GetAll_IncludesTheActivityType_SoTheListCanBeFiltered()
+    {
+        using var db = CreateDbContext();
+        var scenario = NewActivity("Scenarie");
+        scenario.Type = ActivityType.Scenario;
+        var boardGame = NewActivity("Brætspil");
+        boardGame.Type = ActivityType.BoardGame;
+        await AddRunWithSeatsAsync(db, players: 0, gameMasters: 0, scenario);
+        await AddRunWithSeatsAsync(db, players: 0, gameMasters: 0, boardGame);
+
+        var result = await CreateController(db).GetAll();
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var runs = Assert.IsAssignableFrom<IEnumerable<RunSummaryDto>>(ok.Value).ToList();
+        Assert.Equal(new[] { ActivityType.Scenario, ActivityType.BoardGame }, runs.Select(r => r.ActivityType));
+    }
+
     // ---- Seats (groups/scheduleparticipant) ----
 
     [Fact]

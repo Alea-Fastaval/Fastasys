@@ -197,6 +197,7 @@
     "editTitle": "Ret hold",
     "editDelete": "Ret/slet",
     "allRuns": "Alle hold",
+    "allTypes": "Alle",
     "addRun": "Tilføj hold",
     "deleteRun": "Slet hold",
     "runLink": "Hold {{number}}",

@@ -1,3 +1,5 @@
+import { ActivityType } from './activities.types';
+
 // Infosys pladser.type: spiller, spilleder
 export const RUN_SEAT_ROLES = ['Player', 'GameMaster'] as const;
 export type RunSeatRole = (typeof RUN_SEAT_ROLES)[number];
@@ -33,6 +35,7 @@ export interface RunSummary {
   number: number;
   activityId: number;
   activityTitle: string;
+  activityType: ActivityType;
   startTime: string;
   endTime: string;
   roomId: number;
