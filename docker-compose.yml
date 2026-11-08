@@ -41,14 +41,12 @@ services:
       migrations:
         condition: service_completed_successfully
     ports:
-      - "8080:8080"
+      - "8080:8081"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    depends_on:
-      - api
     ports:
       - "4200:80"
 
