@@ -10,6 +10,7 @@ import { Participant, ParticipantDetails, ParticipantOptions } from '@shared/typ
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { ParticipantFlashService } from '../participant-flash.service';
+import { FocusOnShowDirective } from './focus-on-show.directive';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -86,7 +87,16 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
 // entrance/food, ID card, sleeping, wear, price breakdown, activities and hero force come with those features.
 @Component({
   selector: 'app-participant-detail',
-  imports: [FormsModule, NgTemplateOutlet, RouterLink, MatButtonModule, MatIconModule, Card, TranslatePipe],
+  imports: [
+    FormsModule,
+    NgTemplateOutlet,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    Card,
+    TranslatePipe,
+    FocusOnShowDirective,
+  ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',
 })

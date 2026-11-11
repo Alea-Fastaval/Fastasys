@@ -191,6 +191,38 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.textContent).toContain('Glæder mig');
   });
 
+  it('shows each note as a box, with a hint in the empty ones', async () => {
+    const { element } = await setup();
+
+    const boxes = [...element.querySelectorAll<HTMLElement>('.notes .note-box')];
+    // Admin note, message to the participant, finance note and the one signup note given
+    expect(boxes.length).toBe(4);
+    expect(boxes[0].textContent?.trim()).toBe('Intern note');
+    expect(boxes[0].querySelector('.placeholder')).toBeNull();
+    expect(boxes[1].querySelector('.placeholder')?.textContent).toContain('participants.notePlaceholder');
+    expect(boxes[1].getAttribute('role')).toBe('button');
+  });
+
+  it('turns a clicked note into a focused text box and saves it', async () => {
+    const { component, fixture, element } = await setup();
+
+    element.querySelectorAll<HTMLElement>('.notes .note-box')[1].click();
+    fixture.detectChanges();
+    const textarea = element.querySelector<HTMLTextAreaElement>('.notes textarea.note-box');
+    expect(textarea).not.toBeNull();
+    expect(document.activeElement).toBe(textarea);
+
+    openEditor(component).value = 'Husk at hente nøglen';
+    component.submitEdit(field(component, 'messageToParticipant'));
+    const req = httpMock.expectOne('/api/participants/7/fields/messageToParticipant');
+    expect(req.request.body).toEqual({ value: 'Husk at hente nøglen' });
+    req.flush({ ...participant, details: { ...details, messageToParticipant: 'Husk at hente nøglen' } });
+    fixture.detectChanges();
+
+    expect(element.querySelector('.notes textarea')).toBeNull();
+    expect(element.querySelector('.note.saved')?.textContent).toContain('Husk at hente nøglen');
+  });
+
   it('shows only the personal info to users who may only view participants', async () => {
     const { component, element } = await setup({ ...participant, canEdit: false, details: null });
 

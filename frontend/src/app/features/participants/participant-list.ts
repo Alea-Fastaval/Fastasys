@@ -181,7 +181,7 @@ export function filterRows(
 }
 
 // Infosys adds the column of each field used in the search box to the list (activateUsedFields). Fields without a
-// column of the same name (ID, Adresse, Land, Sprog, Scenarie, Noter, SuperGDS) add nothing.
+// column of the same name (ID, Adresse, Land, Sprog, Scenarie, Noter, Super Heltetjanser) add nothing.
 const CRITERIA_COLUMNS: Partial<Record<keyof ParticipantCriteria, ListColumn>> = {
   birthDate: 'birthDate',
   categoryId: 'category',

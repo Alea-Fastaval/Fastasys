@@ -98,10 +98,6 @@ hr {
   }
 }
 
-.multiline {
-  white-space: pre-line;
-}
-
 // Infosys shows Annulleret: Ja in white on red
 .annulled {
   background: #ff0000;
@@ -127,17 +123,67 @@ hr {
   gap: 0 1.5rem;
 }
 
-// The note's name is the card title
-.note-field {
-  margin: 0;
+// A note looks like a text field, so it is clear that it can be clicked and written in. Clicking turns it into a
+// textarea of the same size.
+.note-box {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  cursor: text;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background-color 2s;
 
-  dt {
-    display: none;
+  &:hover {
+    border-color: #6b7280;
   }
 
-  dd {
-    width: 100%;
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: #3f51b5;
+    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25);
   }
+
+  // Only the note keeps its line breaks, not the spaces around it in the template
+  .note-text {
+    white-space: pre-wrap;
+  }
+
+  .placeholder {
+    color: #9ca3af;
+    font-style: italic;
+  }
+}
+
+textarea.note-box {
+  resize: vertical;
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+// Infosys flashes a saved note green and a failed one red
+.note.saved .note-box {
+  background-color: #bbf7d0;
+  transition: none;
+}
+
+.note.failed .note-box {
+  background-color: #fecaca;
+  transition: none;
 }
 
 @media (max-width: 700px) {

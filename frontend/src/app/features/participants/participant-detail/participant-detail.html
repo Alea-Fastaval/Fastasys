@@ -61,9 +61,7 @@
             </option>
             }
           </select>
-          } } @case ('textarea') {
-          <textarea name="value" rows="5" [(ngModel)]="e.value"></textarea>
-          } @default {
+          } } @default {
           <input type="text" name="value" [(ngModel)]="e.value" />
           } }
           <button mat-stroked-button type="submit" [disabled]="busy()">{{ 'participants.ok' | translate }}</button>
@@ -73,7 +71,6 @@
       } @else {
       <dd
         [class.editable]="p.canEdit"
-        [class.multiline]="def.kind === 'textarea'"
         [attr.tabindex]="p.canEdit ? 0 : null"
         [attr.title]="p.canEdit ? ('participants.clickToEdit' | translate) : null"
         (click)="startEdit(def, p)"
@@ -162,9 +159,43 @@
   <div class="notes">
     @for (note of visibleNotes(p); track note.field) {
     <app-card [title]="note.label | translate">
-      <dl class="note-field">
-        <ng-container *ngTemplateOutlet="cell; context: { $implicit: note, participant: p }" />
-      </dl>
+      <!-- The note is a box like a text field, so it is clear that clicking it lets you write -->
+      <div class="note" [class.saved]="saved() === note.field" [class.failed]="failed() === note.field">
+        @if (editor()?.field === note.field && editor(); as e) {
+        <form class="note-editor" (ngSubmit)="submitEdit(note)" (keydown.escape)="cancelEdit()">
+          <textarea
+            appFocusOnShow
+            name="value"
+            rows="6"
+            class="note-box"
+            [attr.aria-label]="note.label | translate"
+            [(ngModel)]="e.value"
+          ></textarea>
+          <div class="note-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="busy()">
+              {{ 'participants.ok' | translate }}
+            </button>
+            <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
+          </div>
+        </form>
+        } @else {
+        <div
+          class="note-box"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="note.label | translate"
+          [title]="'participants.clickToEdit' | translate"
+          (click)="startEdit(note, p)"
+          (keydown.enter)="startEdit(note, p)"
+        >
+          @if (note.value(p)) {
+          <span class="note-text">{{ note.value(p) }}</span>
+          } @else {
+          <span class="placeholder">{{ 'participants.notePlaceholder' | translate }}</span>
+          }
+        </div>
+        }
+      </div>
     </app-card>
     }
   </div>
