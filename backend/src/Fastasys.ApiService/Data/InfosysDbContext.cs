@@ -20,6 +20,8 @@ public class InfosysDbContext : DbContext
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
+    public DbSet<Run> Runs => Set<Run>();
+    public DbSet<RunSeat> RunSeats => Set<RunSeat>();
 
     public DbSet<Payment> Payments => Set<Payment>();
 
@@ -79,6 +81,36 @@ public class InfosysDbContext : DbContext
             .WithMany(a => a.Schedules)
             .HasForeignKey(s => s.ActivityId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Infosys hold: unique (afvikling_id, holdnummer); its foreign keys have no ON DELETE CASCADE
+        modelBuilder.Entity<Run>(run =>
+        {
+            run.HasOne(r => r.Schedule)
+                .WithMany(s => s.Runs)
+                .HasForeignKey(r => r.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            run.HasOne(r => r.Room)
+                .WithMany()
+                .HasForeignKey(r => r.RoomId)
+                .OnDelete(DeleteBehavior.Restrict);
+            run.HasIndex(r => new { r.ScheduleId, r.Number }).IsUnique();
+        });
+
+        // Infosys pladser: primary key (hold_id, pladsnummer), unique (hold_id, deltager_id), no ON DELETE CASCADE
+        modelBuilder.Entity<RunSeat>(seat =>
+        {
+            seat.HasKey(s => new { s.RunId, s.SeatNumber });
+            seat.HasOne(s => s.Run)
+                .WithMany(r => r.Seats)
+                .HasForeignKey(s => s.RunId)
+                .OnDelete(DeleteBehavior.Restrict);
+            seat.HasOne(s => s.Participant)
+                .WithMany()
+                .HasForeignKey(s => s.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            seat.HasIndex(s => new { s.RunId, s.ParticipantId }).IsUnique();
+            seat.Property(s => s.Role).HasConversion<string>();
+        });
 
         modelBuilder.Entity<HeroForceShiftParticipant>()
             .HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });

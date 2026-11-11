@@ -37,7 +37,17 @@
     "inactive": "Inaktiv",
     "yes": "Ja",
     "no": "Nej",
-    "description": "Beskrivelse"
+    "description": "Beskrivelse",
+    "unknownQueryValues": "Linket indeholdt en ukendt værdi, som er blevet fjernet: {{values}}",
+    "weekdays": {
+      "Monday": "Mandag",
+      "Tuesday": "Tirsdag",
+      "Wednesday": "Onsdag",
+      "Thursday": "Torsdag",
+      "Friday": "Fredag",
+      "Saturday": "Lørdag",
+      "Sunday": "Søndag"
+    }
   },
   "users": {
     "title": "Brugerkonti",
@@ -100,6 +110,17 @@
     "no": "nej",
     "deleteConfirmTitle": "Slet aktivitet?",
     "deleteConfirm": "Er du sikker på du vil slette",
+    "createSchedule": "Opret afvikling",
+    "scheduleLegend": "Afvikling: {{time}} (ID: {{id}})",
+    "scheduleEditTitle": "Ret/slet Afvikling for {{title}} (ID: {{id}})",
+    "scheduleDeleteConfirmTitle": "Slet afvikling?",
+    "scheduleDeleteConfirm": "Er du sikker på du vil slette denne afvikling?",
+    "noMeetingRoom": "Mødested: spørg venligst i informationen.",
+    "scheduleFields": {
+      "start": "Start",
+      "end": "Slut",
+      "meetingRoom": "Mødelokale"
+    },
     "fields": {
       "id": "Id",
       "title": "Titel",
@@ -168,7 +189,77 @@
       "notUpdated": "Aktiviteten blev ikke opdateret.",
       "deleted": "Aktiviteten blev slettet.",
       "deleteFailed": "Aktiviteten kunne ikke slettes.",
-      "notFound": "Kunne ikke finde en aktivitet med det id."
+      "notFound": "Kunne ikke finde en aktivitet med det id.",
+      "scheduleCreated": "Afviklingen blev oprettet.",
+      "scheduleCreateFailed": "Kunne ikke oprette afviklingen.",
+      "scheduleUpdated": "Afviklingen blev opdateret.",
+      "scheduleUpdateFailed": "Kunne ikke opdatere afviklingen.",
+      "scheduleNotUpdated": "Afviklingen blev ikke opdateret.",
+      "scheduleDeleted": "Afviklingen blev slettet.",
+      "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
+      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først."
+    }
+  },
+  "runs": {
+    "listTitle": "Hold - ({{count}}):",
+    "detailTitle": "Hold",
+    "participantsTitle": "Holdets deltagere",
+    "editTitle": "Ret hold",
+    "editDelete": "Ret/slet",
+    "allRuns": "Alle hold",
+    "allTypes": "Alle",
+    "sortAction": "Sortér",
+    "addRun": "Tilføj hold",
+    "deleteRun": "Slet hold",
+    "runLink": "Hold {{number}}",
+    "deleteConfirmTitle": "Slet hold?",
+    "deleteConfirm": "Er du sikker på du vil slette hold #{{number}} for",
+    "chooseRoom": "Vælg lokale:",
+    "addParticipant": "Tilføj deltager",
+    "chooseRole": "Vælg",
+    "fields": {
+      "id": "Id",
+      "number": "Holdnummer",
+      "activity": "Aktivitet",
+      "time": "Tid",
+      "room": "Lokale",
+      "needsPlayers": "Mangler spillere",
+      "needsGameMasters": "Mangler spilledere",
+      "name": "Navn",
+      "karma": "Karma",
+      "role": "S / SL",
+      "participantId": "Deltager-id"
+    },
+    "roles": {
+      "Player": "spiller",
+      "GameMaster": "spilleder"
+    },
+    "roleOptions": {
+      "Player": "Spiller",
+      "GameMaster": "Spilleder"
+    },
+    "roleShort": {
+      "Player": "S",
+      "GameMaster": "SL"
+    },
+    "buttons": {
+      "update": "Ret",
+      "cancel": "Fortryd",
+      "delete": "Slet",
+      "add": "Tilføj",
+      "remove": "Fjern"
+    },
+    "messages": {
+      "updated": "Holdet blev opdateret.",
+      "updateFailed": "Holdet kunne ikke opdateres.",
+      "deleted": "Holdet blev slettet.",
+      "deleteFailed": "Holdet kunne ikke slettes.",
+      "notFound": "Kunne ikke finde hold der matchede kravene.",
+      "createFailed": "Kunne ikke oprette hold",
+      "deleteFromActivityFailed": "Kunne ikke slette hold",
+      "deleteWithParticipants": "Der er deltagere på holdet! Er du sikker på du vil slette?",
+      "participantAddFailed": "Deltageren kunne ikke sættes på holdet.",
+      "participantRemoveFailed": "Deltageren kunne ikke fjernes fra holdet."
     }
   },
   "heroForce": {

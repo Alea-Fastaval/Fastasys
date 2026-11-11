@@ -5,13 +5,20 @@
 
   @if (flash) {
   <p class="flash" [class.error]="flash.type === 'error'">{{ 'activities.messages.' + flash.key | translate }}</p>
+  } @if (message(); as m) {
+  <p class="flash" [class.error]="m.type === 'error'">{{ m.key | translate }}</p>
   } @if (notFound()) {
   <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
   } @if (activity(); as a) {
   <app-card [title]="'activities.detailTitle' | translate">
-    <a mat-stroked-button class="edit-link" [routerLink]="['/activities', a.id, 'edit']">
-      <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
-    </a>
+    <div class="card-actions">
+      <a mat-stroked-button [routerLink]="['/activities', a.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
+      </a>
+      <button mat-stroked-button type="button" (click)="openScheduleForm()">
+        <mat-icon>event</mat-icon> {{ 'activities.createSchedule' | translate }}
+      </button>
+    </div>
 
     <dl class="field-list">
       <div class="wide">
@@ -123,5 +130,91 @@
       </div>
     </dl>
   </app-card>
-  }
+
+  @if (scheduleForm(); as form) {
+  <app-card [title]="'activities.createSchedule' | translate">
+    <form class="schedule-form" #newScheduleForm="ngForm" (ngSubmit)="createSchedule()">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.start' | translate }}</mat-label>
+        <input matInput type="datetime-local" name="start" required [(ngModel)]="form.start" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.end' | translate }}</mat-label>
+        <input matInput type="datetime-local" name="end" required [(ngModel)]="form.end" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.meetingRoom' | translate }}</mat-label>
+        <mat-select name="roomId" [(ngModel)]="form.roomId">
+          @for (room of rooms(); track room.id) {
+          <mat-option [value]="room.id">{{ room.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy() || newScheduleForm.invalid">
+          {{ 'activities.createSchedule' | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancelScheduleForm()">
+          {{ 'activities.buttons.cancel' | translate }}
+        </button>
+      </div>
+    </form>
+  </app-card>
+  } @for (schedule of schedules(); track schedule.id) {
+  <app-card
+    class="schedule"
+    [title]="
+      'activities.scheduleLegend'
+        | translate: { time: (schedule.startTime | timeSpan: schedule.endTime : true), id: schedule.id.toString() }
+    "
+  >
+    <p class="meeting-room">{{ schedule.roomName ?? ('activities.noMeetingRoom' | translate) }}</p>
+    <div class="card-actions">
+      <a
+        mat-stroked-button
+        class="edit-schedule"
+        [routerLink]="['/activities', a.id, 'schedules', schedule.id, 'edit']"
+      >
+        <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
+      </a>
+      <button mat-stroked-button type="button" [disabled]="busy()" (click)="createRun(schedule)">
+        <mat-icon>group_add</mat-icon> {{ 'runs.addRun' | translate }}
+      </button>
+    </div>
+
+    <div class="runs">
+      @for (run of schedule.runs; track run.id) {
+      <section class="run">
+        <header class="run-header">
+          <a [routerLink]="['/runs', run.id]">{{ 'runs.runLink' | translate: { number: run.number.toString() } }}</a>
+          <span [class.missing]="run.needsPlayers">
+            {{ 'runs.fields.needsPlayers' | translate }}: {{ (run.needsPlayers ? 'activities.yes' : 'activities.no') |
+            translate }}
+          </span>
+          <span [class.missing]="run.needsGameMasters">
+            {{ 'runs.fields.needsGameMasters' | translate }}: {{ (run.needsGameMasters ? 'activities.yes' :
+            'activities.no') | translate }}
+          </span>
+          <button mat-button color="warn" type="button" [disabled]="busy()" (click)="deleteRun(run)">
+            {{ 'runs.deleteRun' | translate }}
+          </button>
+        </header>
+        @if (run.seats.length > 0) {
+        <table class="seats">
+          <tbody>
+            @for (seat of run.seats; track seat.seatNumber) {
+            <tr>
+              <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>
+              <td>{{ seat.participantName }}</td>
+              <td class="karma">{{ seat.karma }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        }
+      </section>
+      }
+    </div>
+  </app-card>
+  } }
 </div>

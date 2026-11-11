@@ -1,3 +1,5 @@
+import { Run } from './runs.types';
+
 // Display order of the types (list grouping and type dropdown)
 export const ACTIVITY_TYPES = ['Scenario', 'Quest', 'BoardGame', 'Junior', 'System'] as const;
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
@@ -82,10 +84,23 @@ export type CreateActivityDto = ActivityFieldsDto;
 
 export type UpdateActivityDto = ActivityFieldsDto;
 
+// Infosys: afvikling. The room is the meeting room; each run has its own room.
 export interface ActivitySchedule {
   id: number;
   activityId: number;
   startTime: string;
   endTime: string;
-  roomId?: number;
+  roomId: number | null;
+  roomName: string | null;
+  runs: Run[];
 }
+
+// Times are ISO instants; null room means no meeting room
+export interface CreateScheduleDto {
+  startTime: string;
+  endTime: string;
+  roomId: number | null;
+}
+
+// Infosys aktivitet/editafvikling: the same fields as creating
+export type UpdateScheduleDto = CreateScheduleDto;

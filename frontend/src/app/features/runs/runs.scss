@@ -1,0 +1,51 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+}
+
+.type-filter {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.runs-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+// Infosys marks what a team is missing with a red background
+.missing {
+  background: #fecaca;
+}

@@ -78,20 +78,28 @@ public record CreateActivityDto : ActivityFieldsDto;
 
 public record UpdateActivityDto : ActivityFieldsDto;
 
+// Infosys: afvikling. The room is the meeting room; each run has its own room.
 public record ScheduleDto(
     int Id,
     int ActivityId,
-    string ActivityTitle,
     DateTime StartTime,
     DateTime EndTime,
     int? RoomId,
     string? RoomName,
-    int ParticipantCount
+    IReadOnlyList<RunDto> Runs
 );
 
+// Infosys aktivitet/opretafvikling: start, slut and mødelokale. Times are instants; they are stored in UTC.
 public record CreateScheduleDto(
-    DateTime StartTime,
-    DateTime EndTime,
+    DateTimeOffset? StartTime,
+    DateTimeOffset? EndTime,
+    int? RoomId
+);
+
+// Infosys aktivitet/editafvikling: the same fields as creating
+public record UpdateScheduleDto(
+    DateTimeOffset? StartTime,
+    DateTimeOffset? EndTime,
     int? RoomId
 );
 
@@ -103,6 +111,7 @@ public class ActivitiesController : ControllerBase
     public const int MaxTextLength = 256;
     public const int HighestAllowedAge = 200;
     public const int MaxSignupsLimit = 1000;
+    private const string ScheduleHasRunsMessage = "Schedule has runs and cannot be deleted";
 
     private readonly InfosysDbContext _db;
     private readonly ILogger<ActivitiesController> _logger;
@@ -195,57 +204,149 @@ public class ActivitiesController : ControllerBase
         return Ok(new { message = "Activity deleted successfully" });
     }
 
+    // Infosys aktivitet/vis/:id: lists the activity's schedules by start time, each with its runs and their seats
     [HttpGet("{id:int}/schedules")]
     public async Task<ActionResult<IEnumerable<ScheduleDto>>> GetSchedules(int id)
     {
-        var schedules = await _db.Schedules
-            .Include(s => s.Activity)
-            .Include(s => s.Room)
-            .Include(s => s.ParticipantSchedules)
+        if (!await _db.Activities.AnyAsync(a => a.Id == id)) return NotFound(new { message = "Activity not found" });
+
+        var schedules = await SchedulesWithRuns()
             .Where(s => s.ActivityId == id)
-            .Select(s => new ScheduleDto(
-                s.Id,
-                s.ActivityId,
-                s.Activity.Title,
-                s.StartTime,
-                s.EndTime,
-                s.RoomId,
-                s.Room != null ? s.Room.Name : null,
-                s.ParticipantSchedules.Count
-            ))
+            .OrderBy(s => s.StartTime)
+            .ThenBy(s => s.Id)
             .ToListAsync();
 
-        return Ok(schedules);
+        return Ok(schedules.Select(ToDto).ToList());
     }
 
+    // Infosys aktivitet/editafvikling/:id: shows the schedule in the edit form
+    [HttpGet("{id:int}/schedules/{scheduleId:int}")]
+    public async Task<ActionResult<ScheduleDto>> GetSchedule(int id, int scheduleId)
+    {
+        var schedule = await SchedulesWithRuns().FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
+        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+        return Ok(ToDto(schedule));
+    }
+
+    // Infosys aktivitet/editafvikling/:id: ("Opdater"). The checks are the ones for creating a schedule; the
+    // schedule itself doesn't count as a duplicate. Infosys leaves the runs and their rooms as they are, also when
+    // the times change.
+    [HttpPut("{id:int}/schedules/{scheduleId:int}")]
+    [Authorize(Policy = "ActivityManagement")]
+    public async Task<ActionResult<ScheduleDto>> UpdateSchedule(int id, int scheduleId, [FromBody] UpdateScheduleDto dto)
+    {
+        var schedule = await _db.Schedules
+            .Include(s => s.Activity)
+            .FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
+        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+
+        var (isValid, error) = ValidateSchedule(dto.StartTime, dto.EndTime);
+        if (!isValid) return BadRequest(new { message = error });
+
+        var start = dto.StartTime!.Value.UtcDateTime;
+        var end = dto.EndTime!.Value.UtcDateTime;
+        var roomId = NormalizeRoomId(dto.RoomId);
+
+        if (roomId != null && !await _db.Rooms.AnyAsync(r => r.Id == roomId))
+        {
+            return BadRequest(new { message = "Unknown room" });
+        }
+
+        if (await _db.Schedules.AnyAsync(s => s.ActivityId == id && s.Id != scheduleId && s.StartTime == start && s.EndTime == end))
+        {
+            return Conflict(new { message = "The activity already has a schedule with that start and end" });
+        }
+
+        schedule.StartTime = start;
+        schedule.EndTime = end;
+        schedule.RoomId = roomId;
+        schedule.Activity.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} updated by user {UserId}", scheduleId, id, CurrentUserId());
+
+        var updated = await SchedulesWithRuns().FirstAsync(s => s.Id == scheduleId);
+        return Ok(ToDto(updated));
+    }
+
+    // Infosys aktivitet/sletafvikling/:id:. The foreign keys on the runs make Infosys refuse to delete a schedule
+    // that has runs (with a generic error page); here that is checked first so the user is told why.
+    // Unlike creating and updating, Infosys doesn't touch the activity's updated time when deleting.
+    [HttpDelete("{id:int}/schedules/{scheduleId:int}")]
+    [Authorize(Policy = "ActivityManagement")]
+    public async Task<IActionResult> DeleteSchedule(int id, int scheduleId)
+    {
+        var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
+        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+
+        if (await _db.Runs.AnyAsync(r => r.ScheduleId == scheduleId))
+        {
+            return Conflict(new { message = ScheduleHasRunsMessage });
+        }
+
+        _db.Schedules.Remove(schedule);
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // A run was added to the schedule at the same time (runs.ScheduleId is RESTRICT)
+            return Conflict(new { message = ScheduleHasRunsMessage });
+        }
+
+        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} deleted by user {UserId}", scheduleId, id, CurrentUserId());
+
+        return Ok(new { message = "Schedule deleted successfully" });
+    }
+
+    // Infosys aktivitet/opretafvikling/:aktivitet_id:
     [HttpPost("{id:int}/schedules")]
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<ScheduleDto>> CreateSchedule(int id, [FromBody] CreateScheduleDto dto)
     {
         var activity = await _db.Activities.FindAsync(id);
-        if (activity == null) return NotFound("Activity not found");
+        if (activity == null) return NotFound(new { message = "Activity not found" });
+
+        var (isValid, error) = ValidateSchedule(dto.StartTime, dto.EndTime);
+        if (!isValid) return BadRequest(new { message = error });
+
+        var start = dto.StartTime!.Value.UtcDateTime;
+        var end = dto.EndTime!.Value.UtcDateTime;
+        var roomId = NormalizeRoomId(dto.RoomId);
+
+        if (roomId != null && !await _db.Rooms.AnyAsync(r => r.Id == roomId))
+        {
+            return BadRequest(new { message = "Unknown room" });
+        }
+
+        // Infosys refuses a second schedule with the same start and end for the activity
+        if (await _db.Schedules.AnyAsync(s => s.ActivityId == id && s.StartTime == start && s.EndTime == end))
+        {
+            return Conflict(new { message = "The activity already has a schedule with that start and end" });
+        }
 
         var schedule = new Schedule
         {
             ActivityId = id,
-            StartTime = dto.StartTime,
-            EndTime = dto.EndTime,
-            RoomId = dto.RoomId
+            StartTime = start,
+            EndTime = end,
+            RoomId = roomId
         };
 
         _db.Schedules.Add(schedule);
+        activity.UpdatedAt = DateTimeOffset.UtcNow;
         await _db.SaveChangesAsync();
 
-        return Ok(new ScheduleDto(
-            schedule.Id,
-            schedule.ActivityId,
-            activity.Title,
-            schedule.StartTime,
-            schedule.EndTime,
-            schedule.RoomId,
-            null,
-            0
-        ));
+        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} created by user {UserId}", schedule.Id, id, CurrentUserId());
+
+        var created = await _db.Schedules
+            .AsNoTracking()
+            .Include(s => s.Activity)
+            .Include(s => s.Room)
+            .FirstAsync(s => s.Id == schedule.Id);
+
+        return CreatedAtAction(nameof(GetSchedules), new { id }, ToDto(created));
     }
 
     // Infosys only validates in the browser (number inputs with min/max); the same limits are enforced here.
@@ -267,6 +368,39 @@ public class ActivitiesController : ControllerBase
 
         return (true, string.Empty);
     }
+
+    // Infosys only creates or updates the schedule when both times are posted and start is before end.
+    // Returns whether the input is valid and, if not, why.
+    private static (bool IsValid, string Error) ValidateSchedule(DateTimeOffset? startTime, DateTimeOffset? endTime)
+    {
+        if (startTime == null || endTime == null) return (false, "Start and end are required");
+        if (startTime >= endTime) return (false, "Start must be before end");
+
+        return (true, string.Empty);
+    }
+
+    // Infosys stores intval(lokale_id), and 0 means no meeting room
+    private static int? NormalizeRoomId(int? roomId) => roomId is null or 0 ? null : roomId;
+
+    // Schedules with what ToDto needs: the activity, the meeting room and the runs with their rooms and seats
+    private IQueryable<Schedule> SchedulesWithRuns() =>
+        _db.Schedules
+            .AsNoTracking()
+            .Include(s => s.Activity)
+            .Include(s => s.Room)
+            .Include(s => s.Runs).ThenInclude(r => r.Room)
+            .Include(s => s.Runs).ThenInclude(r => r.Seats).ThenInclude(seat => seat.Participant)
+            .AsSplitQuery();
+
+    private static ScheduleDto ToDto(Schedule s) => new(
+        s.Id,
+        s.ActivityId,
+        s.StartTime,
+        s.EndTime,
+        s.RoomId,
+        s.Room?.Name,
+        s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s)).ToList()
+    );
 
     private static void Apply(Activity activity, ActivityFieldsDto dto)
     {

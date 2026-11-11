@@ -3,6 +3,7 @@ import { authGuard } from '@shared/guards';
 import { ActivitiesComponent } from './features/activities/activities';
 import { ActivityDetailComponent } from './features/activities/activity-detail/activity-detail';
 import { ActivityFormComponent } from './features/activities/activity-form/activity-form';
+import { ScheduleFormComponent } from './features/activities/schedule-form/schedule-form';
 import { BoardgamesComponent } from './features/boardgames/boardgames';
 import { CommunicationsComponent } from './features/communications/communications';
 import { HeroForceComponent } from './features/hero-force/hero-force';
@@ -13,6 +14,9 @@ import { RoomsComponent } from './features/resources/rooms/rooms';
 import { WearComponent } from './features/resources/wear/wear';
 import { ShopComponent } from './features/shop/shop';
 import { SignupComponent } from './features/signup/signup';
+import { RunDetailComponent } from './features/runs/run-detail/run-detail';
+import { RunFormComponent } from './features/runs/run-form/run-form';
+import { RunsComponent } from './features/runs/runs';
 import { RolesComponent } from './features/user-management/roles/roles';
 import { UsersComponent } from './features/user-management/users/users';
 
@@ -25,6 +29,10 @@ export const routes: Routes = [
   { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },
   { path: 'activities/:id/edit', component: ActivityFormComponent, canActivate: [authGuard] },
+  { path: 'activities/:id/schedules/:scheduleId/edit', component: ScheduleFormComponent, canActivate: [authGuard] },
+  { path: 'runs', component: RunsComponent, canActivate: [authGuard] },
+  { path: 'runs/:id', component: RunDetailComponent, canActivate: [authGuard] },
+  { path: 'runs/:id/edit', component: RunFormComponent, canActivate: [authGuard] },
   { path: 'hero-force', component: HeroForceComponent, canActivate: [authGuard] },
   { path: 'shop', component: ShopComponent, canActivate: [authGuard] },
   { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },

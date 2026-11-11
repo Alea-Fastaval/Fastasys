@@ -17,7 +17,7 @@ namespace Fastasys.ApiService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -682,6 +682,58 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("Rooms");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("ScheduleId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("runs");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.RunSeat", b =>
+                {
+                    b.Property<int>("RunId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SeatNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("RunId", "SeatNumber");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("RunId", "ParticipantId")
+                        .IsUnique();
+
+                    b.ToTable("run_seats");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Sale", b =>
                 {
                     b.Property<int>("Id")
@@ -1180,6 +1232,44 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Schedule", "Schedule")
+                        .WithMany("Runs")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+
+                    b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.RunSeat", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Run", "Run")
+                        .WithMany("Seats")
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("Run");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Sale", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
@@ -1341,9 +1431,16 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Schedules");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.Navigation("Seats");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Schedule", b =>
                 {
                     b.Navigation("ParticipantSchedules");
+
+                    b.Navigation("Runs");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupPage", b =>
