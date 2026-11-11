@@ -1,57 +1,30 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { Participant } from '@shared/types';
-import { Badge } from '@shared/components';
+import { ParticipantSummary } from '@shared/types';
 import { TranslatePipe } from '@shared/pipes';
+import { ParticipantFlashService } from './participant-flash.service';
 
+// Infosys deltager/visalle ("Alle deltagere"): the id and name of every participant, linking to the participant.
+// The extra columns and the searches come later in the port.
 @Component({
   selector: 'app-participants',
-  imports: [
-    CommonModule,
-    FormsModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    Badge,
-    TranslatePipe,
-  ],
+  imports: [RouterLink, MatButtonModule, MatIconModule, TranslatePipe],
   templateUrl: './participants.html',
   styleUrl: './participants.scss',
 })
 export class ParticipantsComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
-  public readonly participants = signal<Participant[]>([]);
-  public searchQuery = '';
-  public displayedColumns = ['id', 'name', 'email', 'barcode', 'status', 'actions'];
+  public readonly flash = inject(ParticipantFlashService).take();
+  public readonly participants = signal<ParticipantSummary[] | null>(null);
 
-  ngOnInit(): void {
-    this.loadParticipants();
-  }
-
-  public loadParticipants(): void {
-    const url = this.searchQuery
-      ? `/api/participants?search=${encodeURIComponent(this.searchQuery)}`
-      : '/api/participants';
-    this.http.get<Participant[]>(url).subscribe({
+  public ngOnInit(): void {
+    this.http.get<ParticipantSummary[]>('/api/participants').subscribe({
       next: data => this.participants.set(data),
       error: err => console.error('Failed to load participants:', err),
-    });
-  }
-
-  public checkIn(id: number): void {
-    this.http.post(`/api/participants/${id}/checkin`, {}).subscribe({
-      next: () => this.loadParticipants(),
-      error: err => console.error('Failed to check in participant:', err),
     });
   }
 }

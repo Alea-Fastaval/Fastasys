@@ -1,0 +1,225 @@
+<div class="page-container">
+  @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'participants.deleteConfirm.title' | translate">
+    <p>
+      {{ 'participants.deleteConfirm.question' | translate: { name: participantName(), id: '' + participantId() } }}
+    </p>
+    <p>{{ 'participants.deleteConfirm.warning' | translate }}</p>
+    <p>{{ 'participants.deleteConfirm.annulInstead' | translate }}</p>
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
+        {{ 'participants.deleteConfirm.confirm' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">
+        {{ 'participants.deleteConfirm.cancel' | translate }}
+      </button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card
+    [title]="
+      (participantId() === null ? 'participants.createTitle' : storedAnnulled() ? 'participants.editDeleteTitle' : 'participants.editTitle')
+        | translate
+    "
+  >
+    @if (errorKey(); as key) {
+    <p class="flash error">{{ 'participants.messages.' + key | translate }}</p>
+    }
+
+    <form #participantForm="ngForm" (ngSubmit)="submit()">
+      @if (participantId() !== null) {
+      <p><strong>{{ 'common.id' | translate }}:</strong> {{ participantId() }}</p>
+      }
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.birthDate' | translate }}</mat-label>
+          <input matInput type="date" name="birthDate" [(ngModel)]="f.birthDate" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.category' | translate }}</mat-label>
+          <mat-select name="categoryId" [(ngModel)]="f.categoryId">
+            @for (category of categories(); track category.id) {
+            <mat-option [value]="category.id">{{ category.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.amountPaid' | translate }}</mat-label>
+          <input matInput type="number" name="amountPaid" [(ngModel)]="f.amountPaid" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.firstName' | translate }}</mat-label>
+          <input matInput name="firstName" [(ngModel)]="f.firstName" maxlength="128" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.lastName' | translate }}</mat-label>
+          <input matInput name="lastName" [(ngModel)]="f.lastName" maxlength="256" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.email' | translate }}</mat-label>
+          <input matInput name="email" [(ngModel)]="f.email" maxlength="512" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.addressLine1' | translate }}</mat-label>
+          <input matInput name="addressLine1" [(ngModel)]="f.addressLine1" maxlength="128" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.addressLine2' | translate }}</mat-label>
+          <input matInput name="addressLine2" [(ngModel)]="f.addressLine2" maxlength="128" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.zipCode' | translate }}</mat-label>
+          <input matInput name="zipCode" [(ngModel)]="f.zipCode" maxlength="32" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.city' | translate }}</mat-label>
+          <input matInput name="city" [(ngModel)]="f.city" maxlength="128" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.phoneNumber' | translate }}</mat-label>
+          <input matInput name="phoneNumber" [(ngModel)]="f.phoneNumber" maxlength="32" />
+        </mat-form-field>
+
+        <ng-container
+          *ngTemplateOutlet="yesNo; context: { name: 'smsSignup', label: 'participants.fields.smsSignup' }"
+        />
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.preferredLanguage' | translate }}</mat-label>
+          <mat-select name="preferredLanguage" [(ngModel)]="f.preferredLanguage">
+            @for (language of preferredLanguages; track language) {
+            <mat-option [value]="language"
+              >{{ 'participants.preferredLanguageCodes.' + language | translate }}</mat-option
+            >
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (participantId() !== null) {
+        <fieldset class="languages wide">
+          <legend>{{ 'participants.fields.activityLanguages' | translate }}</legend>
+          @for (language of participantLanguages; track language) {
+          <mat-checkbox
+            [name]="'language' + language"
+            [checked]="hasLanguage(f, language)"
+            (change)="toggleLanguage(f, language, $event.checked)"
+            >{{ 'participants.languageShort.' + language | translate }}</mat-checkbox
+          >
+          }
+        </fieldset>
+        }
+
+        <ng-container
+          *ngTemplateOutlet="yesNo; context: { name: 'superHero', label: 'participants.fields.superHero' }"
+        />
+        <ng-container
+          *ngTemplateOutlet="yesNo; context: { name: 'isAuthorOrDesigner', label: 'participants.fields.isAuthor' }"
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            yesNo;
+            context: {
+              name: 'setupHelpMonday',
+              label: participantId() === null ? 'participants.fields.setupStartMonday' : 'participants.fields.setupHelpMonday'
+            }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            yesNo;
+            context: {
+              name: 'setupHelpTuesday',
+              label: participantId() === null ? 'participants.fields.setupStartTuesday' : 'participants.fields.setupHelpTuesday'
+            }
+          "
+        />
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.desiredActivities' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="desiredActivities"
+            [min]="desiredMin"
+            [max]="desiredMax"
+            step="1"
+            [(ngModel)]="f.desiredActivities"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.desiredHeroTasks' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="desiredHeroTasks"
+            [min]="desiredMin"
+            [max]="desiredMax"
+            step="1"
+            [(ngModel)]="f.desiredHeroTasks"
+          />
+        </mat-form-field>
+
+        <ng-container *ngTemplateOutlet="yesNo; context: { name: 'isNoShow', label: 'participants.fields.isNoShow' }" />
+        @if (participantId() !== null) {
+        <ng-container
+          *ngTemplateOutlet="yesNo; context: { name: 'isAnnulled', label: 'participants.fields.isAnnulled' }"
+        />
+        }
+        <ng-container
+          *ngTemplateOutlet="yesNo; context: { name: 'superGameMaster', label: 'participants.fields.superGm' }"
+        />
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'participants.fields.youthClub' | translate }}</mat-label>
+          <input matInput name="youthClub" [(ngModel)]="f.youthClub" maxlength="128" />
+        </mat-form-field>
+      </div>
+
+      <ng-template #yesNo let-name="name" let-label="label">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ label | translate }}</mat-label>
+          <mat-select [name]="name" [(ngModel)]="$any(f)[name]">
+            <mat-option [value]="false">{{ 'participants.no' | translate }}</mat-option>
+            <mat-option [value]="true">{{ 'participants.yes' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-template>
+
+      <div class="form-actions">
+        @if (participantId() === null) {
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy()">
+          {{ 'participants.buttons.create' | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancel()">{{ 'participants.buttons.cancel' | translate }}</button>
+        } @else {
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy()">
+          {{ 'participants.buttons.update' | translate }}
+        </button>
+        @if (storedAnnulled()) {
+        <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="askDelete()">
+          {{ 'participants.buttons.delete' | translate }}
+        </button>
+        } @else {
+        <button mat-stroked-button type="button" [disabled]="busy()" (click)="annul()">
+          {{ 'participants.buttons.annul' | translate }}
+        </button>
+        } }
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

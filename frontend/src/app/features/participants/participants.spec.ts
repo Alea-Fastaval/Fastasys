@@ -1,103 +1,65 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { describe, afterEach, it, expect } from 'vitest';
+import { ParticipantSummary } from '@shared/types';
+import { ParticipantFlashService } from './participant-flash.service';
 import { ParticipantsComponent } from './participants';
-import { Participant } from '@shared/types';
-import { describe, beforeEach, afterEach, it, expect } from 'vitest';
 
-describe('ParticipantsComponent', () => {
-  let component: ParticipantsComponent;
-  let fixture: ComponentFixture<ParticipantsComponent>;
+describe('ParticipantsComponent (Infosys deltager/visalle)', () => {
   let httpMock: HttpTestingController;
-
-  const mockParticipants: Participant[] = [
-    {
-      id: 1,
-      firstName: 'Mads',
-      lastName: 'Hansen',
-      email: 'mads@fastaval.dk',
-      phoneNumber: '+4512345678',
-      barcode: 'FAST-2026-0001',
-      isCheckedIn: false,
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 2,
-      firstName: 'Sofie',
-      lastName: 'Nielsen',
-      email: 'sofie@fastaval.dk',
-      phoneNumber: '+4587654321',
-      barcode: 'FAST-2026-0002',
-      isCheckedIn: true,
-      checkedInAt: '2026-08-08T12:00:00Z',
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-  ];
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [ParticipantsComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(ParticipantsComponent);
-    component = fixture.componentInstance;
-    httpMock = TestBed.inject(HttpTestingController);
-  });
 
   afterEach(() => {
     httpMock.verify();
   });
 
-  const handleInit = () => {
-    fixture.detectChanges();
-    httpMock.expectOne('/assets/i18n/en.json').flush({});
+  const setup = async () => {
+    await TestBed.configureTestingModule({
+      imports: [ParticipantsComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    }).compileComponents();
+
+    httpMock = TestBed.inject(HttpTestingController);
+    const flash = TestBed.inject(ParticipantFlashService);
+    return { flash };
   };
 
-  it('should load participants on initialization', () => {
-    handleInit();
+  const render = () => {
+    const fixture = TestBed.createComponent(ParticipantsComponent);
+    fixture.detectChanges();
+    httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
+    return fixture;
+  };
 
-    const req = httpMock.expectOne('/api/participants');
-    expect(req.request.method).toBe('GET');
-    req.flush(mockParticipants);
+  const list: ParticipantSummary[] = [
+    { id: 1, name: 'Testa Testesen' },
+    { id: 4, name: 'Prøve Person' },
+  ];
 
-    expect(component.participants().length).toBe(2);
-    expect(component.participants()[0].firstName).toBe('Mads');
+  it('lists every participant with links to their page', async () => {
+    await setup();
+    const fixture = render();
+
+    httpMock.expectOne('/api/participants').flush(list);
+    fixture.detectChanges();
+
+    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr');
+    expect(rows.length).toBe(2);
+    const links = rows[1].querySelectorAll('a');
+    expect(links[0].textContent?.trim()).toBe('4');
+    expect(links[1].textContent?.trim()).toBe('Prøve Person');
+    expect(links[1].getAttribute('href')).toBe('/participants/4');
   });
 
-  it('should filter participants by search query', () => {
-    handleInit();
-    httpMock.expectOne('/api/participants').flush(mockParticipants);
+  it('shows the message from the page it came from', async () => {
+    const { flash } = await setup();
+    flash.set('error', 'createFailed');
+    const fixture = render();
+    httpMock.expectOne('/api/participants').flush([]);
+    fixture.detectChanges();
 
-    component.searchQuery = 'Mads';
-    component.loadParticipants();
-
-    const req = httpMock.expectOne('/api/participants?search=Mads');
-    expect(req.request.method).toBe('GET');
-    req.flush([mockParticipants[0]]);
-
-    expect(component.participants().length).toBe(1);
-    expect(component.participants()[0].firstName).toBe('Mads');
-  });
-
-  it('should perform check-in action for a participant', () => {
-    handleInit();
-    httpMock.expectOne('/api/participants').flush(mockParticipants);
-
-    component.checkIn(1);
-
-    const checkInReq = httpMock.expectOne('/api/participants/1/checkin');
-    expect(checkInReq.request.method).toBe('POST');
-    checkInReq.flush({});
-
-    // Triggers reload
-    const reloadReq = httpMock.expectOne('/api/participants');
-    expect(reloadReq.request.method).toBe('GET');
-    reloadReq.flush([
-      { ...mockParticipants[0], isCheckedIn: true, checkedInAt: '2026-08-08T15:00:00Z' },
-      mockParticipants[1],
-    ]);
-
-    expect(component.participants()[0].isCheckedIn).toBe(true);
+    expect(fixture.componentInstance.flash).toEqual({ type: 'error', key: 'createFailed' });
+    expect((fixture.nativeElement as HTMLElement).querySelector('.flash.error')).not.toBeNull();
   });
 });

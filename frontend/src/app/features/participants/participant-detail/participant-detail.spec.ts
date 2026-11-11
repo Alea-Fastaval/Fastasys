@@ -1,0 +1,303 @@
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
+import { describe, afterEach, it, expect, vi } from 'vitest';
+import { Participant, ParticipantDetails, ParticipantOptions } from '@shared/types';
+import { ParticipantFlashService } from '../participant-flash.service';
+import { ParticipantDetailComponent, editorValue } from './participant-detail';
+
+const details: ParticipantDetails = {
+  organizerAreaId: 2,
+  organizerAreaName: 'Brætspilsdesigner',
+  isAuthorOrDesigner: true,
+  gameActivityId: null,
+  gameActivityTitle: null,
+  extraVouchers: 0,
+  activityLanguages: ['Danish', 'English'],
+  sleepingAreas: ['Organizer'],
+  desiredHeroTasks: 2,
+  desiredActivities: 3,
+  superGameMaster: false,
+  maxGameMasterRuns: null,
+  juniorGameMaster: false,
+  superRulesGuide: false,
+  maxRulesGuideGames: null,
+  superHero: false,
+  setupHelpMonday: false,
+  setupHelpTuesday: true,
+  financialSupport: false,
+  isNoShow: false,
+  isAnnulled: true,
+  isActivityLocked: false,
+  signedUpAt: '2026-11-01T10:00:00Z',
+  checkedInAt: null,
+  youthClub: '',
+  photoConsent: false,
+  adminNote: 'Intern note',
+  messageToParticipant: '',
+  paymentNote: '',
+  commentNote: 'Glæder mig',
+  heroForceNote: null,
+  juniorContact: null,
+  juniorComment: null,
+  sleepingNote: null,
+};
+
+const participant: Participant = {
+  id: 7,
+  firstName: 'Testa',
+  lastName: 'Testesen',
+  nickname: '',
+  email: 'testa@example.invalid',
+  phoneNumber: '11223344',
+  addressLine1: 'Testvej 1',
+  addressLine2: '',
+  zipCode: '8000',
+  city: 'Testby',
+  countryCode: 'DK',
+  countryName: 'Danmark',
+  birthDate: '2001-02-03',
+  pronouns: 'fsfo',
+  preferredLanguage: 'Danish',
+  categoryId: 1,
+  categoryName: 'Deltager',
+  amountPaid: 450,
+  smsSignup: true,
+  previousId: 3,
+  nextId: 9,
+  canEdit: true,
+  details,
+};
+
+const options: ParticipantOptions = {
+  categories: [
+    { id: 1, name: 'Deltager' },
+    { id: 2, name: 'Arrangør' },
+  ],
+  organizerAreas: [
+    { id: 1, nameDanish: 'Scenarieforfatter', nameEnglish: null },
+    { id: 2, nameDanish: 'Brætspilsdesigner', nameEnglish: null },
+  ],
+  countries: [
+    { code: 'DK', nameDanish: 'Danmark', nameEnglish: 'Denmark' },
+    { code: 'AX', nameDanish: 'Åland', nameEnglish: 'Åland Islands' },
+  ],
+  games: [],
+};
+
+describe('editorValue', () => {
+  const editor = (value: string | number | boolean | null) => ({
+    field: 'x',
+    value,
+    pronouns: { first: 'ns', second: 'no' },
+  });
+
+  it('sends what the API expects for each kind of field', () => {
+    expect(editorValue('number', editor(''))).toBe(0);
+    expect(editorValue('number', editor('12'))).toBe(12);
+    expect(editorValue('optionalNumber', editor(''))).toBeNull();
+    expect(editorValue('date', editor(''))).toBeNull();
+    expect(editorValue('date', editor('1999-12-24'))).toBe('1999-12-24');
+    expect(editorValue('pronouns', editor(null))).toBe('nsno');
+    expect(editorValue('yesNo', editor(false))).toBe(false);
+  });
+});
+
+describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
+  let httpMock: HttpTestingController;
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  const setup = async (loaded: Participant = participant) => {
+    const params = new BehaviorSubject(convertToParamMap({ id: String(loaded.id) }));
+    await TestBed.configureTestingModule({
+      imports: [ParticipantDetailComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: params } },
+      ],
+    }).compileComponents();
+
+    httpMock = TestBed.inject(HttpTestingController);
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(ParticipantDetailComponent);
+    fixture.detectChanges();
+    httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
+    httpMock.expectOne(`/api/participants/${loaded.id}`).flush(loaded);
+    if (loaded.canEdit) httpMock.expectOne('/api/participants/options').flush(options);
+    fixture.detectChanges();
+
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      element: fixture.nativeElement as HTMLElement,
+      navigate,
+      params,
+    };
+  };
+
+  const field = (component: ParticipantDetailComponent, name: string) => {
+    const all = [
+      ...component.personalFields,
+      ...component.organizerFields,
+      ...component.preferenceFields,
+      ...component.statusFields,
+      ...component.otherFields,
+      ...component.noteFields,
+    ];
+    const def = all.find(f => f.field === name);
+    if (!def) throw new Error(`No field ${name}`);
+    return def;
+  };
+
+  const shown = (component: ParticipantDetailComponent) => {
+    const p = component.participant();
+    if (!p) throw new Error('No participant is shown');
+    return p;
+  };
+
+  const openEditor = (component: ParticipantDetailComponent) => {
+    const editor = component.editor();
+    if (!editor) throw new Error('No field is being edited');
+    return editor;
+  };
+
+  const choices = (component: ParticipantDetailComponent, name: string) => {
+    const options = field(component, name).options;
+    if (!options) throw new Error(`${name} has no options`);
+    return options();
+  };
+
+  it('shows the whole page with the notes to editors', async () => {
+    const { element } = await setup();
+
+    expect(element.textContent).toContain('Testa');
+    expect(element.textContent).toContain('03-02-2001');
+    expect(element.textContent).toContain('Brætspilsdesigner');
+    // Infosys shows the raw set values
+    expect(element.textContent).toContain('dansk, engelsk');
+    expect(element.textContent).toContain('organizer');
+    // Annulleret: Ja in red
+    expect(element.querySelector('.annulled')).not.toBeNull();
+    // The admin note and the one signup note given; the missing signup notes are not shown
+    const notes = element.querySelectorAll('.notes app-card');
+    expect(notes.length).toBe(4);
+    expect(element.textContent).toContain('Glæder mig');
+  });
+
+  it('shows only the personal info to users who may only view participants', async () => {
+    const { component, element } = await setup({ ...participant, canEdit: false, details: null });
+
+    expect(component.options()).toBeNull();
+    expect(element.textContent).toContain('Testa');
+    expect(element.querySelector('.notes')).toBeNull();
+    expect(element.querySelector('.editable')).toBeNull();
+    // Clicking does nothing
+    component.startEdit(field(component, 'firstName'), shown(component));
+    expect(component.editor()).toBeNull();
+  });
+
+  it('saves a clicked field and shows the result', async () => {
+    const { component } = await setup();
+    const def = field(component, 'lastName');
+
+    component.startEdit(def, shown(component));
+    expect(component.editor()?.value).toBe('Testesen');
+    openEditor(component).value = 'van der Berg';
+    component.submitEdit(def);
+
+    const req = httpMock.expectOne('/api/participants/7/fields/lastName');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ value: 'van der Berg' });
+    req.flush({ ...participant, lastName: 'van der Berg' });
+
+    expect(component.participant()?.lastName).toBe('van der Berg');
+    expect(component.editor()).toBeNull();
+    expect(component.saved()).toBe('lastName');
+  });
+
+  it('saves the pronoun widget as one value', async () => {
+    const { component } = await setup();
+    const def = field(component, 'pronouns');
+
+    component.startEdit(def, shown(component));
+    expect(component.editor()?.pronouns).toEqual({ first: 'fs', second: 'fo' });
+    component.changeFirstPronoun('ask');
+    component.submitEdit(def);
+
+    httpMock.expectOne('/api/participants/7/fields/pronouns').flush({ ...participant, pronouns: 'ask' });
+    expect(component.participant()?.pronouns).toBe('ask');
+  });
+
+  it('keeps the editor open with an error when the save fails', async () => {
+    const { component } = await setup();
+    const def = field(component, 'birthDate');
+
+    component.startEdit(def, shown(component));
+    component.submitEdit(def);
+    httpMock
+      .expectOne('/api/participants/7/fields/birthDate')
+      .flush({ message: 'bad' }, { status: 400, statusText: 'Bad Request' });
+
+    expect(component.errorKey()).toBe('fieldUpdateFailed');
+    expect(component.failed()).toBe('birthDate');
+    expect(component.editor()).not.toBeNull();
+  });
+
+  it('offers no organizer area first and sorts the countries in Danish order', async () => {
+    const { component } = await setup();
+
+    const areas = choices(component, 'organizerAreaId');
+    expect(areas[0]).toMatchObject({ value: null, labelKey: 'participants.noOrganizerArea' });
+    const countries = choices(component, 'countryCode').map(o => o.label);
+    expect(countries).toEqual(['Danmark', 'Åland']);
+  });
+
+  it('goes to the previous and next participant with the arrow keys', async () => {
+    const { component, navigate } = await setup();
+
+    component.onKeyUp(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+    component.onKeyUp(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
+
+    expect(navigate).toHaveBeenCalledWith(['/participants', 3]);
+    expect(navigate).toHaveBeenCalledWith(['/participants', 9]);
+  });
+
+  it('loads the next participant when the id in the URL changes', async () => {
+    const { component, params } = await setup();
+
+    params.next(convertToParamMap({ id: '9' }));
+    httpMock.expectOne('/api/participants/9').flush({ ...participant, id: 9, firstName: 'Næste' });
+
+    expect(component.participant()?.firstName).toBe('Næste');
+  });
+
+  it('shows that the participant was not found', async () => {
+    const params = new BehaviorSubject(convertToParamMap({ id: '404' }));
+    await TestBed.configureTestingModule({
+      imports: [ParticipantDetailComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: ActivatedRoute, useValue: { paramMap: params } },
+      ],
+    }).compileComponents();
+    httpMock = TestBed.inject(HttpTestingController);
+    TestBed.inject(ParticipantFlashService);
+    const fixture = TestBed.createComponent(ParticipantDetailComponent);
+    fixture.detectChanges();
+    httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
+    httpMock
+      .expectOne('/api/participants/404')
+      .flush({ message: 'Participant not found' }, { status: 404, statusText: 'Not Found' });
+
+    expect(fixture.componentInstance.notFound()).toBe(true);
+  });
+});

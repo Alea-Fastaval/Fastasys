@@ -67,8 +67,12 @@ const string AdminRole = "Admin";
 const string PrivilegeClaim = "privilege";
 
 builder.Services.AddAuthorizationBuilder()
+    // Infosys: the Read-only role may view and search participants; Infonaut, Participant admin and the other
+    // roles with ParticipantController/* may also change them
+    .AddPolicy("ParticipantView", policy =>
+    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participants_view") || context.User.HasClaim(PrivilegeClaim, "participants_edit")))
     .AddPolicy("ParticipantManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participant_management")))
+    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participants_edit")))
     .AddPolicy("ActivityView", policy =>
     policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activities_view") || context.User.HasClaim(PrivilegeClaim, "activities_edit")))
     .AddPolicy("ActivityManagement", policy =>

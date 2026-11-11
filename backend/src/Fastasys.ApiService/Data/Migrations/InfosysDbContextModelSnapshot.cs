@@ -202,6 +202,1509 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("BoardgameLoans");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Country", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.Property<string>("NameDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("countries");
+
+                    b.HasData(
+                        new
+                        {
+                            Code = "AF",
+                            NameDanish = "Afghanistan",
+                            NameEnglish = "Afghanistan"
+                        },
+                        new
+                        {
+                            Code = "AL",
+                            NameDanish = "Albanien",
+                            NameEnglish = "Albania"
+                        },
+                        new
+                        {
+                            Code = "DZ",
+                            NameDanish = "Algeriet",
+                            NameEnglish = "Algeria"
+                        },
+                        new
+                        {
+                            Code = "AS",
+                            NameDanish = "Amerikansk Samoa",
+                            NameEnglish = "American Samoa"
+                        },
+                        new
+                        {
+                            Code = "AD",
+                            NameDanish = "Andorra",
+                            NameEnglish = "Andorra"
+                        },
+                        new
+                        {
+                            Code = "AO",
+                            NameDanish = "Angola",
+                            NameEnglish = "Angola"
+                        },
+                        new
+                        {
+                            Code = "AI",
+                            NameDanish = "Anguilla",
+                            NameEnglish = "Anguilla"
+                        },
+                        new
+                        {
+                            Code = "AG",
+                            NameDanish = "Antigua og Barbuda",
+                            NameEnglish = "Antigua & Barbuda"
+                        },
+                        new
+                        {
+                            Code = "AR",
+                            NameDanish = "Argentina",
+                            NameEnglish = "Argentina"
+                        },
+                        new
+                        {
+                            Code = "AM",
+                            NameDanish = "Armenien",
+                            NameEnglish = "Armenia"
+                        },
+                        new
+                        {
+                            Code = "AW",
+                            NameDanish = "Aruba",
+                            NameEnglish = "Aruba"
+                        },
+                        new
+                        {
+                            Code = "AU",
+                            NameDanish = "Australien",
+                            NameEnglish = "Australia"
+                        },
+                        new
+                        {
+                            Code = "AT",
+                            NameDanish = "Østrig",
+                            NameEnglish = "Austria"
+                        },
+                        new
+                        {
+                            Code = "AZ",
+                            NameDanish = "Aserbajdsjan",
+                            NameEnglish = "Azerbaijan"
+                        },
+                        new
+                        {
+                            Code = "BS",
+                            NameDanish = "Bahamas",
+                            NameEnglish = "Bahamas"
+                        },
+                        new
+                        {
+                            Code = "BH",
+                            NameDanish = "Bahrain",
+                            NameEnglish = "Bahrain"
+                        },
+                        new
+                        {
+                            Code = "BD",
+                            NameDanish = "Bangladesh",
+                            NameEnglish = "Bangladesh"
+                        },
+                        new
+                        {
+                            Code = "BB",
+                            NameDanish = "Barbados",
+                            NameEnglish = "Barbados"
+                        },
+                        new
+                        {
+                            Code = "BY",
+                            NameDanish = "Hviderusland",
+                            NameEnglish = "Belarus"
+                        },
+                        new
+                        {
+                            Code = "BE",
+                            NameDanish = "Belgien",
+                            NameEnglish = "Belgium"
+                        },
+                        new
+                        {
+                            Code = "BZ",
+                            NameDanish = "Belize",
+                            NameEnglish = "Belize"
+                        },
+                        new
+                        {
+                            Code = "BJ",
+                            NameDanish = "Benin",
+                            NameEnglish = "Benin"
+                        },
+                        new
+                        {
+                            Code = "BM",
+                            NameDanish = "Bermuda",
+                            NameEnglish = "Bermuda"
+                        },
+                        new
+                        {
+                            Code = "BT",
+                            NameDanish = "Bhutan",
+                            NameEnglish = "Bhutan"
+                        },
+                        new
+                        {
+                            Code = "BO",
+                            NameDanish = "Bolivia",
+                            NameEnglish = "Bolivia"
+                        },
+                        new
+                        {
+                            Code = "BA",
+                            NameDanish = "Bosnien-Hercegovina",
+                            NameEnglish = "Bosnia & Herzegovina"
+                        },
+                        new
+                        {
+                            Code = "BW",
+                            NameDanish = "Botswana",
+                            NameEnglish = "Botswana"
+                        },
+                        new
+                        {
+                            Code = "BR",
+                            NameDanish = "Brasilien",
+                            NameEnglish = "Brazil"
+                        },
+                        new
+                        {
+                            Code = "IO",
+                            NameDanish = "Det Britiske Territorium i Det Indiske Ocean",
+                            NameEnglish = "British Indian Ocean Territory"
+                        },
+                        new
+                        {
+                            Code = "VG",
+                            NameDanish = "De Britiske Jomfruøer",
+                            NameEnglish = "British Virgin Islands"
+                        },
+                        new
+                        {
+                            Code = "BN",
+                            NameDanish = "Brunei",
+                            NameEnglish = "Brunei"
+                        },
+                        new
+                        {
+                            Code = "BG",
+                            NameDanish = "Bulgarien",
+                            NameEnglish = "Bulgaria"
+                        },
+                        new
+                        {
+                            Code = "BF",
+                            NameDanish = "Burkina Faso",
+                            NameEnglish = "Burkina Faso"
+                        },
+                        new
+                        {
+                            Code = "BI",
+                            NameDanish = "Burundi",
+                            NameEnglish = "Burundi"
+                        },
+                        new
+                        {
+                            Code = "KH",
+                            NameDanish = "Cambodja",
+                            NameEnglish = "Cambodia"
+                        },
+                        new
+                        {
+                            Code = "CM",
+                            NameDanish = "Cameroun",
+                            NameEnglish = "Cameroon"
+                        },
+                        new
+                        {
+                            Code = "CA",
+                            NameDanish = "Canada",
+                            NameEnglish = "Canada"
+                        },
+                        new
+                        {
+                            Code = "IC",
+                            NameDanish = "Kanariske øer",
+                            NameEnglish = "Canary Islands"
+                        },
+                        new
+                        {
+                            Code = "CV",
+                            NameDanish = "Kap Verde",
+                            NameEnglish = "Cape Verde"
+                        },
+                        new
+                        {
+                            Code = "BQ",
+                            NameDanish = "De tidligere Nederlandske Antiller",
+                            NameEnglish = "Caribbean Netherlands"
+                        },
+                        new
+                        {
+                            Code = "KY",
+                            NameDanish = "Caymanøerne",
+                            NameEnglish = "Cayman Islands"
+                        },
+                        new
+                        {
+                            Code = "CF",
+                            NameDanish = "Den Centralafrikanske Republik",
+                            NameEnglish = "Central African Republic"
+                        },
+                        new
+                        {
+                            Code = "EA",
+                            NameDanish = "Ceuta og Melilla",
+                            NameEnglish = "Ceuta & Melilla"
+                        },
+                        new
+                        {
+                            Code = "TD",
+                            NameDanish = "Tchad",
+                            NameEnglish = "Chad"
+                        },
+                        new
+                        {
+                            Code = "CL",
+                            NameDanish = "Chile",
+                            NameEnglish = "Chile"
+                        },
+                        new
+                        {
+                            Code = "CN",
+                            NameDanish = "Kina",
+                            NameEnglish = "China"
+                        },
+                        new
+                        {
+                            Code = "CX",
+                            NameDanish = "Juleøen",
+                            NameEnglish = "Christmas Island"
+                        },
+                        new
+                        {
+                            Code = "CC",
+                            NameDanish = "Cocosøerne",
+                            NameEnglish = "Cocos (Keeling) Islands"
+                        },
+                        new
+                        {
+                            Code = "CO",
+                            NameDanish = "Colombia",
+                            NameEnglish = "Colombia"
+                        },
+                        new
+                        {
+                            Code = "KM",
+                            NameDanish = "Comorerne",
+                            NameEnglish = "Comoros"
+                        },
+                        new
+                        {
+                            Code = "CG",
+                            NameDanish = "Congo-Brazzaville",
+                            NameEnglish = "Congo - Brazzaville"
+                        },
+                        new
+                        {
+                            Code = "CD",
+                            NameDanish = "Congo-Kinshasa",
+                            NameEnglish = "Congo - Kinshasa"
+                        },
+                        new
+                        {
+                            Code = "CK",
+                            NameDanish = "Cookøerne",
+                            NameEnglish = "Cook Islands"
+                        },
+                        new
+                        {
+                            Code = "CR",
+                            NameDanish = "Costa Rica",
+                            NameEnglish = "Costa Rica"
+                        },
+                        new
+                        {
+                            Code = "HR",
+                            NameDanish = "Kroatien",
+                            NameEnglish = "Croatia"
+                        },
+                        new
+                        {
+                            Code = "CU",
+                            NameDanish = "Cuba",
+                            NameEnglish = "Cuba"
+                        },
+                        new
+                        {
+                            Code = "CW",
+                            NameDanish = "Curaçao",
+                            NameEnglish = "Curaçao"
+                        },
+                        new
+                        {
+                            Code = "CY",
+                            NameDanish = "Cypern",
+                            NameEnglish = "Cyprus"
+                        },
+                        new
+                        {
+                            Code = "CZ",
+                            NameDanish = "Tjekkiet",
+                            NameEnglish = "Czechia"
+                        },
+                        new
+                        {
+                            Code = "CI",
+                            NameDanish = "Elfenbenskysten",
+                            NameEnglish = "Côte d’Ivoire"
+                        },
+                        new
+                        {
+                            Code = "DK",
+                            NameDanish = "Danmark",
+                            NameEnglish = "Denmark"
+                        },
+                        new
+                        {
+                            Code = "DG",
+                            NameDanish = "Diego Garcia",
+                            NameEnglish = "Diego Garcia"
+                        },
+                        new
+                        {
+                            Code = "DJ",
+                            NameDanish = "Djibouti",
+                            NameEnglish = "Djibouti"
+                        },
+                        new
+                        {
+                            Code = "DM",
+                            NameDanish = "Dominica",
+                            NameEnglish = "Dominica"
+                        },
+                        new
+                        {
+                            Code = "DO",
+                            NameDanish = "Den Dominikanske Republik",
+                            NameEnglish = "Dominican Republic"
+                        },
+                        new
+                        {
+                            Code = "EC",
+                            NameDanish = "Ecuador",
+                            NameEnglish = "Ecuador"
+                        },
+                        new
+                        {
+                            Code = "EG",
+                            NameDanish = "Egypten",
+                            NameEnglish = "Egypt"
+                        },
+                        new
+                        {
+                            Code = "SV",
+                            NameDanish = "El Salvador",
+                            NameEnglish = "El Salvador"
+                        },
+                        new
+                        {
+                            Code = "GQ",
+                            NameDanish = "Ækvatorialguinea",
+                            NameEnglish = "Equatorial Guinea"
+                        },
+                        new
+                        {
+                            Code = "ER",
+                            NameDanish = "Eritrea",
+                            NameEnglish = "Eritrea"
+                        },
+                        new
+                        {
+                            Code = "EE",
+                            NameDanish = "Estland",
+                            NameEnglish = "Estonia"
+                        },
+                        new
+                        {
+                            Code = "SZ",
+                            NameDanish = "Eswatini",
+                            NameEnglish = "Eswatini"
+                        },
+                        new
+                        {
+                            Code = "ET",
+                            NameDanish = "Etiopien",
+                            NameEnglish = "Ethiopia"
+                        },
+                        new
+                        {
+                            Code = "FK",
+                            NameDanish = "Falklandsøerne",
+                            NameEnglish = "Falkland Islands"
+                        },
+                        new
+                        {
+                            Code = "FO",
+                            NameDanish = "Færøerne",
+                            NameEnglish = "Faroe Islands"
+                        },
+                        new
+                        {
+                            Code = "FJ",
+                            NameDanish = "Fiji",
+                            NameEnglish = "Fiji"
+                        },
+                        new
+                        {
+                            Code = "FI",
+                            NameDanish = "Finland",
+                            NameEnglish = "Finland"
+                        },
+                        new
+                        {
+                            Code = "FR",
+                            NameDanish = "Frankrig",
+                            NameEnglish = "France"
+                        },
+                        new
+                        {
+                            Code = "GF",
+                            NameDanish = "Fransk Guyana",
+                            NameEnglish = "French Guiana"
+                        },
+                        new
+                        {
+                            Code = "PF",
+                            NameDanish = "Fransk Polynesien",
+                            NameEnglish = "French Polynesia"
+                        },
+                        new
+                        {
+                            Code = "GA",
+                            NameDanish = "Gabon",
+                            NameEnglish = "Gabon"
+                        },
+                        new
+                        {
+                            Code = "GM",
+                            NameDanish = "Gambia",
+                            NameEnglish = "Gambia"
+                        },
+                        new
+                        {
+                            Code = "GE",
+                            NameDanish = "Georgien",
+                            NameEnglish = "Georgia"
+                        },
+                        new
+                        {
+                            Code = "DE",
+                            NameDanish = "Tyskland",
+                            NameEnglish = "Germany"
+                        },
+                        new
+                        {
+                            Code = "GH",
+                            NameDanish = "Ghana",
+                            NameEnglish = "Ghana"
+                        },
+                        new
+                        {
+                            Code = "GI",
+                            NameDanish = "Gibraltar",
+                            NameEnglish = "Gibraltar"
+                        },
+                        new
+                        {
+                            Code = "GR",
+                            NameDanish = "Grækenland",
+                            NameEnglish = "Greece"
+                        },
+                        new
+                        {
+                            Code = "GL",
+                            NameDanish = "Grønland",
+                            NameEnglish = "Greenland"
+                        },
+                        new
+                        {
+                            Code = "GD",
+                            NameDanish = "Grenada",
+                            NameEnglish = "Grenada"
+                        },
+                        new
+                        {
+                            Code = "GP",
+                            NameDanish = "Guadeloupe",
+                            NameEnglish = "Guadeloupe"
+                        },
+                        new
+                        {
+                            Code = "GU",
+                            NameDanish = "Guam",
+                            NameEnglish = "Guam"
+                        },
+                        new
+                        {
+                            Code = "GT",
+                            NameDanish = "Guatemala",
+                            NameEnglish = "Guatemala"
+                        },
+                        new
+                        {
+                            Code = "GG",
+                            NameDanish = "Guernsey",
+                            NameEnglish = "Guernsey"
+                        },
+                        new
+                        {
+                            Code = "GN",
+                            NameDanish = "Guinea",
+                            NameEnglish = "Guinea"
+                        },
+                        new
+                        {
+                            Code = "GW",
+                            NameDanish = "Guinea-Bissau",
+                            NameEnglish = "Guinea-Bissau"
+                        },
+                        new
+                        {
+                            Code = "GY",
+                            NameDanish = "Guyana",
+                            NameEnglish = "Guyana"
+                        },
+                        new
+                        {
+                            Code = "HT",
+                            NameDanish = "Haiti",
+                            NameEnglish = "Haiti"
+                        },
+                        new
+                        {
+                            Code = "HN",
+                            NameDanish = "Honduras",
+                            NameEnglish = "Honduras"
+                        },
+                        new
+                        {
+                            Code = "HK",
+                            NameDanish = "SAR Hongkong",
+                            NameEnglish = "Hong Kong SAR China"
+                        },
+                        new
+                        {
+                            Code = "HU",
+                            NameDanish = "Ungarn",
+                            NameEnglish = "Hungary"
+                        },
+                        new
+                        {
+                            Code = "IS",
+                            NameDanish = "Island",
+                            NameEnglish = "Iceland"
+                        },
+                        new
+                        {
+                            Code = "IN",
+                            NameDanish = "Indien",
+                            NameEnglish = "India"
+                        },
+                        new
+                        {
+                            Code = "ID",
+                            NameDanish = "Indonesien",
+                            NameEnglish = "Indonesia"
+                        },
+                        new
+                        {
+                            Code = "IR",
+                            NameDanish = "Iran",
+                            NameEnglish = "Iran"
+                        },
+                        new
+                        {
+                            Code = "IQ",
+                            NameDanish = "Irak",
+                            NameEnglish = "Iraq"
+                        },
+                        new
+                        {
+                            Code = "IE",
+                            NameDanish = "Irland",
+                            NameEnglish = "Ireland"
+                        },
+                        new
+                        {
+                            Code = "IM",
+                            NameDanish = "Isle of Man",
+                            NameEnglish = "Isle of Man"
+                        },
+                        new
+                        {
+                            Code = "IL",
+                            NameDanish = "Israel",
+                            NameEnglish = "Israel"
+                        },
+                        new
+                        {
+                            Code = "IT",
+                            NameDanish = "Italien",
+                            NameEnglish = "Italy"
+                        },
+                        new
+                        {
+                            Code = "JM",
+                            NameDanish = "Jamaica",
+                            NameEnglish = "Jamaica"
+                        },
+                        new
+                        {
+                            Code = "JP",
+                            NameDanish = "Japan",
+                            NameEnglish = "Japan"
+                        },
+                        new
+                        {
+                            Code = "JE",
+                            NameDanish = "Jersey",
+                            NameEnglish = "Jersey"
+                        },
+                        new
+                        {
+                            Code = "JO",
+                            NameDanish = "Jordan",
+                            NameEnglish = "Jordan"
+                        },
+                        new
+                        {
+                            Code = "KZ",
+                            NameDanish = "Kasakhstan",
+                            NameEnglish = "Kazakhstan"
+                        },
+                        new
+                        {
+                            Code = "KE",
+                            NameDanish = "Kenya",
+                            NameEnglish = "Kenya"
+                        },
+                        new
+                        {
+                            Code = "KI",
+                            NameDanish = "Kiribati",
+                            NameEnglish = "Kiribati"
+                        },
+                        new
+                        {
+                            Code = "XK",
+                            NameDanish = "Kosovo",
+                            NameEnglish = "Kosovo"
+                        },
+                        new
+                        {
+                            Code = "KW",
+                            NameDanish = "Kuwait",
+                            NameEnglish = "Kuwait"
+                        },
+                        new
+                        {
+                            Code = "KG",
+                            NameDanish = "Kirgisistan",
+                            NameEnglish = "Kyrgyzstan"
+                        },
+                        new
+                        {
+                            Code = "LA",
+                            NameDanish = "Laos",
+                            NameEnglish = "Laos"
+                        },
+                        new
+                        {
+                            Code = "LV",
+                            NameDanish = "Letland",
+                            NameEnglish = "Latvia"
+                        },
+                        new
+                        {
+                            Code = "LB",
+                            NameDanish = "Libanon",
+                            NameEnglish = "Lebanon"
+                        },
+                        new
+                        {
+                            Code = "LS",
+                            NameDanish = "Lesotho",
+                            NameEnglish = "Lesotho"
+                        },
+                        new
+                        {
+                            Code = "LR",
+                            NameDanish = "Liberia",
+                            NameEnglish = "Liberia"
+                        },
+                        new
+                        {
+                            Code = "LY",
+                            NameDanish = "Libyen",
+                            NameEnglish = "Libya"
+                        },
+                        new
+                        {
+                            Code = "LI",
+                            NameDanish = "Liechtenstein",
+                            NameEnglish = "Liechtenstein"
+                        },
+                        new
+                        {
+                            Code = "LT",
+                            NameDanish = "Litauen",
+                            NameEnglish = "Lithuania"
+                        },
+                        new
+                        {
+                            Code = "LU",
+                            NameDanish = "Luxembourg",
+                            NameEnglish = "Luxembourg"
+                        },
+                        new
+                        {
+                            Code = "MO",
+                            NameDanish = "SAR Macao",
+                            NameEnglish = "Macao SAR China"
+                        },
+                        new
+                        {
+                            Code = "MG",
+                            NameDanish = "Madagaskar",
+                            NameEnglish = "Madagascar"
+                        },
+                        new
+                        {
+                            Code = "MW",
+                            NameDanish = "Malawi",
+                            NameEnglish = "Malawi"
+                        },
+                        new
+                        {
+                            Code = "MY",
+                            NameDanish = "Malaysia",
+                            NameEnglish = "Malaysia"
+                        },
+                        new
+                        {
+                            Code = "ML",
+                            NameDanish = "Mali",
+                            NameEnglish = "Mali"
+                        },
+                        new
+                        {
+                            Code = "MT",
+                            NameDanish = "Malta",
+                            NameEnglish = "Malta"
+                        },
+                        new
+                        {
+                            Code = "MH",
+                            NameDanish = "Marshalløerne",
+                            NameEnglish = "Marshall Islands"
+                        },
+                        new
+                        {
+                            Code = "MQ",
+                            NameDanish = "Martinique",
+                            NameEnglish = "Martinique"
+                        },
+                        new
+                        {
+                            Code = "MR",
+                            NameDanish = "Mauretanien",
+                            NameEnglish = "Mauritania"
+                        },
+                        new
+                        {
+                            Code = "MU",
+                            NameDanish = "Mauritius",
+                            NameEnglish = "Mauritius"
+                        },
+                        new
+                        {
+                            Code = "YT",
+                            NameDanish = "Mayotte",
+                            NameEnglish = "Mayotte"
+                        },
+                        new
+                        {
+                            Code = "MX",
+                            NameDanish = "Mexico",
+                            NameEnglish = "Mexico"
+                        },
+                        new
+                        {
+                            Code = "FM",
+                            NameDanish = "Mikronesien",
+                            NameEnglish = "Micronesia"
+                        },
+                        new
+                        {
+                            Code = "MD",
+                            NameDanish = "Moldova",
+                            NameEnglish = "Moldova"
+                        },
+                        new
+                        {
+                            Code = "MC",
+                            NameDanish = "Monaco",
+                            NameEnglish = "Monaco"
+                        },
+                        new
+                        {
+                            Code = "MN",
+                            NameDanish = "Mongoliet",
+                            NameEnglish = "Mongolia"
+                        },
+                        new
+                        {
+                            Code = "ME",
+                            NameDanish = "Montenegro",
+                            NameEnglish = "Montenegro"
+                        },
+                        new
+                        {
+                            Code = "MS",
+                            NameDanish = "Montserrat",
+                            NameEnglish = "Montserrat"
+                        },
+                        new
+                        {
+                            Code = "MA",
+                            NameDanish = "Marokko",
+                            NameEnglish = "Morocco"
+                        },
+                        new
+                        {
+                            Code = "MZ",
+                            NameDanish = "Mozambique",
+                            NameEnglish = "Mozambique"
+                        },
+                        new
+                        {
+                            Code = "MM",
+                            NameDanish = "Myanmar (Burma)",
+                            NameEnglish = "Myanmar (Burma)"
+                        },
+                        new
+                        {
+                            Code = "NA",
+                            NameDanish = "Namibia",
+                            NameEnglish = "Namibia"
+                        },
+                        new
+                        {
+                            Code = "NR",
+                            NameDanish = "Nauru",
+                            NameEnglish = "Nauru"
+                        },
+                        new
+                        {
+                            Code = "NP",
+                            NameDanish = "Nepal",
+                            NameEnglish = "Nepal"
+                        },
+                        new
+                        {
+                            Code = "NL",
+                            NameDanish = "Holland",
+                            NameEnglish = "Netherlands"
+                        },
+                        new
+                        {
+                            Code = "NC",
+                            NameDanish = "Ny Kaledonien",
+                            NameEnglish = "New Caledonia"
+                        },
+                        new
+                        {
+                            Code = "NZ",
+                            NameDanish = "New Zealand",
+                            NameEnglish = "New Zealand"
+                        },
+                        new
+                        {
+                            Code = "NI",
+                            NameDanish = "Nicaragua",
+                            NameEnglish = "Nicaragua"
+                        },
+                        new
+                        {
+                            Code = "NE",
+                            NameDanish = "Niger",
+                            NameEnglish = "Niger"
+                        },
+                        new
+                        {
+                            Code = "NG",
+                            NameDanish = "Nigeria",
+                            NameEnglish = "Nigeria"
+                        },
+                        new
+                        {
+                            Code = "NU",
+                            NameDanish = "Niue",
+                            NameEnglish = "Niue"
+                        },
+                        new
+                        {
+                            Code = "NF",
+                            NameDanish = "Norfolk Island",
+                            NameEnglish = "Norfolk Island"
+                        },
+                        new
+                        {
+                            Code = "KP",
+                            NameDanish = "Nordkorea",
+                            NameEnglish = "North Korea"
+                        },
+                        new
+                        {
+                            Code = "MK",
+                            NameDanish = "Nordmakedonien",
+                            NameEnglish = "North Macedonia"
+                        },
+                        new
+                        {
+                            Code = "MP",
+                            NameDanish = "Nordmarianerne",
+                            NameEnglish = "Northern Mariana Islands"
+                        },
+                        new
+                        {
+                            Code = "NO",
+                            NameDanish = "Norge",
+                            NameEnglish = "Norway"
+                        },
+                        new
+                        {
+                            Code = "OM",
+                            NameDanish = "Oman",
+                            NameEnglish = "Oman"
+                        },
+                        new
+                        {
+                            Code = "PK",
+                            NameDanish = "Pakistan",
+                            NameEnglish = "Pakistan"
+                        },
+                        new
+                        {
+                            Code = "PW",
+                            NameDanish = "Palau",
+                            NameEnglish = "Palau"
+                        },
+                        new
+                        {
+                            Code = "PS",
+                            NameDanish = "De palæstinensiske områder",
+                            NameEnglish = "Palestinian Territories"
+                        },
+                        new
+                        {
+                            Code = "PA",
+                            NameDanish = "Panama",
+                            NameEnglish = "Panama"
+                        },
+                        new
+                        {
+                            Code = "PG",
+                            NameDanish = "Papua Ny Guinea",
+                            NameEnglish = "Papua New Guinea"
+                        },
+                        new
+                        {
+                            Code = "PY",
+                            NameDanish = "Paraguay",
+                            NameEnglish = "Paraguay"
+                        },
+                        new
+                        {
+                            Code = "PE",
+                            NameDanish = "Peru",
+                            NameEnglish = "Peru"
+                        },
+                        new
+                        {
+                            Code = "PH",
+                            NameDanish = "Filippinerne",
+                            NameEnglish = "Philippines"
+                        },
+                        new
+                        {
+                            Code = "PN",
+                            NameDanish = "Pitcairn",
+                            NameEnglish = "Pitcairn Islands"
+                        },
+                        new
+                        {
+                            Code = "PL",
+                            NameDanish = "Polen",
+                            NameEnglish = "Poland"
+                        },
+                        new
+                        {
+                            Code = "PT",
+                            NameDanish = "Portugal",
+                            NameEnglish = "Portugal"
+                        },
+                        new
+                        {
+                            Code = "PR",
+                            NameDanish = "Puerto Rico",
+                            NameEnglish = "Puerto Rico"
+                        },
+                        new
+                        {
+                            Code = "QA",
+                            NameDanish = "Qatar",
+                            NameEnglish = "Qatar"
+                        },
+                        new
+                        {
+                            Code = "RO",
+                            NameDanish = "Rumænien",
+                            NameEnglish = "Romania"
+                        },
+                        new
+                        {
+                            Code = "RU",
+                            NameDanish = "Rusland",
+                            NameEnglish = "Russia"
+                        },
+                        new
+                        {
+                            Code = "RW",
+                            NameDanish = "Rwanda",
+                            NameEnglish = "Rwanda"
+                        },
+                        new
+                        {
+                            Code = "RE",
+                            NameDanish = "Réunion",
+                            NameEnglish = "Réunion"
+                        },
+                        new
+                        {
+                            Code = "WS",
+                            NameDanish = "Samoa",
+                            NameEnglish = "Samoa"
+                        },
+                        new
+                        {
+                            Code = "SM",
+                            NameDanish = "San Marino",
+                            NameEnglish = "San Marino"
+                        },
+                        new
+                        {
+                            Code = "SA",
+                            NameDanish = "Saudi-Arabien",
+                            NameEnglish = "Saudi Arabia"
+                        },
+                        new
+                        {
+                            Code = "SN",
+                            NameDanish = "Senegal",
+                            NameEnglish = "Senegal"
+                        },
+                        new
+                        {
+                            Code = "RS",
+                            NameDanish = "Serbien",
+                            NameEnglish = "Serbia"
+                        },
+                        new
+                        {
+                            Code = "SC",
+                            NameDanish = "Seychellerne",
+                            NameEnglish = "Seychelles"
+                        },
+                        new
+                        {
+                            Code = "SL",
+                            NameDanish = "Sierra Leone",
+                            NameEnglish = "Sierra Leone"
+                        },
+                        new
+                        {
+                            Code = "SG",
+                            NameDanish = "Singapore",
+                            NameEnglish = "Singapore"
+                        },
+                        new
+                        {
+                            Code = "SX",
+                            NameDanish = "Sint Maarten",
+                            NameEnglish = "Sint Maarten"
+                        },
+                        new
+                        {
+                            Code = "SK",
+                            NameDanish = "Slovakiet",
+                            NameEnglish = "Slovakia"
+                        },
+                        new
+                        {
+                            Code = "SI",
+                            NameDanish = "Slovenien",
+                            NameEnglish = "Slovenia"
+                        },
+                        new
+                        {
+                            Code = "SB",
+                            NameDanish = "Salomonøerne",
+                            NameEnglish = "Solomon Islands"
+                        },
+                        new
+                        {
+                            Code = "SO",
+                            NameDanish = "Somalia",
+                            NameEnglish = "Somalia"
+                        },
+                        new
+                        {
+                            Code = "ZA",
+                            NameDanish = "Sydafrika",
+                            NameEnglish = "South Africa"
+                        },
+                        new
+                        {
+                            Code = "KR",
+                            NameDanish = "Sydkorea",
+                            NameEnglish = "South Korea"
+                        },
+                        new
+                        {
+                            Code = "SS",
+                            NameDanish = "Sydsudan",
+                            NameEnglish = "South Sudan"
+                        },
+                        new
+                        {
+                            Code = "ES",
+                            NameDanish = "Spanien",
+                            NameEnglish = "Spain"
+                        },
+                        new
+                        {
+                            Code = "LK",
+                            NameDanish = "Sri Lanka",
+                            NameEnglish = "Sri Lanka"
+                        },
+                        new
+                        {
+                            Code = "BL",
+                            NameDanish = "Saint Barthélemy",
+                            NameEnglish = "St. Barthélemy"
+                        },
+                        new
+                        {
+                            Code = "SH",
+                            NameDanish = "St. Helena",
+                            NameEnglish = "St. Helena"
+                        },
+                        new
+                        {
+                            Code = "KN",
+                            NameDanish = "Saint Kitts og Nevis",
+                            NameEnglish = "St. Kitts & Nevis"
+                        },
+                        new
+                        {
+                            Code = "LC",
+                            NameDanish = "Saint Lucia",
+                            NameEnglish = "St. Lucia"
+                        },
+                        new
+                        {
+                            Code = "MF",
+                            NameDanish = "Saint Martin",
+                            NameEnglish = "St. Martin"
+                        },
+                        new
+                        {
+                            Code = "PM",
+                            NameDanish = "Saint Pierre og Miquelon",
+                            NameEnglish = "St. Pierre & Miquelon"
+                        },
+                        new
+                        {
+                            Code = "VC",
+                            NameDanish = "Saint Vincent og Grenadinerne",
+                            NameEnglish = "St. Vincent & Grenadines"
+                        },
+                        new
+                        {
+                            Code = "SD",
+                            NameDanish = "Sudan",
+                            NameEnglish = "Sudan"
+                        },
+                        new
+                        {
+                            Code = "SR",
+                            NameDanish = "Surinam",
+                            NameEnglish = "Suriname"
+                        },
+                        new
+                        {
+                            Code = "SJ",
+                            NameDanish = "Svalbard og Jan Mayen",
+                            NameEnglish = "Svalbard & Jan Mayen"
+                        },
+                        new
+                        {
+                            Code = "SE",
+                            NameDanish = "Sverige",
+                            NameEnglish = "Sweden"
+                        },
+                        new
+                        {
+                            Code = "CH",
+                            NameDanish = "Schweiz",
+                            NameEnglish = "Switzerland"
+                        },
+                        new
+                        {
+                            Code = "SY",
+                            NameDanish = "Syrien",
+                            NameEnglish = "Syria"
+                        },
+                        new
+                        {
+                            Code = "ST",
+                            NameDanish = "São Tomé og Príncipe",
+                            NameEnglish = "São Tomé & Príncipe"
+                        },
+                        new
+                        {
+                            Code = "TW",
+                            NameDanish = "Taiwan",
+                            NameEnglish = "Taiwan"
+                        },
+                        new
+                        {
+                            Code = "TJ",
+                            NameDanish = "Tadsjikistan",
+                            NameEnglish = "Tajikistan"
+                        },
+                        new
+                        {
+                            Code = "TZ",
+                            NameDanish = "Tanzania",
+                            NameEnglish = "Tanzania"
+                        },
+                        new
+                        {
+                            Code = "TH",
+                            NameDanish = "Thailand",
+                            NameEnglish = "Thailand"
+                        },
+                        new
+                        {
+                            Code = "TL",
+                            NameDanish = "Timor-Leste",
+                            NameEnglish = "Timor-Leste"
+                        },
+                        new
+                        {
+                            Code = "TG",
+                            NameDanish = "Togo",
+                            NameEnglish = "Togo"
+                        },
+                        new
+                        {
+                            Code = "TK",
+                            NameDanish = "Tokelau",
+                            NameEnglish = "Tokelau"
+                        },
+                        new
+                        {
+                            Code = "TO",
+                            NameDanish = "Tonga",
+                            NameEnglish = "Tonga"
+                        },
+                        new
+                        {
+                            Code = "TT",
+                            NameDanish = "Trinidad og Tobago",
+                            NameEnglish = "Trinidad & Tobago"
+                        },
+                        new
+                        {
+                            Code = "TN",
+                            NameDanish = "Tunesien",
+                            NameEnglish = "Tunisia"
+                        },
+                        new
+                        {
+                            Code = "TR",
+                            NameDanish = "Tyrkiet",
+                            NameEnglish = "Turkey"
+                        },
+                        new
+                        {
+                            Code = "TM",
+                            NameDanish = "Turkmenistan",
+                            NameEnglish = "Turkmenistan"
+                        },
+                        new
+                        {
+                            Code = "TC",
+                            NameDanish = "Turks- og Caicosøerne",
+                            NameEnglish = "Turks & Caicos Islands"
+                        },
+                        new
+                        {
+                            Code = "TV",
+                            NameDanish = "Tuvalu",
+                            NameEnglish = "Tuvalu"
+                        },
+                        new
+                        {
+                            Code = "UM",
+                            NameDanish = "Amerikanske oversøiske øer",
+                            NameEnglish = "U.S. Outlying Islands"
+                        },
+                        new
+                        {
+                            Code = "VI",
+                            NameDanish = "De Amerikanske Jomfruøer",
+                            NameEnglish = "U.S. Virgin Islands"
+                        },
+                        new
+                        {
+                            Code = "UG",
+                            NameDanish = "Uganda",
+                            NameEnglish = "Uganda"
+                        },
+                        new
+                        {
+                            Code = "UA",
+                            NameDanish = "Ukraine",
+                            NameEnglish = "Ukraine"
+                        },
+                        new
+                        {
+                            Code = "AE",
+                            NameDanish = "De Forenede Arabiske Emirater",
+                            NameEnglish = "United Arab Emirates"
+                        },
+                        new
+                        {
+                            Code = "GB",
+                            NameDanish = "Storbritannien",
+                            NameEnglish = "United Kingdom"
+                        },
+                        new
+                        {
+                            Code = "US",
+                            NameDanish = "USA",
+                            NameEnglish = "United States"
+                        },
+                        new
+                        {
+                            Code = "UY",
+                            NameDanish = "Uruguay",
+                            NameEnglish = "Uruguay"
+                        },
+                        new
+                        {
+                            Code = "UZ",
+                            NameDanish = "Usbekistan",
+                            NameEnglish = "Uzbekistan"
+                        },
+                        new
+                        {
+                            Code = "VU",
+                            NameDanish = "Vanuatu",
+                            NameEnglish = "Vanuatu"
+                        },
+                        new
+                        {
+                            Code = "VA",
+                            NameDanish = "Vatikanstaten",
+                            NameEnglish = "Vatican City"
+                        },
+                        new
+                        {
+                            Code = "VE",
+                            NameDanish = "Venezuela",
+                            NameEnglish = "Venezuela"
+                        },
+                        new
+                        {
+                            Code = "VN",
+                            NameDanish = "Vietnam",
+                            NameEnglish = "Vietnam"
+                        },
+                        new
+                        {
+                            Code = "WF",
+                            NameDanish = "Wallis og Futuna",
+                            NameEnglish = "Wallis & Futuna"
+                        },
+                        new
+                        {
+                            Code = "EH",
+                            NameDanish = "Vestsahara",
+                            NameEnglish = "Western Sahara"
+                        },
+                        new
+                        {
+                            Code = "YE",
+                            NameDanish = "Yemen",
+                            NameEnglish = "Yemen"
+                        },
+                        new
+                        {
+                            Code = "ZM",
+                            NameDanish = "Zambia",
+                            NameEnglish = "Zambia"
+                        },
+                        new
+                        {
+                            Code = "ZW",
+                            NameDanish = "Zimbabwe",
+                            NameEnglish = "Zimbabwe"
+                        },
+                        new
+                        {
+                            Code = "AX",
+                            NameDanish = "Åland",
+                            NameEnglish = "Åland Islands"
+                        });
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.EntranceType", b =>
                 {
                     b.Property<int>("Id")
@@ -388,6 +1891,308 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("Newsletters");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.OrganizerArea", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("NameDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameEnglish")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("organizer_areas");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            NameDanish = "Scenarieforfatter"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            NameDanish = "Brætspilsdesigner"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            NameDanish = "Arrangørkærlighed"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            NameDanish = "Arrangørmessen"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            NameDanish = "AV & Tech"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            NameDanish = "Bar"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            NameDanish = "Brætspilscafé"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            NameDanish = "Brætspilsdesignansvarlig"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            NameDanish = "Opsætning/nedpilning"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            NameDanish = "Butikker"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            NameDanish = "DirtBuster"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            NameDanish = "Brætspilsdommer"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            NameDanish = "Scenariedommer"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            NameDanish = "Fastafamily"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            NameDanish = "FastaQuests"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            NameDanish = "Fastaval Junior"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            NameDanish = "FTTF (Fastaval-translator-task-force)"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            NameDanish = "Game Rush"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            NameDanish = "TV"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            NameDanish = "Heltestyrken"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            NameDanish = "Holdlægning"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            NameDanish = "Hovedarrangørgruppe"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            NameDanish = "Indkøb & Transport"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            NameDanish = "Infoen"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            NameDanish = "International"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            NameDanish = "IT"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            NameDanish = "Kaffekro"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            NameDanish = "Kiosk"
+                        },
+                        new
+                        {
+                            Id = 29,
+                            NameDanish = "Kommunikation"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            NameDanish = "Køkken"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            NameDanish = "Levnedsmiddel"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            NameDanish = "Madudlevering"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            NameDanish = "Miljø/affaldshåndtering"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            NameDanish = "Morgenmad"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            NameDanish = "Økonomi"
+                        },
+                        new
+                        {
+                            Id = 36,
+                            NameDanish = "Opvask"
+                        },
+                        new
+                        {
+                            Id = 37,
+                            NameDanish = "Otto-produktion"
+                        },
+                        new
+                        {
+                            Id = 38,
+                            NameDanish = "Ottofest"
+                        },
+                        new
+                        {
+                            Id = 39,
+                            NameDanish = "Ottos stue"
+                        },
+                        new
+                        {
+                            Id = 40,
+                            NameDanish = "Receptioner"
+                        },
+                        new
+                        {
+                            Id = 41,
+                            NameDanish = "Regelformidleransvarlig"
+                        },
+                        new
+                        {
+                            Id = 42,
+                            NameDanish = "Scenarieansvarlig"
+                        },
+                        new
+                        {
+                            Id = 43,
+                            NameDanish = "Sildesalat"
+                        },
+                        new
+                        {
+                            Id = 44,
+                            NameDanish = "SoMe"
+                        },
+                        new
+                        {
+                            Id = 45,
+                            NameDanish = "Spillederansvarlig"
+                        },
+                        new
+                        {
+                            Id = 46,
+                            NameDanish = "Spilstart (scenarier + brætspil)"
+                        },
+                        new
+                        {
+                            Id = 47,
+                            NameDanish = "Streaming (under Fastaval)"
+                        },
+                        new
+                        {
+                            Id = 48,
+                            NameDanish = "Streaming (under Ottoshow)"
+                        },
+                        new
+                        {
+                            Id = 49,
+                            NameDanish = "Super Søndag"
+                        },
+                        new
+                        {
+                            Id = 50,
+                            NameDanish = "Synopseakademiet"
+                        },
+                        new
+                        {
+                            Id = 51,
+                            NameDanish = "Tema og Wear"
+                        },
+                        new
+                        {
+                            Id = 52,
+                            NameDanish = "Tryghed & Tryghedsvært"
+                        },
+                        new
+                        {
+                            Id = 53,
+                            NameDanish = "Ungdom og Efterskolerne"
+                        },
+                        new
+                        {
+                            Id = 54,
+                            NameDanish = "Æresgæst"
+                        },
+                        new
+                        {
+                            Id = 55,
+                            NameDanish = "Æresotto"
+                        },
+                        new
+                        {
+                            Id = 56,
+                            NameDanish = "Grafik"
+                        });
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
                 {
                     b.Property<int>("Id")
@@ -396,65 +2201,254 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Address")
+                    b.PrimitiveCollection<string[]>("ActivityLanguages")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("AddressLine2")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("AdminNote")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Barcode")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("AmountPaid")
+                        .HasColumnType("integer");
 
-                    b.Property<DateTime>("BirthDate")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("CheckedInAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("City")
                         .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("CommentNote")
                         .HasColumnType("text");
 
-                    b.Property<string>("Country")
+                    b.Property<string>("CountryCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DesiredActivities")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DesiredHeroTasks")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<int>("ExtraVouchers")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("FinancialSupport")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int?>("GameActivityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HeroForceNote")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsCheckedIn")
+                    b.Property<bool>("IsActivityLocked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsAnnulled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsAuthorOrDesigner")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsNoShow")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JuniorComment")
+                        .HasColumnType("text");
+
+                    b.Property<string>("JuniorContact")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("JuniorGameMaster")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
-                    b.Property<string>("MedicalInfo")
+                    b.Property<int?>("MaxGameMasterRuns")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxRulesGuideGames")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MessageToParticipant")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Nickname")
                         .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int?>("OrganizerAreaId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentNote")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
-                    b.Property<string>("ZipCode")
+                    b.Property<bool>("PhotoConsent")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PreferredLanguage")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Pronouns")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
+                    b.Property<bool>("SetupHelpMonday")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SetupHelpTuesday")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("SignedUpAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<string[]>("SleepingAreas")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("SleepingNote")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("SmsSignup")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SuperGameMaster")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SuperHero")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SuperRulesGuide")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("YouthClub")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CountryCode");
+
+                    b.HasIndex("GameActivityId");
+
+                    b.HasIndex("OrganizerAreaId");
+
                     b.ToTable("participants");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("IsOrganizer")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("participant_categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsOrganizer = false,
+                            Name = "Deltager"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            IsOrganizer = true,
+                            Name = "Arrangør"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            IsOrganizer = false,
+                            Name = "Junior"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            IsOrganizer = false,
+                            Name = "Forældre"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            IsOrganizer = false,
+                            Name = "Freeloader"
+                        });
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>
@@ -1143,6 +3137,39 @@ namespace Fastasys.ApiService.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Shift");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.ParticipantCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Activity", "GameActivity")
+                        .WithMany()
+                        .HasForeignKey("GameActivityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.OrganizerArea", "OrganizerArea")
+                        .WithMany()
+                        .HasForeignKey("OrganizerAreaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("GameActivity");
+
+                    b.Navigation("OrganizerArea");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>

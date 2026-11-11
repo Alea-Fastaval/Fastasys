@@ -114,15 +114,12 @@ public static class DbSeeder
             {
                 FirstName = "Mads",
                 LastName = "Hansen",
-                Email = "mads@fastaval.dk",
-                PhoneNumber = "+4512345678",
-                BirthDate = new DateTime(1995, 5, 12, 0, 0, 0, DateTimeKind.Utc),
-                Address = "Vestergade 12",
+                Email = "mads@example.invalid",
+                PhoneNumber = "12345678",
+                BirthDate = new DateOnly(1995, 5, 12),
+                AddressLine1 = "Vestergade 12",
                 ZipCode = "8000",
                 City = "Aarhus",
-                Country = "Denmark",
-                Barcode = "FAST-2026-0001",
-                IsCheckedIn = true,
                 CheckedInAt = DateTime.UtcNow.AddHours(-2)
             };
 
@@ -130,15 +127,13 @@ public static class DbSeeder
             {
                 FirstName = "Sofie",
                 LastName = "Nielsen",
-                Email = "sofie@fastaval.dk",
-                PhoneNumber = "+4587654321",
-                BirthDate = new DateTime(1998, 9, 24, 0, 0, 0, DateTimeKind.Utc),
-                Address = "Nørrebrogade 45",
+                Email = "sofie@example.invalid",
+                PhoneNumber = "87654321",
+                BirthDate = new DateOnly(1998, 9, 24),
+                AddressLine1 = "Nørrebrogade 45",
                 ZipCode = "2200",
                 City = "København N",
-                Country = "Denmark",
-                Barcode = "FAST-2026-0002",
-                IsCheckedIn = false
+                CategoryId = ParticipantCategory.OrganizerId
             };
 
             db.Participants.AddRange(p1, p2);

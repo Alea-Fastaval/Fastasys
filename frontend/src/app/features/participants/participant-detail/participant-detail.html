@@ -1,0 +1,172 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/participants"><mat-icon>arrow_back</mat-icon> {{ 'nav.participants' | translate }}</a>
+    @if (participant(); as p) {
+    <span class="spacer"></span>
+    @if (p.previousId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.previousId]"
+      >{{ 'participants.showPrevious' | translate }}</a
+    >
+    } @if (p.nextId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.nextId]">{{ 'participants.showNext' | translate }}</a>
+    } }
+  </header>
+
+  @if (flash(); as f) {
+  <p class="flash" [class.error]="f.type === 'error'">{{ 'participants.messages.' + f.key | translate }}</p>
+  } @if (errorKey(); as key) {
+  <p class="flash error">{{ 'participants.messages.' + key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  }
+
+  <ng-template #cell let-def let-p="participant">
+    <div class="field" [class.saved]="saved() === def.field" [class.failed]="failed() === def.field">
+      <dt>{{ def.label | translate }}:</dt>
+      @if (editor()?.field === def.field && editor(); as e) {
+      <dd class="editing">
+        <form class="inline-editor" (ngSubmit)="submitEdit(def)" (keydown.escape)="cancelEdit()">
+          @switch (def.kind) { @case ('yesNo') {
+          <select name="value" [(ngModel)]="e.value">
+            <option [ngValue]="true">{{ 'participants.yes' | translate }}</option>
+            <option [ngValue]="false">{{ 'participants.no' | translate }}</option>
+          </select>
+          } @case ('select') {
+          <select name="value" [(ngModel)]="e.value">
+            @for (option of def.options(); track option.value) {
+            <option [ngValue]="option.value">{{ option.label ?? (option.labelKey | translate) }}</option>
+            }
+          </select>
+          } @case ('date') {
+          <input type="date" name="value" [(ngModel)]="e.value" />
+          } @case ('number') {
+          <input type="number" name="value" [(ngModel)]="e.value" />
+          } @case ('optionalNumber') {
+          <input type="number" name="value" [(ngModel)]="e.value" />
+          } @case ('pronouns') {
+          <select name="first" [ngModel]="e.pronouns.first" (ngModelChange)="changeFirstPronoun($event)">
+            @for (code of pronounFirstChoices; track code) {
+            <option [value]="code" [disabled]="code === e.pronouns.second">
+              {{ pronounWord(code, p.preferredLanguage) }}
+            </option>
+            }
+          </select>
+          @if (e.pronouns.first !== 'none' && e.pronouns.first !== 'ask') {
+          <span>/</span>
+          <select name="second" [ngModel]="e.pronouns.second" (ngModelChange)="changeSecondPronoun($event)">
+            <option value=""></option>
+            @for (code of pronounCodes; track code) {
+            <option [value]="code" [disabled]="code === e.pronouns.first">
+              {{ pronounWord(code, p.preferredLanguage) }}
+            </option>
+            }
+          </select>
+          } } @case ('textarea') {
+          <textarea name="value" rows="5" [(ngModel)]="e.value"></textarea>
+          } @default {
+          <input type="text" name="value" [(ngModel)]="e.value" />
+          } }
+          <button mat-stroked-button type="submit" [disabled]="busy()">{{ 'participants.ok' | translate }}</button>
+          <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
+        </form>
+      </dd>
+      } @else {
+      <dd
+        [class.editable]="p.canEdit"
+        [class.multiline]="def.kind === 'textarea'"
+        [attr.tabindex]="p.canEdit ? 0 : null"
+        [attr.title]="p.canEdit ? ('participants.clickToEdit' | translate) : null"
+        (click)="startEdit(def, p)"
+        (keydown.enter)="startEdit(def, p)"
+      >
+        @switch (def.kind) { @case ('yesNo') { @if (def.field === 'isAnnulled') {
+        <!-- Infosys writes Annulleret with a capital and marks it red when it is ja -->
+        <span [class.annulled]="def.value(p)">{{ (def.value(p) ? 'common.yes' : 'common.no') | translate }}</span>
+        } @else { {{ (def.value(p) ? 'participants.yes' : 'participants.no') | translate }} } } @case ('date') { {{
+        formatBirthDate(p.birthDate) }} } @case ('select') { {{ selectedLabel(def, p) }} } @case ('pronouns') { {{
+        def.text(p) }} } @default { {{ def.value(p) }} } }
+      </dd>
+      }
+    </div>
+  </ng-template>
+
+  @if (participant(); as p) {
+  <app-card [title]="'participants.personalInfo' | translate">
+    @if (p.canEdit) {
+    <div class="card-actions">
+      <a mat-stroked-button [routerLink]="['/participants', p.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ (p.details?.isAnnulled ? 'participants.editDelete' : 'participants.edit') |
+        translate }}
+      </a>
+    </div>
+    }
+
+    <dl class="field-list">
+      <div class="field">
+        <dt>{{ 'common.id' | translate }}:</dt>
+        <dd>{{ p.id }}</dd>
+      </div>
+      @for (def of personalFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+
+    @if (p.details; as d) {
+    <hr />
+    <dl class="field-list">
+      @for (def of organizerFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (shown of languageFields; track shown.label) {
+      <div class="field wide">
+        <dt>{{ shown.label | translate }}:</dt>
+        <dd>{{ shown.text(p, d) }}</dd>
+      </div>
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (def of preferenceFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (def of statusFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+      <div class="field">
+        <dt>{{ 'participants.fields.signedUpAt' | translate }}:</dt>
+        <dd>{{ formatConventionDate(d.signedUpAt) }}</dd>
+      </div>
+      <div class="field">
+        <dt>{{ 'participants.fields.checkedInAt' | translate }}:</dt>
+        <dd>
+          {{ d.checkedInAt ? formatConventionDateTime(d.checkedInAt) : ('participants.notCheckedIn' | translate) }}
+        </dd>
+      </div>
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (def of otherFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    }
+  </app-card>
+
+  @if (p.details) {
+  <div class="notes">
+    @for (note of visibleNotes(p); track note.field) {
+    <app-card [title]="note.label | translate">
+      <dl class="note-field">
+        <ng-container *ngTemplateOutlet="cell; context: { $implicit: note, participant: p }" />
+      </dl>
+    </app-card>
+    }
+  </div>
+  } }
+</div>

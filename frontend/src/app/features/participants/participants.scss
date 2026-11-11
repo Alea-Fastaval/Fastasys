@@ -3,22 +3,47 @@
   max-width: 1200px;
   margin: 0 auto;
 }
+
 .page-header {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
-.toolbar {
-  margin-bottom: 1.5rem;
+
+h1 {
+  font-size: 1.75rem;
 }
-.search-field {
-  width: 100%;
-  max-width: 500px;
-}
-.full-table {
-  width: 100%;
+
+.flash {
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  overflow: hidden;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
 }
-.checked-time {
-  font-size: 0.85rem;
-  color: #4b5563;
+
+.participants-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  a {
+    color: inherit;
+  }
 }

@@ -1,4 +1,5 @@
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Data;
@@ -17,6 +18,9 @@ public class InfosysDbContext : DbContext
     public DbSet<RolePrivilege> RolePrivileges => Set<RolePrivilege>();
 
     public DbSet<Participant> Participants => Set<Participant>();
+    public DbSet<ParticipantCategory> ParticipantCategories => Set<ParticipantCategory>();
+    public DbSet<OrganizerArea> OrganizerAreas => Set<OrganizerArea>();
+    public DbSet<Country> Countries => Set<Country>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
@@ -66,6 +70,35 @@ public class InfosysDbContext : DbContext
 
         modelBuilder.Entity<ParticipantSchedule>()
             .HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
+
+        // Infosys deltagere: brugerkategori_id, country and game_id have foreign keys without ON DELETE CASCADE;
+        // work_area has ON UPDATE CASCADE only
+        modelBuilder.Entity<Participant>(participant =>
+        {
+            participant.Property(p => p.PreferredLanguage).HasConversion<string>();
+            participant.PrimitiveCollection(p => p.ActivityLanguages).ElementType().HasConversion<string>();
+            participant.PrimitiveCollection(p => p.SleepingAreas).ElementType().HasConversion<string>();
+            participant.HasOne(p => p.Category)
+                .WithMany()
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.Country)
+                .WithMany()
+                .HasForeignKey(p => p.CountryCode)
+                .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.OrganizerArea)
+                .WithMany()
+                .HasForeignKey(p => p.OrganizerAreaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.GameActivity)
+                .WithMany()
+                .HasForeignKey(p => p.GameActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ParticipantCategory>().HasData(ParticipantLookupSeed.Categories);
+        modelBuilder.Entity<OrganizerArea>().HasData(ParticipantLookupSeed.OrganizerAreas);
+        modelBuilder.Entity<Country>().HasData(CountrySeed.All);
 
         modelBuilder.Entity<Activity>(activity =>
         {

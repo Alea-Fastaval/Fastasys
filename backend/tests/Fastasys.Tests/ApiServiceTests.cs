@@ -81,53 +81,6 @@ public class ApiServiceTests
     }
 
     [Fact]
-    public async Task ParticipantsController_GetAll_ReturnsParticipants()
-    {
-        using var db = CreateDbContext();
-        db.Participants.Add(new Participant
-        {
-            FirstName = "Jane",
-            LastName = "Doe",
-            Email = "jane@example.com",
-            Barcode = "EAN12345678"
-        });
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        var controller = new ParticipantsController(db);
-
-        var actionResult = await controller.GetAll(search: null);
-
-        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var list = Assert.IsAssignableFrom<IEnumerable<ParticipantDto>>(okResult.Value);
-        Assert.Single(list);
-    }
-
-    [Fact]
-    public async Task ParticipantsController_CheckIn_UpdatesStatus()
-    {
-        using var db = CreateDbContext();
-        var participant = new Participant
-        {
-            FirstName = "John",
-            LastName = "Smith",
-            Email = "john@example.com",
-            IsCheckedIn = false
-        };
-        db.Participants.Add(participant);
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        var controller = new ParticipantsController(db);
-
-        var actionResult = await controller.CheckIn(participant.Id);
-
-        Assert.IsType<OkObjectResult>(actionResult);
-        var updated = await db.Participants.FindAsync([participant.Id], TestContext.Current.CancellationToken);
-        Assert.NotNull(updated);
-        Assert.True(updated.IsCheckedIn);
-        Assert.NotNull(updated.CheckedInAt);
-    }
-
-    [Fact]
     public async Task PaymentsController_CreatePayment_ReturnsTransactionId()
     {
         using var db = CreateDbContext();
