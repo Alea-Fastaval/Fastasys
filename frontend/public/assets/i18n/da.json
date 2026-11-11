@@ -38,6 +38,7 @@
     "yes": "Ja",
     "no": "Nej",
     "description": "Beskrivelse",
+    "unknownQueryValues": "Linket indeholdt en ukendt værdi, som er blevet fjernet: {{values}}",
     "weekdays": {
       "Monday": "Mandag",
       "Tuesday": "Tirsdag",

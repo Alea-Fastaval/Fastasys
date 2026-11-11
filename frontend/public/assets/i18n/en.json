@@ -38,6 +38,7 @@
     "yes": "Yes",
     "no": "No",
     "description": "Description",
+    "unknownQueryValues": "The link contained an unknown value, which has been removed: {{values}}",
     "weekdays": {
       "Monday": "Monday",
       "Tuesday": "Tuesday",

@@ -1,21 +1,16 @@
 import { Component, OnInit, computed, signal, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { ACTIVITY_TYPES, ActivityType, RunSummary } from '@shared/types';
 import { TimeSpanPipe, TranslatePipe } from '@shared/pipes';
+import { QueryParamsService } from '@shared/services';
 import { RunFlashService } from './run-flash.service';
 
-// The "Alle" choice of the type filter
+// The "Alle" choice of the type filter. It is what the list shows when the URL has no ?type=.
 export const ALL_TYPES = 'All';
 export type RunTypeFilter = ActivityType | typeof ALL_TYPES;
-
-// Reads ?type= from the URL. A missing or unknown type shows every run.
-export function parseTypeFilter(value: string | null): RunTypeFilter {
-  return ACTIVITY_TYPES.find(type => type === value) ?? ALL_TYPES;
-}
 
 export function filterByType(runs: RunSummary[], filter: RunTypeFilter): RunSummary[] {
   return filter === ALL_TYPES ? runs : runs.filter(run => run.activityType === filter);
@@ -32,17 +27,17 @@ export const RUN_SORT_COLUMNS = [
   'needsGameMasters',
 ] as const;
 export type RunSortColumn = (typeof RUN_SORT_COLUMNS)[number];
-export type RunSortDirection = 'asc' | 'desc';
+export const RUN_SORT_DIRECTIONS = ['asc', 'desc'] as const;
+export type RunSortDirection = (typeof RUN_SORT_DIRECTIONS)[number];
 
 export interface RunSort {
   column: RunSortColumn;
   direction: RunSortDirection;
 }
 
-// Reads ?sort= and ?dir= from the URL. Without a known column the list stays in id order.
-export function parseSort(column: string | null, direction: string | null): RunSort | null {
-  const known = RUN_SORT_COLUMNS.find(c => c === column);
-  return known ? { column: known, direction: direction === 'desc' ? 'desc' : 'asc' } : null;
+// The sorting from ?sort= and ?dir=. Without a column the list stays in id order; without a direction it is A-Z.
+export function toRunSort(column: RunSortColumn | null, direction: RunSortDirection | null): RunSort | null {
+  return column ? { column, direction: direction ?? 'asc' } : null;
 }
 
 // Danish alphabetical order (æ, ø, å after z), with numbers in numeric order ("Lokale 2" before "Lokale 10")
@@ -73,14 +68,16 @@ export function sortRuns(runs: RunSummary[], sort: RunSort | null): RunSummary[]
 @Component({
   selector: 'app-runs',
   imports: [RouterLink, MatButtonToggleModule, MatSortModule, TimeSpanPipe, TranslatePipe],
+  providers: [QueryParamsService],
   templateUrl: './runs.html',
   styleUrl: './runs.scss',
 })
 export class RunsComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
+  private readonly query = inject(QueryParamsService);
+  private readonly type = this.query.oneOf('type', ACTIVITY_TYPES);
+  private readonly sortColumn = this.query.oneOf('sort', RUN_SORT_COLUMNS);
+  private readonly sortDirection = this.query.oneOf('dir', RUN_SORT_DIRECTIONS);
 
   public readonly activityTypes = ACTIVITY_TYPES;
   public readonly allTypes = ALL_TYPES;
@@ -95,10 +92,17 @@ export class RunsComponent implements OnInit {
   ];
   public readonly flash = inject(RunFlashService).take();
   public readonly runs = signal<RunSummary[] | null>(null);
-  public readonly typeFilter = computed(() => parseTypeFilter(this.queryParams().get('type')));
-  public readonly sort = computed(() => parseSort(this.queryParams().get('sort'), this.queryParams().get('dir')));
+  public readonly typeFilter = computed(() => this.type() ?? ALL_TYPES);
+  public readonly sort = computed(() => toRunSort(this.sortColumn(), this.sortDirection()));
   public readonly visibleRuns = computed(() =>
     sortRuns(filterByType(this.runs() ?? [], this.typeFilter()), this.sort()),
+  );
+  // The unknown values that were removed from the URL, e.g. "type=rolle", or '' when there were none
+  public readonly unknownQueryValues = computed(() =>
+    this.query
+      .unknownValues()
+      .map(error => `${error.param}=${error.value}`)
+      .join(', '),
   );
 
   public ngOnInit(): void {
@@ -110,15 +114,11 @@ export class RunsComponent implements OnInit {
 
   // The filter and the sorting live in the URL, so going back from a run returns to the same list
   public filterBy(filter: RunTypeFilter): void {
-    this.updateQuery({ type: filter === ALL_TYPES ? null : filter });
+    this.query.update({ type: filter === ALL_TYPES ? null : filter });
   }
 
   // Clicking a column sorts it A-Z, clicking it again Z-A (matSortDisableClear: never back to unsorted)
   public sortBy(sort: Sort): void {
-    this.updateQuery({ sort: sort.active, dir: sort.direction || null });
-  }
-
-  private updateQuery(queryParams: Record<string, string | null>): void {
-    this.router.navigate([], { relativeTo: this.route, queryParams, queryParamsHandling: 'merge', replaceUrl: true });
+    this.query.update({ sort: sort.active, dir: sort.direction || null });
   }
 }

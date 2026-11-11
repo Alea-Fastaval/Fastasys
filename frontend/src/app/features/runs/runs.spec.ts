@@ -3,10 +3,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { describe, beforeEach, afterEach, it, expect } from 'vitest';
+import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { UnknownQueryParamError } from '@shared/services';
 import { ActivityType, RunSummary } from '@shared/types';
 import { RunFlashService } from './run-flash.service';
-import { RunSortColumn, RunsComponent, filterByType, parseSort, parseTypeFilter, sortRuns } from './runs';
+import { RunSortColumn, RunsComponent, filterByType, sortRuns, toRunSort } from './runs';
 
 const summary = (id: number, activityType: ActivityType, activityTitle: string, number = 1): RunSummary => ({
   id,
@@ -28,20 +29,6 @@ const runs: RunSummary[] = [
   summary(4, 'BoardGame', 'Testbrætspil'),
   summary(6, 'BoardGame', 'Testbrætspil', 2),
 ];
-
-describe('parseTypeFilter', () => {
-  it('accepts the activity types', () => {
-    expect(parseTypeFilter('BoardGame')).toBe('BoardGame');
-    expect(parseTypeFilter('Scenario')).toBe('Scenario');
-  });
-
-  it('shows every run when the type is missing or unknown', () => {
-    expect(parseTypeFilter(null)).toBe('All');
-    expect(parseTypeFilter('')).toBe('All');
-    expect(parseTypeFilter('rolle')).toBe('All');
-    expect(parseTypeFilter('boardgame')).toBe('All');
-  });
-});
 
 describe('filterByType', () => {
   it('keeps every run for "All"', () => {
@@ -90,21 +77,19 @@ const sortable: RunSummary[] = [
   },
 ];
 
-describe('parseSort', () => {
-  it('reads the column and the direction', () => {
-    expect(parseSort('activity', 'asc')).toEqual({ column: 'activity', direction: 'asc' });
-    expect(parseSort('room', 'desc')).toEqual({ column: 'room', direction: 'desc' });
+describe('toRunSort', () => {
+  it('combines the column and the direction', () => {
+    expect(toRunSort('activity', 'asc')).toEqual({ column: 'activity', direction: 'asc' });
+    expect(toRunSort('room', 'desc')).toEqual({ column: 'room', direction: 'desc' });
   });
 
-  it('sorts A-Z when the direction is missing or unknown', () => {
-    expect(parseSort('time', null)).toEqual({ column: 'time', direction: 'asc' });
-    expect(parseSort('time', 'up')).toEqual({ column: 'time', direction: 'asc' });
+  it('sorts A-Z when there is no direction', () => {
+    expect(toRunSort('time', null)).toEqual({ column: 'time', direction: 'asc' });
   });
 
-  it('does not sort when the column is missing or unknown', () => {
-    expect(parseSort(null, 'desc')).toBeNull();
-    expect(parseSort('karma', 'asc')).toBeNull();
-    expect(parseSort('Activity', 'asc')).toBeNull();
+  it('does not sort without a column', () => {
+    expect(toRunSort(null, 'desc')).toBeNull();
+    expect(toRunSort(null, null)).toBeNull();
   });
 });
 
@@ -166,6 +151,12 @@ describe('RunsComponent', () => {
     harness.detectChanges();
     httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
     return { harness, component, element: harness.routeNativeElement as HTMLElement };
+  };
+
+  // Lets the page remove unknown values from the URL and show the result
+  const settle = async (harness: RouterTestingHarness) => {
+    await harness.fixture.whenStable();
+    harness.detectChanges();
   };
 
   const rowIds = (element: HTMLElement) =>
@@ -265,11 +256,42 @@ describe('RunsComponent', () => {
     expect(component.visibleRuns().length).toBe(0);
   });
 
-  it('shows every run when the type in the URL is unknown', async () => {
-    const { element } = await open('/runs?type=rolle', runs);
+  // ---- Unknown values in the URL ----
 
+  it('reports an unknown type, removes it from the URL and shows every run', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { harness, component, element } = await open('/runs?type=rolle', runs);
+    await settle(harness);
+
+    expect(TestBed.inject(Router).url).toBe('/runs');
+    expect(consoleError).toHaveBeenCalledWith(expect.any(UnknownQueryParamError));
+    expect(component.unknownQueryValues()).toBe('type=rolle');
+    expect(element.querySelector('.unknown-query')?.textContent).toContain('common.unknownQueryValues');
     expect(rowIds(element)).toEqual(['3', '4', '6']);
     expect(toggle(element, 'runs.allTypes')?.getAttribute('aria-checked')).toBe('true');
+    consoleError.mockRestore();
+  });
+
+  it('shows no message when the URL has only known values', async () => {
+    const { harness, component, element } = await open('/runs?type=BoardGame&sort=room&dir=desc', runs);
+    await settle(harness);
+
+    expect(TestBed.inject(Router).url).toBe('/runs?type=BoardGame&sort=room&dir=desc');
+    expect(component.unknownQueryValues()).toBe('');
+    expect(element.querySelector('.unknown-query')).toBeNull();
+  });
+
+  it('removes the message once a filter is chosen', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { harness, element } = await open('/runs?type=rolle', runs);
+    await settle(harness);
+    expect(element.querySelector('.unknown-query')).not.toBeNull();
+
+    await choose(harness, element, 'activities.types.Scenario');
+
+    expect(TestBed.inject(Router).url).toBe('/runs?type=Scenario');
+    expect(element.querySelector('.unknown-query')).toBeNull();
+    consoleError.mockRestore();
   });
 
   // ---- Sorting by clicking a column heading ----
@@ -341,11 +363,28 @@ describe('RunsComponent', () => {
     expect(sortedBy(element)).toEqual([['runs.fields.time', 'descending']]);
   });
 
-  it('keeps the id order when the sort column in the URL is unknown', async () => {
-    const { element } = await open('/runs?sort=karma&dir=desc', sortable);
+  it('reports an unknown sort column, removes it from the URL and keeps the id order', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { harness, component, element } = await open('/runs?sort=karma&dir=desc', sortable);
+    await settle(harness);
 
+    expect(TestBed.inject(Router).url).toBe('/runs?dir=desc');
+    expect(component.unknownQueryValues()).toBe('sort=karma');
     expect(rowIds(element)).toEqual(['1', '2', '3', '4']);
     expect(sortedBy(element)).toEqual([]);
+    consoleError.mockRestore();
+  });
+
+  it('reports an unknown direction, removes it and sorts A-Z', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { harness, component, element } = await open('/runs?sort=time&dir=up', sortable);
+    await settle(harness);
+
+    expect(TestBed.inject(Router).url).toBe('/runs?sort=time');
+    expect(component.unknownQueryValues()).toBe('dir=up');
+    expect(rowIds(element)).toEqual(['4', '2', '1', '3']);
+    expect(sortedBy(element)).toEqual([['runs.fields.time', 'ascending']]);
+    consoleError.mockRestore();
   });
 
   it('sorts within the type filter, and keeps the sorting when the filter changes', async () => {

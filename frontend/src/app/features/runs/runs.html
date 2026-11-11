@@ -1,6 +1,8 @@
 <div class="page-container">
   @if (flash) {
   <p class="flash" [class.error]="flash.type === 'error'">{{ 'runs.messages.' + flash.key | translate }}</p>
+  } @if (unknownQueryValues(); as values) {
+  <p class="flash error unknown-query">{{ 'common.unknownQueryValues' | translate: { values } }}</p>
   } @if (runs(); as list) { @if (list.length === 0) {
   <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
   } @else {
