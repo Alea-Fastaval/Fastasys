@@ -117,4 +117,31 @@ public class RunRulesTests
 
         Assert.False(RunRules.IsRoomOccupied(1, Start, End, true, bookings));
     }
+
+    // Fastaval 2027 runs over the switch to summer time: on Sunday 28 March the clocks go from 02:00 to 03:00.
+    // A run from Saturday 23:00 (UTC+1) to Sunday 04:00 (UTC+2) is four hours long, and the times are compared
+    // as instants.
+    private static readonly DateTime NightStart = new(2027, 3, 27, 22, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime NightEnd = new(2027, 3, 28, 2, 0, 0, DateTimeKind.Utc);
+
+    [Theory]
+    // Starts at 03:30 summer time, half an hour before the night run ends
+    [InlineData("2027-03-28T03:30:00+02:00", "2027-03-28T06:00:00+02:00", true)]
+    // Starts at 04:00 summer time, when the night run ends: back to back
+    [InlineData("2027-03-28T04:00:00+02:00", "2027-03-28T06:00:00+02:00", false)]
+    // Ends at 01:30 winter time, inside the night run
+    [InlineData("2027-03-27T20:00:00+01:00", "2027-03-28T01:30:00+01:00", true)]
+    // Ends at 23:00 winter time, when the night run starts: back to back
+    [InlineData("2027-03-27T20:00:00+01:00", "2027-03-27T23:00:00+01:00", false)]
+    // 01:59 winter time to 03:01 summer time is only two minutes, inside the night run
+    [InlineData("2027-03-28T01:59:00+01:00", "2027-03-28T03:01:00+02:00", true)]
+    public void IsRoomOccupied_AcrossTheSwitchToSummerTime(string start, string end, bool expected)
+    {
+        var bookings = new[] { new RoomBooking(1, NightStart, NightEnd, true) };
+
+        Assert.Equal(expected, RunRules.IsRoomOccupied(1, Utc(start), Utc(end), true, bookings));
+    }
+
+    private static DateTime Utc(string value) =>
+        DateTimeOffset.Parse(value, System.Globalization.CultureInfo.InvariantCulture).UtcDateTime;
 }

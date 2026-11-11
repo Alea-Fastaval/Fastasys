@@ -36,6 +36,13 @@ describe('toScheduleForm', () => {
   });
 });
 
+describe('toScheduleForm across the switch to summer time (28 March 2027)', () => {
+  it('fills in each end in its own offset', () => {
+    const night = { ...schedule, startTime: '2027-03-27T22:00:00Z', endTime: '2027-03-28T02:00:00Z' };
+    expect(toScheduleForm(night)).toMatchObject({ start: '2027-03-27T23:00', end: '2027-03-28T04:00' });
+  });
+});
+
 describe('withDefaultRoom', () => {
   const form = { start: '2027-03-24T10:00', end: '2027-03-24T14:00' };
 
@@ -131,6 +138,34 @@ describe('ScheduleFormComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/activities', '5']);
     expect(flash.take()).toEqual({ type: 'success', key: 'scheduleUpdated' });
+  });
+
+  it('keeps the instants of a schedule across the switch to summer time when it is saved unchanged', async () => {
+    // Saturday 27 March 2027 23:00 winter time to Sunday 04:00 summer time
+    const { component } = await setup();
+    load({ ...schedule, startTime: '2027-03-27T22:00:00Z', endTime: '2027-03-28T02:00:00Z' });
+
+    component.submit();
+
+    const req = httpMock.expectOne(r => r.url === '/api/activities/5/schedules/9' && r.method === 'PUT');
+    expect(req.request.body).toMatchObject({
+      startTime: '2027-03-27T22:00:00.000Z',
+      endTime: '2027-03-28T02:00:00.000Z',
+    });
+    req.flush(schedule);
+  });
+
+  it('sends a time from the skipped hour on 28 March 2027 as the hour after, like Infosys', async () => {
+    const { component } = await setup();
+    load();
+
+    component.form.set({ start: '2027-03-27T23:00', end: '2027-03-28T02:30', roomId: 4 });
+    component.submit();
+
+    const req = httpMock.expectOne(r => r.url === '/api/activities/5/schedules/9' && r.method === 'PUT');
+    // 02:30 doesn't exist that night; it is saved as 03:30 summer time (01:30 UTC)
+    expect(req.request.body).toMatchObject({ endTime: '2027-03-28T01:30:00.000Z' });
+    req.flush(schedule);
   });
 
   it('returns to the activity with the Infosys error when the update is refused', async () => {

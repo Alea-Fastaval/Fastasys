@@ -17,6 +17,11 @@ describe('toConventionTime', () => {
     expect(toConventionTime('2027-04-01T22:30:00Z')).toMatchObject({ day: 2, weekday: 'Friday', hour: 0, minute: 30 });
   });
 
+  it('jumps from 01:59 to 03:00 when the clocks go forward during Fastaval (28 March 2027)', () => {
+    expect(toConventionTime('2027-03-28T00:59:00Z')).toMatchObject({ weekday: 'Sunday', hour: 1, minute: 59 });
+    expect(toConventionTime('2027-03-28T01:00:00Z')).toMatchObject({ weekday: 'Sunday', hour: 3, minute: 0 });
+  });
+
   it('shows midnight as 00, not 24', () => {
     expect(formatClock(toConventionTime('2027-03-23T23:00:00Z'))).toBe('00:00');
   });
@@ -46,8 +51,21 @@ describe('conventionLocalToIso', () => {
   it('handles the hours around the spring change (clocks go from 02:00 to 03:00 on 28 March 2027)', () => {
     expect(conventionLocalToIso('2027-03-28T01:30')).toBe('2027-03-28T00:30:00.000Z');
     expect(conventionLocalToIso('2027-03-28T03:30')).toBe('2027-03-28T01:30:00.000Z');
-    // 02:30 doesn't exist that night and becomes 03:30
+    // 02:00-02:59 doesn't exist that night. Like Infosys (PHP strtotime), such a time silently becomes an hour
+    // later; this was kept on purpose (2026-11-11).
+    expect(conventionLocalToIso('2027-03-28T02:00')).toBe('2027-03-28T01:00:00.000Z');
     expect(conventionLocalToIso('2027-03-28T02:30')).toBe('2027-03-28T01:30:00.000Z');
+    expect(conventionLocalToIso('2027-03-28T02:59')).toBe('2027-03-28T01:59:00.000Z');
+  });
+
+  it('gives a time from the skipped hour back as the hour after', () => {
+    expect(toConventionLocalInput(conventionLocalToIso('2027-03-28T02:30') ?? '')).toBe('2027-03-28T03:30');
+  });
+
+  it('round-trips the times on both sides of the switch', () => {
+    for (const local of ['2027-03-28T01:59', '2027-03-28T03:00', '2027-03-27T23:00', '2027-03-28T04:00']) {
+      expect(toConventionLocalInput(conventionLocalToIso(local) ?? '')).toBe(local);
+    }
   });
 
   it('reads the repeated hour in autumn as the second one (31 October 2027)', () => {

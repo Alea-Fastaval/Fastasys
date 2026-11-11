@@ -68,6 +68,46 @@ public class ActivitySchedulesTests
     }
 
     [Fact]
+    public async Task CreateSchedule_AcrossTheSwitchToSummerTime_StoresTheRealInstants()
+    {
+        // Fastaval 2027: Saturday 27 March 23:00 (UTC+1) to Sunday 28 March 04:00 (UTC+2). The clocks go from 02:00
+        // to 03:00 in between, so the schedule is four hours long, not five.
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var start = new DateTimeOffset(2027, 3, 27, 23, 0, 0, TimeSpan.FromHours(1));
+        var end = new DateTimeOffset(2027, 3, 28, 4, 0, 0, TimeSpan.FromHours(2));
+
+        var result = await CreateController(db).CreateSchedule(activity.Id, new CreateScheduleDto(start, end, null));
+
+        Assert.IsType<CreatedAtActionResult>(result.Result);
+        var stored = await db.Schedules.SingleAsync(Ct);
+        Assert.Equal(new DateTime(2027, 3, 27, 22, 0, 0, DateTimeKind.Utc), stored.StartTime);
+        Assert.Equal(new DateTime(2027, 3, 28, 2, 0, 0, DateTimeKind.Utc), stored.EndTime);
+        Assert.Equal(TimeSpan.FromHours(4), stored.EndTime - stored.StartTime);
+    }
+
+    [Fact]
+    public async Task CreateSchedule_SameInstantsWithOtherOffsets_IsADuplicate()
+    {
+        // 01:00 UTC on 28 March 2027 is 03:00 summer time; the check compares instants, not wall-clock times
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var controller = CreateController(db);
+        await controller.CreateSchedule(activity.Id, new CreateScheduleDto(
+            new DateTimeOffset(2027, 3, 28, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2027, 3, 28, 1, 0, 0, TimeSpan.Zero),
+            null));
+
+        var result = await controller.CreateSchedule(activity.Id, new CreateScheduleDto(
+            new DateTimeOffset(2027, 3, 28, 1, 0, 0, TimeSpan.FromHours(1)),
+            new DateTimeOffset(2027, 3, 28, 3, 0, 0, TimeSpan.FromHours(2)),
+            null));
+
+        Assert.IsType<ConflictObjectResult>(result.Result);
+        Assert.Single(db.Schedules);
+    }
+
+    [Fact]
     public async Task CreateSchedule_RefreshesActivityUpdatedAt()
     {
         // Infosys sets aktiviteter.updated when a schedule is created

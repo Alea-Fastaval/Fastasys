@@ -53,8 +53,9 @@ export function toConventionLocalInput(instant: string | number | Date): string 
 
 // Reads a datetime-local value ("2027-03-24T10:00") as Copenhagen wall-clock time and returns the UTC instant
 // as an ISO string, or null when the value is not a date and time. A time that doesn't exist because the
-// clocks are put forward (02:00-03:00 on the last Sunday of March) is moved forward by an hour; a time that
-// exists twice when they are put back is read as the second one.
+// clocks are put forward (02:00-03:00 on the last Sunday of March, which falls during Fastaval 2027) is moved
+// forward by an hour without a warning, like Infosys (PHP strtotime) does; that was kept on purpose. A time that
+// exists twice when the clocks are put back is read as the second one.
 export function conventionLocalToIso(local: string): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
   if (!match) return null;

@@ -154,6 +154,10 @@ public class RunsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
             Assert.Equal(JsonValueKind.Null, seat.GetProperty("karma").ValueKind);
             Assert.False(json.RootElement.GetProperty("needsGameMasters").GetBoolean());
             Assert.True(json.RootElement.GetProperty("needsPlayers").GetBoolean());
+            // Times go out as UTC with a "Z", so the browser converts them to Copenhagen time with the right
+            // offset, also across the switch to summer time during Fastaval 2027
+            Assert.EndsWith("Z", json.RootElement.GetProperty("startTime").GetString());
+            Assert.EndsWith("Z", json.RootElement.GetProperty("endTime").GetString());
         }
 
         var otherRoom = await AddAsync(new Room { Name = "Holdtest lokale B" });
