@@ -9,6 +9,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import {
+  Country,
+  GameOption,
+  OrganizerArea,
   PARTICIPANT_LANGUAGES,
   PREFERRED_LANGUAGES,
   Participant,
@@ -22,6 +25,7 @@ import {
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { ParticipantFlashService } from '../participant-flash.service';
+import { sortByDanish } from '../participant-format';
 
 // Number inputs can be left empty, so they are nullable until the form is submitted
 export interface ParticipantForm {
@@ -49,10 +53,14 @@ export interface ParticipantForm {
   isAnnulled: boolean;
   superGameMaster: boolean;
   youthClub: string;
+  countryCode: string;
+  organizerAreaId: number | null;
+  gameActivityId: number | null;
 }
 
 // The Infosys create form has no preselected values, so the browser shows the first option of each select:
-// nej, da and the category with the lowest id. Empty number fields become 0 (PHP intval).
+// nej, da and the category with the lowest id; no language is ticked (the participant then gets dansk). Empty
+// number fields become 0 (PHP intval). Land starts as Danmark, the column's default.
 export function newParticipantForm(categories: ParticipantCategory[]): ParticipantForm {
   return {
     birthDate: '',
@@ -68,7 +76,7 @@ export function newParticipantForm(categories: ParticipantCategory[]): Participa
     phoneNumber: '',
     smsSignup: false,
     preferredLanguage: 'Danish',
-    activityLanguages: ['Danish'],
+    activityLanguages: [],
     superHero: false,
     isAuthorOrDesigner: false,
     setupHelpMonday: false,
@@ -79,6 +87,9 @@ export function newParticipantForm(categories: ParticipantCategory[]): Participa
     isAnnulled: false,
     superGameMaster: false,
     youthClub: '',
+    countryCode: 'DK',
+    organizerAreaId: null,
+    gameActivityId: null,
   };
 }
 
@@ -109,6 +120,9 @@ export function toForm(p: Participant): ParticipantForm {
     isAnnulled: d?.isAnnulled ?? false,
     superGameMaster: d?.superGameMaster ?? false,
     youthClub: d?.youthClub ?? '',
+    countryCode: p.countryCode,
+    organizerAreaId: d?.organizerAreaId ?? null,
+    gameActivityId: d?.gameActivityId ?? null,
   };
 }
 
@@ -136,16 +150,19 @@ export function toFieldsDto(form: ParticipantForm): ParticipantFieldsDto {
     isNoShow: form.isNoShow,
     superGameMaster: form.superGameMaster,
     youthClub: form.youthClub,
+    countryCode: form.countryCode,
+    organizerAreaId: form.organizerAreaId,
+    gameActivityId: form.gameActivityId,
+    activityLanguages: form.activityLanguages,
   };
 }
 
 export function toUpdateDto(form: ParticipantForm): UpdateParticipantDto {
-  return { ...toFieldsDto(form), activityLanguages: form.activityLanguages, isAnnulled: form.isAnnulled };
+  return { ...toFieldsDto(form), isAnnulled: form.isAnnulled };
 }
 
-// Infosys deltager/opret (create) and deltager/retdeltager/:id: (edit). Land, Arrangørområde, Scenarie and, on
-// create, the activity languages are left out: Infosys ignores them in these forms (reported 2026-11-11). They
-// can be changed on the participant page.
+// Infosys deltager/opret (create) and deltager/retdeltager/:id: (edit). Infosys ignores Land, Arrangørområde,
+// Scenarie and (on create) the activity languages in these forms; they are saved here (fixed 2026-11-11).
 @Component({
   selector: 'app-participant-form',
   imports: [
@@ -179,6 +196,10 @@ export class ParticipantFormComponent implements OnInit {
   // Whether the participant is annulled as stored, which decides between "Slet deltager" and "Annuller tilmelding"
   public readonly storedAnnulled = signal(false);
   public readonly categories = signal<ParticipantCategory[]>([]);
+  // Sorted by Danish name, as Infosys does
+  public readonly countries = signal<Country[]>([]);
+  public readonly organizerAreas = signal<OrganizerArea[]>([]);
+  public readonly games = signal<GameOption[]>([]);
   public readonly form = signal<ParticipantForm | null>(null);
   public readonly notFound = signal(false);
   public readonly busy = signal(false);
@@ -190,6 +211,9 @@ export class ParticipantFormComponent implements OnInit {
     this.http.get<ParticipantOptions>('/api/participants/options').subscribe({
       next: options => {
         this.categories.set(options.categories);
+        this.countries.set(sortByDanish(options.countries, c => c.nameDanish));
+        this.organizerAreas.set(sortByDanish(options.organizerAreas, a => a.nameDanish));
+        this.games.set(sortByDanish(options.games, g => g.title));
         if (!id) this.form.set(newParticipantForm(options.categories));
       },
       error: err => console.error('Failed to load participant options:', err),

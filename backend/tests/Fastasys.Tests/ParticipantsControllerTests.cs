@@ -140,6 +140,78 @@ public class ParticipantsControllerTests
     }
 
     [Fact]
+    public async Task Create_SavesLandArrangoeromraadeScenarieAndLanguages()
+    {
+        // Infosys's create form ignores these four fields (fixed on 2026-11-11)
+        using var db = CreateDbContext();
+        var game = new Activity { Title = "Et brætspil", Type = ActivityType.BoardGame };
+        db.Activities.Add(game);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var created = Ok(await CreateController(db).Create(ValidCreate() with
+        {
+            CountryCode = "SE",
+            OrganizerAreaId = OrganizerArea.BoardGameDesignerId,
+            GameActivityId = game.Id,
+            ActivityLanguages = [ParticipantLanguage.English, ParticipantLanguage.Scandinavian],
+        }));
+
+        Assert.Equal("Sverige", created.CountryName);
+        Assert.Equal("Brætspilsdesigner", created.Details!.OrganizerAreaName);
+        Assert.Equal("Et brætspil", created.Details.GameActivityTitle);
+        Assert.Equal([ParticipantLanguage.English, ParticipantLanguage.Scandinavian], created.Details.ActivityLanguages);
+    }
+
+    [Fact]
+    public async Task Create_WithoutLanguagesOrCountry_GetsDanskAndDanmark()
+    {
+        using var db = CreateDbContext();
+
+        var created = Ok(await CreateController(db).Create(ValidCreate() with { CountryCode = null, ActivityLanguages = [] }));
+
+        Assert.Equal("DK", created.CountryCode);
+        Assert.Equal([ParticipantLanguage.Danish], created.Details!.ActivityLanguages);
+    }
+
+    [Fact]
+    public async Task Create_RefusesUnknownCountryAreaGameOrLanguage()
+    {
+        using var db = CreateDbContext();
+        var quest = new Activity { Title = "En quest", Type = ActivityType.Quest };
+        db.Activities.Add(quest);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var controller = CreateController(db);
+
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { CountryCode = "XX" })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { OrganizerAreaId = 999 })).Result);
+        // The forms only offer scenarios and board games
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { GameActivityId = quest.Id })).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Create(ValidCreate() with { ActivityLanguages = [(ParticipantLanguage)9] })).Result);
+        Assert.Empty(db.Participants);
+    }
+
+    [Fact]
+    public async Task Update_SavesLandArrangoeromraadeAndScenarie()
+    {
+        // Infosys's edit form ignores these three fields (fixed on 2026-11-11)
+        using var db = CreateDbContext();
+        var scenario = new Activity { Title = "Et scenarie", Type = ActivityType.Scenario };
+        db.Activities.Add(scenario);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await AddAsync(db, 1, p => p.OrganizerAreaId = OrganizerArea.ScenarioAuthorId);
+        var controller = CreateController(db);
+
+        var updated = Ok(await controller.Update(1, ValidUpdate() with { CountryCode = "NO", OrganizerAreaId = null, GameActivityId = scenario.Id }));
+        db.ChangeTracker.Clear();
+        var keptCountry = Ok(await controller.Update(1, ValidUpdate() with { CountryCode = null, GameActivityId = scenario.Id }));
+
+        Assert.Equal("Norge", updated.CountryName);
+        Assert.Null(updated.Details!.OrganizerAreaId);
+        Assert.Equal("Et scenarie", updated.Details.GameActivityTitle);
+        Assert.Equal("NO", keptCountry.CountryCode);
+    }
+
+    [Fact]
     public async Task Create_WithoutBirthDate_StoresItAsUnknown()
     {
         using var db = CreateDbContext();

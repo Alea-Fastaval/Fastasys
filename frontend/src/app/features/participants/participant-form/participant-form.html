@@ -89,6 +89,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.fields.country' | translate }}</mat-label>
+          <mat-select name="countryCode" [(ngModel)]="f.countryCode">
+            @for (country of countries(); track country.code) {
+            <mat-option [value]="country.code">{{ country.nameDanish }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
           <mat-label>{{ 'participants.fields.phoneNumber' | translate }}</mat-label>
           <input matInput name="phoneNumber" [(ngModel)]="f.phoneNumber" maxlength="32" />
         </mat-form-field>
@@ -108,7 +117,6 @@
           </mat-select>
         </mat-form-field>
 
-        @if (participantId() !== null) {
         <fieldset class="languages wide">
           <legend>{{ 'participants.fields.activityLanguages' | translate }}</legend>
           @for (language of participantLanguages; track language) {
@@ -120,7 +128,6 @@
           >
           }
         </fieldset>
-        }
 
         <ng-container
           *ngTemplateOutlet="yesNo; context: { name: 'superHero', label: 'participants.fields.superHero' }"
@@ -186,6 +193,26 @@
         <mat-form-field appearance="outline" class="wide">
           <mat-label>{{ 'participants.fields.youthClub' | translate }}</mat-label>
           <input matInput name="youthClub" [(ngModel)]="f.youthClub" maxlength="128" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'participants.fields.organizerArea' | translate }}</mat-label>
+          <mat-select name="organizerAreaId" [(ngModel)]="f.organizerAreaId">
+            <mat-option [value]="null">{{ 'participants.noOrganizerArea' | translate }}</mat-option>
+            @for (area of organizerAreas(); track area.id) {
+            <mat-option [value]="area.id">{{ area.nameDanish }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'participants.fields.game' | translate }}</mat-label>
+          <mat-select name="gameActivityId" [(ngModel)]="f.gameActivityId">
+            <mat-option [value]="null">{{ 'participants.noGame' | translate }}</mat-option>
+            @for (game of games(); track game.id) {
+            <mat-option [value]="game.id">{{ game.title }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
       </div>
 

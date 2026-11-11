@@ -108,17 +108,20 @@ describe('newParticipantForm', () => {
     });
   });
 
-  it('does not send the fields Infosys ignores on create', () => {
+  it('sends Land, Arrangørområde, Scenarie and the languages, which Infosys ignored (fixed)', () => {
     const dto = toFieldsDto(newParticipantForm(options.categories));
-    expect(dto).not.toHaveProperty('activityLanguages');
-    expect(dto).not.toHaveProperty('countryCode');
-    expect(dto).not.toHaveProperty('organizerAreaId');
-    expect(dto).not.toHaveProperty('gameActivityId');
+    // Danmark, nothing chosen and no language ticked (the server then gives dansk)
+    expect(dto).toMatchObject({
+      countryCode: 'DK',
+      organizerAreaId: null,
+      gameActivityId: null,
+      activityLanguages: [],
+    });
   });
 });
 
 describe('toUpdateDto', () => {
-  it('sends both address lines, the languages and Annulleret', () => {
+  it('sends both address lines, the languages, Land, Arrangørområde, Scenarie and Annulleret', () => {
     expect(toUpdateDto(toForm(existing))).toMatchObject({
       addressLine1: 'Testvej 1',
       addressLine2: '2. th',
@@ -126,6 +129,9 @@ describe('toUpdateDto', () => {
       isAnnulled: false,
       desiredActivities: 4,
       youthClub: 'Klubben',
+      countryCode: 'DK',
+      organizerAreaId: null,
+      gameActivityId: null,
     });
   });
 });
@@ -137,7 +143,7 @@ describe('ParticipantFormComponent', () => {
     httpMock.verify();
   });
 
-  const setup = async (id: string | null, loaded: Participant = existing) => {
+  const setup = async (id: string | null, loaded: Participant = existing, given: ParticipantOptions = options) => {
     await TestBed.configureTestingModule({
       imports: [ParticipantFormComponent],
       providers: [
@@ -154,7 +160,7 @@ describe('ParticipantFormComponent', () => {
     const fixture = TestBed.createComponent(ParticipantFormComponent);
     fixture.detectChanges();
     httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
-    httpMock.expectOne('/api/participants/options').flush(options);
+    httpMock.expectOne('/api/participants/options').flush(given);
     if (id) httpMock.expectOne(`/api/participants/${id}`).flush(loaded);
     fixture.detectChanges();
     // The texts are first needed when the form is shown
@@ -191,9 +197,30 @@ describe('ParticipantFormComponent', () => {
     expect(flash.take()).toEqual({ type: 'error', key: 'createFailed' });
   });
 
-  it('does not show the activity languages on the create form', async () => {
+  it('shows the activity languages, Land, Arrangørområde and Scenarie on the create form', async () => {
     const { element } = await setup(null);
-    expect(element.querySelector('.languages')).toBeNull();
+    expect(element.querySelector('.languages')).not.toBeNull();
+    expect(element.querySelector('mat-select[name=countryCode]')).not.toBeNull();
+    expect(element.querySelector('mat-select[name=organizerAreaId]')).not.toBeNull();
+    expect(element.querySelector('mat-select[name=gameActivityId]')).not.toBeNull();
+  });
+
+  it('sorts the countries, areas and games in Danish order', async () => {
+    const unsorted: ParticipantOptions = {
+      ...options,
+      countries: [
+        { code: 'AX', nameDanish: 'Åland', nameEnglish: 'Åland Islands' },
+        { code: 'DK', nameDanish: 'Danmark', nameEnglish: 'Denmark' },
+      ],
+      organizerAreas: [
+        { id: 35, nameDanish: 'Økonomi', nameEnglish: null },
+        { id: 6, nameDanish: 'Bar', nameEnglish: null },
+      ],
+    };
+    const { component } = await setup(null, existing, unsorted);
+
+    expect(component.countries().map(c => c.code)).toEqual(['DK', 'AX']);
+    expect(component.organizerAreas().map(a => a.nameDanish)).toEqual(['Bar', 'Økonomi']);
   });
 
   it('updates a participant and opens them with a success message', async () => {

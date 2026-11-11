@@ -95,8 +95,7 @@ public record ParticipantOptionsDto(
     IReadOnlyList<GameOptionDto> Games
 );
 
-// The fields of the Infosys create form (deltager/opret) that work there. Land, Arrangørområde, Scenarie and the
-// activity languages are left out: Infosys ignores them on create (bug reported to the user on 2026-11-11).
+// The fields of the Infosys create form (deltager/opret)
 public abstract record ParticipantFieldsDto
 {
     public DateOnly? BirthDate { get; init; }
@@ -121,16 +120,26 @@ public abstract record ParticipantFieldsDto
     public bool IsNoShow { get; init; }
     public bool SuperGameMaster { get; init; }
     public string? YouthClub { get; init; }
+
+    // Infosys's forms have Land, Arrangørområde, Scenarie and (on create) the activity languages, but ignore them
+    // because the columns were renamed. Fixed on 2026-11-11: they are saved.
+    // Land: null keeps the country (DK on create)
+    public string? CountryCode { get; init; }
+
+    // null is "Intet arrangørområde" / "Intet scenarie/brætspil"
+    public int? OrganizerAreaId { get; init; }
+    public int? GameActivityId { get; init; }
+
+    // Only used when at least one is ticked, as in the Infosys edit form; otherwise a new participant gets dansk
+    // (the column default) and an existing one keeps their languages
+    public IReadOnlyList<ParticipantLanguage>? ActivityLanguages { get; init; }
 }
 
 public record CreateParticipantDto : ParticipantFieldsDto;
 
-// The fields of the Infosys edit form (deltager/retdeltager) that work there: the create fields plus the activity
-// languages and Annulleret. Land, Arrangørområde and Scenarie are ignored by Infosys (bug reported 2026-11-11).
+// The fields of the Infosys edit form (deltager/retdeltager): the create fields plus Annulleret
 public record UpdateParticipantDto : ParticipantFieldsDto
 {
-    // Infosys only changes the languages when at least one is ticked
-    public IReadOnlyList<ParticipantLanguage>? ActivityLanguages { get; init; }
     public bool IsAnnulled { get; init; }
 }
 
@@ -252,16 +261,8 @@ public class ParticipantsController : ControllerBase
 
         var (isValid, error) = await ValidateAsync(dto);
         if (!isValid) return BadRequest(new { message = error });
-        if (dto.ActivityLanguages != null && dto.ActivityLanguages.Any(l => !Enum.IsDefined(l)))
-        {
-            return BadRequest(new { message = "Unknown activity language" });
-        }
 
         Apply(participant, dto);
-        if (dto.ActivityLanguages is { Count: > 0 })
-        {
-            participant.ActivityLanguages = dto.ActivityLanguages.Distinct().Order().ToList();
-        }
         participant.IsAnnulled = dto.IsAnnulled;
         Normalize(participant);
         participant.UpdatedAt = DateTime.UtcNow;
@@ -357,8 +358,21 @@ public class ParticipantsController : ControllerBase
         if (dto.DesiredActivities is < 0 or > MaxTinyUnsigned) return (false, $"Desired activities must be between 0 and {MaxTinyUnsigned}");
         if (dto.DesiredHeroTasks is < 0 or > MaxTinyUnsigned) return (false, $"Desired hero tasks must be between 0 and {MaxTinyUnsigned}");
 
+        if (dto.CountryCode != null && !await IsKnownCountryAsync(dto.CountryCode)) return (false, "Unknown country");
+        if (dto.OrganizerAreaId != null && !await IsKnownOrganizerAreaAsync(dto.OrganizerAreaId.Value)) return (false, "Unknown organizer area");
+        if (dto.GameActivityId != null && !await IsKnownGameAsync(dto.GameActivityId.Value)) return (false, "Unknown scenario or board game");
+        if (dto.ActivityLanguages != null && dto.ActivityLanguages.Any(l => !Enum.IsDefined(l))) return (false, "Unknown activity language");
+
         return (true, string.Empty);
     }
+
+    private Task<bool> IsKnownCountryAsync(string code) => _db.Countries.AnyAsync(c => c.Code == code);
+
+    private Task<bool> IsKnownOrganizerAreaAsync(int id) => _db.OrganizerAreas.AnyAsync(a => a.Id == id);
+
+    // The participant page and the forms only offer scenarios and board games (Infosys ParticipantModel::getGames)
+    private Task<bool> IsKnownGameAsync(int id) =>
+        _db.Activities.AnyAsync(a => a.Id == id && (a.Type == ActivityType.BoardGame || a.Type == ActivityType.Scenario));
 
     private static (bool IsValid, string Error) ValidateLengths(params (string Name, string? Value, int Max)[] fields)
     {
@@ -394,6 +408,13 @@ public class ParticipantsController : ControllerBase
         participant.IsNoShow = dto.IsNoShow;
         participant.SuperGameMaster = dto.SuperGameMaster;
         participant.YouthClub = dto.YouthClub ?? string.Empty;
+        participant.OrganizerAreaId = dto.OrganizerAreaId;
+        participant.GameActivityId = dto.GameActivityId;
+        if (dto.CountryCode != null) participant.CountryCode = dto.CountryCode;
+        if (dto.ActivityLanguages is { Count: > 0 })
+        {
+            participant.ActivityLanguages = dto.ActivityLanguages.Distinct().Order().ToList();
+        }
     }
 
     // Infosys Deltagere::insert and ::update normalize the phone number and e-mail on every save
@@ -489,7 +510,7 @@ public class ParticipantsController : ControllerBase
 
             case "countryCode":
                 if (value.ValueKind == JsonValueKind.String && value.GetString() is { } code
-                    && await _db.Countries.AnyAsync(c => c.Code == code))
+                    && await IsKnownCountryAsync(code))
                 {
                     p.CountryCode = code;
                     return (true, string.Empty);
@@ -500,18 +521,18 @@ public class ParticipantsController : ControllerBase
             case "organizerAreaId":
                 if (value.ValueKind == JsonValueKind.Null) { p.OrganizerAreaId = null; return (true, string.Empty); }
                 if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var areaId)
-                    && await _db.OrganizerAreas.AnyAsync(a => a.Id == areaId))
+                    && await IsKnownOrganizerAreaAsync(areaId))
                 {
                     p.OrganizerAreaId = areaId;
                     return (true, string.Empty);
                 }
                 return (false, "Unknown organizer area");
 
-            // Infosys "Intet scenarie/brætspil" clears it; the page only offers scenarios and board games
+            // Infosys "Intet scenarie/brætspil" clears it
             case "gameActivityId":
                 if (value.ValueKind == JsonValueKind.Null) { p.GameActivityId = null; return (true, string.Empty); }
                 if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var gameId)
-                    && await _db.Activities.AnyAsync(a => a.Id == gameId && (a.Type == ActivityType.BoardGame || a.Type == ActivityType.Scenario)))
+                    && await IsKnownGameAsync(gameId))
                 {
                     p.GameActivityId = gameId;
                     return (true, string.Empty);

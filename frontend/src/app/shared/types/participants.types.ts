@@ -113,7 +113,7 @@ export interface ParticipantOptions {
   games: GameOption[];
 }
 
-// The fields of the Infosys create form that work there
+// The fields of the Infosys create form
 export interface ParticipantFieldsDto {
   birthDate: string | null;
   categoryId: number;
@@ -137,12 +137,17 @@ export interface ParticipantFieldsDto {
   isNoShow: boolean;
   superGameMaster: boolean;
   youthClub: string;
+  countryCode: string;
+  // null is "Intet arrangørområde" / "Intet scenarie/brætspil"
+  organizerAreaId: number | null;
+  gameActivityId: number | null;
+  // Only used when at least one is ticked
+  activityLanguages: ParticipantLanguage[];
 }
 
 export type CreateParticipantDto = ParticipantFieldsDto;
 
-// The edit form adds the activity languages and Annulleret
+// The edit form adds Annulleret
 export interface UpdateParticipantDto extends ParticipantFieldsDto {
-  activityLanguages: ParticipantLanguage[];
   isAnnulled: boolean;
 }
