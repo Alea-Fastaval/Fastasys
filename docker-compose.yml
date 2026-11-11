@@ -47,8 +47,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    depends_on:
-      - api
     ports:
       - "4200:80"
 
