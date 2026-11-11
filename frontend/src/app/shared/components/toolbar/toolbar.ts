@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { AuthService, TranslationService, SupportedLang } from '@shared/services';
 import { TranslatePipe } from '@shared/pipes';
+// Infosys has the participant search field in its page header
+import { ParticipantQuickSearchComponent } from '../../../features/participants/participant-quick-search/participant-quick-search';
 
 @Component({
   selector: 'app-toolbar',
@@ -20,6 +22,7 @@ import { TranslatePipe } from '@shared/pipes';
     MatIconModule,
     MatMenuModule,
     TranslatePipe,
+    ParticipantQuickSearchComponent,
   ],
   templateUrl: './toolbar.html',
   styleUrl: './toolbar.scss',

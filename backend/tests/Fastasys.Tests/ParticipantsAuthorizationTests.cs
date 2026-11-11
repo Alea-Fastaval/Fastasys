@@ -91,6 +91,20 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/participants", ct)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/participants/1", ct)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/participants/options", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/participants/search", new SearchParticipantsDto(null, null), ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task ViewPrivilege_CanSearch_ButNotSeeTheNotes()
+    {
+        var viewer = await CreateClientWithPrivilegeAsync("participants_view");
+        var ct = TestContext.Current.CancellationToken;
+
+        var search = await viewer.PostAsJsonAsync("/api/participants/search", new SearchParticipantsDto([new ParticipantSearchStepDto("a", null)], ["email"]), ct);
+        var notes = await viewer.PostAsJsonAsync("/api/participants/search", new SearchParticipantsDto(null, ["adminNote"]), ct);
+
+        Assert.Equal(HttpStatusCode.OK, search.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, notes.StatusCode);
     }
 
     [Fact]
@@ -137,6 +151,16 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         var created = await createResponse.Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
         var url = $"/api/participants/{created.Id}";
+
+        var search = await client.PostAsJsonAsync("/api/participants/search", new SearchParticipantsDto(null, ["adminNote", "createdAt", "smsSignup"]), ct);
+        Assert.Equal(HttpStatusCode.OK, search.StatusCode);
+        using (var json = JsonDocument.Parse(await search.Content.ReadAsStringAsync(ct)))
+        {
+            var row = json.RootElement.GetProperty("rows").EnumerateArray().First(r => r.GetProperty("id").GetInt32() == created.Id);
+            // Times go out as UTC with a "Z", yes/no as true/false
+            Assert.EndsWith("Z", row.GetProperty("values").GetProperty("createdAt").GetString());
+            Assert.Equal(JsonValueKind.False, row.GetProperty("values").GetProperty("smsSignup").ValueKind);
+        }
 
         var get = await client.GetAsync(url, ct);
         using (var json = JsonDocument.Parse(await get.Content.ReadAsStringAsync(ct)))

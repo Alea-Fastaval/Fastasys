@@ -1,33 +1,155 @@
 <div class="page-container">
   <header class="page-header">
-    <h1>{{ 'participants.allParticipants' | translate }}</h1>
-    <a mat-stroked-button routerLink="/participants/new"
-      ><mat-icon>person_add</mat-icon> {{ 'participants.createTitle' | translate }}</a
-    >
+    <h1>
+      {{ (searchLabel() === null ? 'participants.allParticipants' : 'participants.list.searchTitle') | translate }}
+    </h1>
+    <div class="actions">
+      <button mat-stroked-button type="button" class="open-search" (click)="toggleSearch()">
+        <mat-icon>search</mat-icon> {{ 'participants.list.search' | translate }}
+      </button>
+      <a mat-stroked-button routerLink="/participants/new"
+        ><mat-icon>person_add</mat-icon> {{ 'participants.createTitle' | translate }}</a
+      >
+    </div>
   </header>
 
   @if (flash) {
   <p class="flash" [class.error]="flash.type === 'error'">{{ 'participants.messages.' + flash.key | translate }}</p>
-  } @if (participants(); as list) {
-  <table class="participants-table">
+  } @if (unknownQueryValues(); as values) {
+  <p class="flash error unknown-query">{{ 'common.unknownQueryValues' | translate: { values } }}</p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'participants.messages.listFailed' | translate }}</p>
+  } @if (showSearch()) {
+  <app-participant-search-form
+    [categories]="categories()"
+    [organizerAreas]="organizerAreas()"
+    (searched)="search($event)"
+  />
+  }
+
+  <p class="list-helpers">
+    <button type="button" class="link more-columns" (click)="showColumns.set(!showColumns())">
+      <mat-icon>add</mat-icon> {{ 'participants.list.moreColumns' | translate }}
+    </button>
+    <button type="button" class="link reset-columns" (click)="resetColumns()">
+      <mat-icon>close</mat-icon> {{ 'participants.list.resetColumns' | translate }}
+    </button>
+    @if (searchLabel() !== null) {
+    <span class="reset-search">
+      {{ 'participants.list.searchLabel' | translate }}@if (searchLabel()) {: <strong>{{ searchLabel() }}</strong>}
+      <button
+        type="button"
+        class="link"
+        [attr.aria-label]="'participants.list.resetSearch' | translate"
+        [title]="'participants.list.resetSearch' | translate"
+        (click)="resetSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </span>
+    }
+  </p>
+
+  @if (showColumns()) {
+  <div class="available-columns">
+    @for (c of availableColumns(); track c.column) {
+    <button type="button" class="addable-column" [class.active]="isShown(c.column)" (click)="toggleColumn(c.column)">
+      {{ c.label }}
+    </button>
+    }
+  </div>
+  }
+
+  <div class="table-controls">
+    <label>
+      {{ 'participants.list.show' | translate }}
+      <select name="pageSize" [ngModel]="pageSize()" (ngModelChange)="setPageSize($event)">
+        @for (size of pageSizes; track size) {
+        <option [ngValue]="size">{{ size === 0 ? ('participants.list.all' | translate) : size }}</option>
+        }
+      </select>
+      {{ 'participants.list.entries' | translate }}
+    </label>
+    <label>
+      {{ 'participants.list.filter' | translate }}
+      <input type="text" name="filter" [ngModel]="filter() ?? ''" (ngModelChange)="setFilter($event)" />
+    </label>
+  </div>
+
+  <table
+    class="participants-table"
+    matSort
+    matSortDisableClear
+    [matSortActive]="sortKey() ?? ''"
+    [matSortDirection]="sortDirection() ?? ''"
+    (matSortChange)="sortBy($event)"
+  >
     <thead>
       <tr>
-        <th>{{ 'participants.columns.id' | translate }}</th>
-        <th>{{ 'participants.columns.name' | translate }}</th>
+        <th mat-sort-header="id" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ 'participants.columns.id' | translate }}
+        </th>
+        <th mat-sort-header="name" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ 'participants.columns.name' | translate }}
+        </th>
+        @for (column of columns(); track column) {
+        <th [mat-sort-header]="column" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ columnLabel(column) | translate }}
+        </th>
+        }
       </tr>
     </thead>
     <tbody>
-      @for (participant of list; track participant.id) {
+      @if (rows() === null && !failed()) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.processing' | translate }}</td>
+      </tr>
+      } @else if (rows()?.length === 0) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.emptyTable' | translate }}</td>
+      </tr>
+      } @else if (filtered().length === 0) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.zeroRecords' | translate }}</td>
+      </tr>
+      } @for (row of visibleRows(); track row.id) {
       <tr>
         <td>
-          <a [routerLink]="['/participants', participant.id]">{{ participant.id }}</a>
+          <a [routerLink]="['/participants', row.id]">{{ row.id }}</a>
         </td>
         <td>
-          <a [routerLink]="['/participants', participant.id]">{{ participant.name }}</a>
+          <a [routerLink]="['/participants', row.id]">{{ row.name }}</a>
         </td>
+        @for (column of columns(); track column) {
+        <td>{{ text(row, column) }}</td>
+        }
       </tr>
       }
     </tbody>
   </table>
+
+  @if (rows(); as all) {
+  <div class="table-footer">
+    <span class="info">
+      {{ 'participants.list.info' | translate: { start: '' + firstShown(), end: '' + lastShown(), total: '' +
+      filtered().length } }} @if (filtered().length !== all.length) { {{ 'participants.list.infoFiltered' | translate: {
+      max: '' + all.length } }} }
+    </span>
+    <span class="pager">
+      <button mat-button type="button" [disabled]="page() === 0" (click)="goTo(0)">
+        {{ 'participants.list.first' | translate }}
+      </button>
+      <button mat-button type="button" [disabled]="page() === 0" (click)="goTo(page() - 1)">
+        {{ 'participants.list.previous' | translate }}
+      </button>
+      <span class="page-number">{{ page() + 1 }} / {{ pageCount() }}</span>
+      <button mat-button type="button" [disabled]="page() >= pageCount() - 1" (click)="goTo(page() + 1)">
+        {{ 'participants.list.next' | translate }}
+      </button>
+      <button mat-button type="button" [disabled]="page() >= pageCount() - 1" (click)="goTo(pageCount() - 1)">
+        {{ 'participants.list.last' | translate }}
+      </button>
+    </span>
+  </div>
   }
 </div>

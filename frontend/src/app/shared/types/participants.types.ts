@@ -16,6 +16,75 @@ export interface ParticipantSummary {
   name: string;
 }
 
+// Infosys search box: Søgelogik, the combination with the previous result, and Fødselsdato Før/Efter/Samme
+export const SEARCH_LOGICS = ['And', 'Or'] as const;
+export type SearchLogic = (typeof SEARCH_LOGICS)[number];
+export const SEARCH_COMBINATIONS = ['New', 'Intersection', 'Union', 'Difference'] as const;
+export type SearchCombination = (typeof SEARCH_COMBINATIONS)[number];
+export const BIRTH_DATE_RANGES = ['Before', 'After', 'Same'] as const;
+export type BirthDateRange = (typeof BIRTH_DATE_RANGES)[number];
+
+// The fields of the Infosys search box; a field that is left out is not used
+export interface ParticipantCriteria {
+  id?: string;
+  birthDate?: string;
+  birthDateRange?: BirthDateRange;
+  categoryId?: number;
+  firstName?: string;
+  lastName?: string;
+  nickname?: string;
+  email?: string;
+  amountPaid?: string;
+  address?: string;
+  zipCode?: string;
+  city?: string;
+  country?: string;
+  phoneNumber?: string;
+  smsSignup?: boolean;
+  activityLanguages?: ParticipantLanguage[];
+  superHero?: boolean;
+  desiredHeroTasks?: number;
+  setupHelpMonday?: boolean;
+  setupHelpTuesday?: boolean;
+  isAuthorOrDesigner?: boolean;
+  desiredActivities?: number;
+  superGameMaster?: boolean;
+  financialSupport?: boolean;
+  isNoShow?: boolean;
+  isAnnulled?: boolean;
+  youthClub?: string;
+  organizerAreaId?: number;
+  game?: string;
+  checkedInAt?: string;
+  notes?: string;
+}
+
+export interface QuickSearchStep {
+  quick: string;
+}
+
+export interface CriteriaSearchStep {
+  criteria: ParticipantCriteria;
+  logic: SearchLogic;
+  combination: SearchCombination;
+}
+
+// One search in the URL: the quick search from the page header or the search box
+export type ParticipantSearchStep = QuickSearchStep | CriteriaSearchStep;
+
+// One row of the participant list: id, "fornavn efternavn" and the chosen columns
+export interface ParticipantRow {
+  id: number;
+  name: string;
+  values: Record<string, unknown>;
+}
+
+export interface ParticipantSearchResult {
+  // The participant a lone quick search goes straight to
+  directId: number | null;
+  rows: ParticipantRow[];
+}
+
 // Infosys deltager/visdeltager. details is null when the user may only view participants.
 export interface Participant {
   id: number;

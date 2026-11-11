@@ -84,6 +84,10 @@
   </nav>
   <span class="spacer"></span>
 
+  @if (authService.hasPrivilege('participants_view', 'participants_edit')) {
+  <app-participant-quick-search />
+  }
+
   <!-- Language Switcher Dropdown next to Logout -->
   <div class="menu-hover-wrapper" (mouseenter)="openMenu(langTrigger)" (mouseleave)="closeMenu(langTrigger)">
     <button

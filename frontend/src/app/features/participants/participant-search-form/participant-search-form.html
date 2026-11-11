@@ -1,0 +1,136 @@
+<app-card [title]="'participants.search.title' | translate">
+  <form class="search-form" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.id' | translate }}</mat-label>
+        <input matInput name="id" [(ngModel)]="form().id" />
+      </mat-form-field>
+
+      <div class="birth-date">
+        <mat-form-field appearance="outline" class="range">
+          <mat-label>{{ 'participants.search.birthDate' | translate }}</mat-label>
+          <mat-select name="birthDateRange" [(ngModel)]="form().birthDateRange">
+            @for (range of birthDateRanges; track range) {
+            <mat-option [value]="range">{{ 'participants.search.birthDateRanges.' + range | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.search.birthDatePlaceholder' | translate }}</mat-label>
+          <input matInput name="birthDate" [(ngModel)]="form().birthDate" />
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.category' | translate }}</mat-label>
+        <mat-select name="categoryId" [(ngModel)]="form().categoryId">
+          <mat-option [value]="null" />
+          @for (category of categories(); track category.id) {
+          <mat-option [value]="category.id">{{ category.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @for (field of personalTextFields; track field) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.' + field | translate }}</mat-label>
+        <input matInput [name]="field" [(ngModel)]="form()[field]" />
+      </mat-form-field>
+      }
+
+      <fieldset class="languages wide">
+        <legend>{{ 'participants.search.activityLanguages' | translate }}</legend>
+        @for (language of languages; track language) {
+        <mat-checkbox
+          [name]="'language' + language"
+          [checked]="hasLanguage(language)"
+          (change)="toggleLanguage(language, $event.checked)"
+          >{{ 'participants.search.languages.' + language | translate }}</mat-checkbox
+        >
+        }
+      </fieldset>
+
+      @for (field of yesNoFields; track field.name) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ field.label | translate }}</mat-label>
+        <mat-select [name]="field.name" [(ngModel)]="form()[field.name]">
+          <mat-option value="" />
+          <mat-option value="nej">{{ 'participants.no' | translate }}</mat-option>
+          <mat-option value="ja">{{ 'participants.yes' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.desiredHeroTasks' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="10"
+          step="1"
+          name="desiredHeroTasks"
+          [(ngModel)]="form().desiredHeroTasks"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.desiredActivities' | translate }}</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="10"
+          step="1"
+          name="desiredActivities"
+          [(ngModel)]="form().desiredActivities"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.youthClub' | translate }}</mat-label>
+        <input matInput name="youthClub" [(ngModel)]="form().youthClub" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.organizerArea' | translate }}</mat-label>
+        <mat-select name="organizerAreaId" [(ngModel)]="form().organizerAreaId">
+          <mat-option [value]="null" />
+          @for (area of organizerAreas(); track area.id) {
+          <mat-option [value]="area.id">{{ area.nameDanish }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @for (field of otherTextFields; track field) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.' + field | translate }}</mat-label>
+        <input matInput [name]="field" [(ngModel)]="form()[field]" />
+      </mat-form-field>
+      }
+    </div>
+
+    <hr />
+    <div class="logic">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.search.logic' | translate }}</mat-label>
+        <mat-select name="logic" [(ngModel)]="form().logic">
+          @for (logic of logics; track logic) {
+          <mat-option [value]="logic">{{ 'participants.search.logics.' + logic | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-radio-group name="combination" [(ngModel)]="form().combination" class="combinations">
+        @for (combination of combinations; track combination) {
+        <mat-radio-button [value]="combination">
+          {{ 'participants.search.combinations.' + combination | translate }}
+        </mat-radio-button>
+        }
+      </mat-radio-group>
+    </div>
+
+    <div class="form-actions">
+      <button mat-raised-button color="primary" type="submit">{{ 'participants.search.submit' | translate }}</button>
+    </div>
+  </form>
+</app-card>

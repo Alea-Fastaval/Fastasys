@@ -146,6 +146,26 @@ public record UpdateParticipantDto : ParticipantFieldsDto
 // Infosys deltager/ajax/editable/:id: changes one field from the participant page
 public record UpdateParticipantFieldDto(JsonElement Value);
 
+// One search: the quick search from the page header, or the search box with its logic and how it is combined with
+// the result of the steps before it. Infosys kept the result in the session; here the browser sends the searches
+// again (they are kept in the URL, agreed 2026-11-11).
+public record ParticipantSearchStepDto(
+    string? Quick,
+    ParticipantCriteria? Criteria,
+    SearchLogic Logic = SearchLogic.And,
+    SearchCombination Combination = SearchCombination.New
+);
+
+// Infosys deltager/visalle and deltager/search_result with the chosen extra columns ("Tilføj/fjern kolonne").
+// No steps lists every participant.
+public record SearchParticipantsDto(IReadOnlyList<ParticipantSearchStepDto>? Steps, IReadOnlyList<string>? Columns);
+
+// Id and "fornavn efternavn" are always shown; Values has the chosen columns
+public record ParticipantRowDto(int Id, string Name, IReadOnlyDictionary<string, object?> Values);
+
+// DirectId: the participant a lone quick search goes straight to (an id, a badge, or the only participant found)
+public record ParticipantSearchResultDto(int? DirectId, IReadOnlyList<ParticipantRowDto> Rows);
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "ParticipantView")]
@@ -157,6 +177,9 @@ public class ParticipantsController : ControllerBase
     private const int MaxTinySigned = 127;
 
     private const string NotFoundMessage = "Participant not found";
+
+    // A URL can only hold so many searches; this is far more than anyone combines by hand
+    private const int MaxSearchSteps = 20;
 
     private readonly InfosysDbContext _db;
     private readonly IAuthorizationService _authorization;
@@ -193,6 +216,61 @@ public class ParticipantsController : ControllerBase
         if (participant == null) return NotFound(new { message = NotFoundMessage });
 
         return Ok(await ToDtoAsync(participant));
+    }
+
+    // Infosys deltager/visalle, the quick search (IndexController::main + showSearchResult) and the search box
+    // (deltager/ajax/parametersearch). The searches are run in order, each combined with the result so far.
+    [HttpPost("search")]
+    public async Task<ActionResult<ParticipantSearchResultDto>> Search([FromBody] SearchParticipantsDto dto)
+    {
+        var steps = dto.Steps ?? [];
+        var columns = dto.Columns ?? [];
+
+        var (isValid, error) = ValidateSearch(steps, columns);
+        if (!isValid) return BadRequest(new { message = error });
+
+        if (columns.Any(c => ParticipantColumns.All[c].EditorsOnly)
+            && !(await _authorization.AuthorizeAsync(User, "ParticipantManagement")).Succeeded)
+        {
+            return Forbid();
+        }
+
+        var participants = await _db.Participants
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .Include(p => p.Country)
+            .Include(p => p.OrganizerArea)
+            .Include(p => p.GameActivity)
+            .OrderBy(p => p.Id)
+            .ToListAsync();
+        var year = CopenhagenNow().Year;
+
+        IReadOnlyList<int>? found = null;
+        foreach (var step in steps)
+        {
+            // A quick search always starts a new search, as in Infosys
+            found = step.Quick != null
+                ? ParticipantSearch.Quick(participants, step.Quick, year)
+                : ParticipantSearch.Combine(found, ParticipantSearch.Advanced(participants, step.Criteria!, step.Logic, year), step.Combination);
+        }
+
+        var ids = (found ?? participants.Select(p => p.Id)).ToHashSet();
+        int? directId = null;
+        if (steps is [{ Quick: { } quick }])
+        {
+            directId = ParticipantSearch.DirectId(quick, participants.Select(p => p.Id).ToHashSet(), year)
+                ?? (ids.Count == 1 ? ids.Single() : null);
+        }
+
+        var rows = participants
+            .Where(p => ids.Contains(p.Id))
+            .Select(p => new ParticipantRowDto(
+                p.Id,
+                p.FirstName + " " + p.LastName,
+                columns.Distinct().ToDictionary(c => c, c => ParticipantColumns.All[c].Value(p))))
+            .ToList();
+
+        return Ok(new ParticipantSearchResultDto(directId, rows));
     }
 
     [HttpGet("options")]
@@ -336,6 +414,25 @@ public class ParticipantsController : ControllerBase
 
     private static DateTime CopenhagenNow() =>
         TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Europe/Copenhagen");
+
+    // Returns whether the searches and columns can be used and, if not, why
+    private static (bool IsValid, string Error) ValidateSearch(IReadOnlyList<ParticipantSearchStepDto> steps, IReadOnlyList<string> columns)
+    {
+        if (steps.Count > MaxSearchSteps) return (false, $"At most {MaxSearchSteps} searches can be combined");
+        foreach (var step in steps)
+        {
+            if ((step.Quick == null) == (step.Criteria == null)) return (false, "A search is either a quick search or search criteria");
+            if (!Enum.IsDefined(step.Logic)) return (false, "Unknown search logic");
+            if (!Enum.IsDefined(step.Combination)) return (false, "Unknown search combination");
+            if (step.Criteria is { } c && (!Enum.IsDefined(c.BirthDateRange) || (c.ActivityLanguages?.Any(l => !Enum.IsDefined(l)) ?? false)))
+            {
+                return (false, "Unknown search value");
+            }
+        }
+
+        var unknown = columns.FirstOrDefault(c => !ParticipantColumns.All.ContainsKey(c));
+        return unknown == null ? (true, string.Empty) : (false, $"Unknown column {unknown}");
+    }
 
     // Returns whether the form fields are valid and, if not, why
     private async Task<(bool IsValid, string Error)> ValidateAsync(ParticipantFieldsDto dto)

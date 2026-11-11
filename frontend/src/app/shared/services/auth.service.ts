@@ -37,6 +37,14 @@ export class AuthService {
     this.isAuthenticated.set(false);
   }
 
+  // Whether the user has one of the privileges. The Admin role may do everything, as in the API's policies. This
+  // only decides what the page offers; the API checks every request.
+  public hasPrivilege(...keys: string[]): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    return user.roles.includes('Admin') || keys.some(key => user.privileges.includes(key));
+  }
+
   public getToken(): string | null {
     if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') return null;
     return localStorage.getItem(this.TOKEN_KEY);

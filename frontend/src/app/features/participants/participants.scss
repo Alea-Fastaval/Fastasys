@@ -1,6 +1,6 @@
 .page-container {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -10,6 +10,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
 }
 
 h1 {
@@ -28,6 +34,71 @@ h1 {
   }
 }
 
+.list-helpers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}
+
+.reset-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.available-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.addable-column {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+
+  &.active {
+    background: #dbeafe;
+    border-color: #3b82f6;
+  }
+}
+
+.table-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+
+  select,
+  input {
+    margin: 0 0.3rem;
+  }
+}
+
 .participants-table {
   width: 100%;
   border-collapse: collapse;
@@ -37,13 +108,36 @@ h1 {
     text-align: left;
     padding: 0.4rem 0.6rem;
     border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+
+  td {
+    white-space: pre-line;
   }
 
   tbody tr:nth-child(even) {
     background: #f9fafb;
   }
 
+  .empty {
+    text-align: center;
+    font-style: italic;
+  }
+
   a {
     color: inherit;
+  }
+}
+
+.table-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  .page-number {
+    padding: 0 0.5rem;
   }
 }

@@ -1,0 +1,11 @@
+<form class="quick-search" (ngSubmit)="submit()">
+  <input
+    type="text"
+    name="term"
+    class="wildcardsearch"
+    [attr.aria-label]="'participants.quickSearch.label' | translate"
+    [ngModel]="term()"
+    (ngModelChange)="term.set($event)"
+  />
+  <button type="submit">{{ 'participants.quickSearch.button' | translate }}</button>
+</form>

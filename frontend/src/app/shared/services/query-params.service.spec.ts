@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { describe, beforeEach, afterEach, it, expect, vi, MockInstance } from 'vitest';
-import { QueryParamsService, UnknownQueryParamError, parseOneOf } from './query-params.service';
+import { QueryParamsService, UnknownQueryParamError, parseListOf, parseOneOf } from './query-params.service';
 
 const COLORS = ['red', 'blue'] as const;
 const SIZES = ['small', 'large'] as const;
@@ -16,7 +16,30 @@ class HostComponent {
   public readonly query = inject(QueryParamsService);
   public readonly color = this.query.oneOf('color', COLORS);
   public readonly size = this.query.oneOf('size', SIZES);
+  public readonly colors = this.query.listOf('colors', COLORS);
+  public readonly note = this.query.text('note');
+  public readonly count = this.query.parsed('count', value => {
+    if (!/^\d+$/.test(value)) throw new UnknownQueryParamError('count', value);
+    return Number(value);
+  });
 }
+
+describe('parseListOf', () => {
+  it('returns the known items once each, and null when the parameter is missing', () => {
+    expect(parseListOf('colors', 'blue,red,blue', COLORS)).toEqual(['blue', 'red']);
+    expect(parseListOf('colors', '', COLORS)).toEqual([]);
+    expect(parseListOf('colors', null, COLORS)).toBeNull();
+  });
+
+  it('throws for the whole value when one item is unknown', () => {
+    expect(() => parseListOf('colors', 'red,green', COLORS)).toThrow(UnknownQueryParamError);
+    try {
+      parseListOf('colors', 'red,green', COLORS);
+    } catch (error) {
+      expect(error).toMatchObject({ param: 'colors', value: 'red,green' });
+    }
+  });
+});
 
 describe('parseOneOf', () => {
   it('returns a known value', () => {
@@ -115,6 +138,25 @@ describe('QueryParamsService', () => {
     await settle(harness);
     expect(router.url).toBe('/host?size=small');
     expect(host.color()).toBeNull();
+  });
+
+  it('reads lists, free text and the page’s own values', async () => {
+    const { host } = await open('/host?colors=red,blue&note=hej%20med%20dig&count=3');
+
+    expect(host.colors()).toEqual(['red', 'blue']);
+    expect(host.note()).toBe('hej med dig');
+    expect(host.count()).toBe(3);
+  });
+
+  it('removes a list with an unknown item and a value the page’s parser refuses', async () => {
+    const { host, router } = await open('/host?colors=red,green&count=x&note=');
+
+    expect(host.colors()).toBeNull();
+    expect(host.count()).toBeNull();
+    // Free text is never unknown, the empty text included
+    expect(host.note()).toBe('');
+    expect(router.url).toBe('/host?note=');
+    expect(host.query.unknownValues().map(error => error.param)).toEqual(['colors', 'count']);
   });
 
   it('forgets the reported values when the page changes its parameters', async () => {

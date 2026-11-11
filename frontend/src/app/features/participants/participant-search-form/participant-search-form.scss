@@ -1,0 +1,62 @@
+app-card {
+  display: block;
+  margin-bottom: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 1rem;
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.birth-date {
+  display: flex;
+  gap: 0.5rem;
+
+  .range {
+    width: 7rem;
+  }
+}
+
+.languages {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.5rem 0 1rem;
+}
+
+.logic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0 1.5rem;
+}
+
+.combinations {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -95,6 +95,88 @@ public class ParticipantsControllerTests
         Assert.Equal([new ParticipantSummaryDto(1, "Anna A"), new ParticipantSummaryDto(3, "Carl C")], list);
     }
 
+    private static SearchParticipantsDto Search(params ParticipantSearchStepDto[] steps) => new(steps, []);
+
+    [Fact]
+    public async Task Search_WithoutSearchesListsEveryoneWithTheChosenColumns()
+    {
+        using var db = CreateDbContext();
+        await AddAsync(db, 2, p => { p.FirstName = "Bo"; p.LastName = "B"; p.IsNoShow = true; p.ActivityLanguages = [ParticipantLanguage.English]; });
+        await AddAsync(db, 1, p => { p.FirstName = "Anna"; p.LastName = "A"; p.BirthDate = new DateOnly(2001, 2, 3); });
+
+        var result = Ok(await CreateController(db).Search(new SearchParticipantsDto(null, ["isNoShow", "country", "birthDate", "activityLanguages"])));
+
+        Assert.Null(result.DirectId);
+        Assert.Equal([1, 2], result.Rows.Select(r => r.Id));
+        Assert.Equal("Anna A", result.Rows[0].Name);
+        Assert.Equal(false, result.Rows[0].Values["isNoShow"]);
+        Assert.Equal("Danmark", result.Rows[0].Values["country"]);
+        Assert.Equal(new DateOnly(2001, 2, 3), result.Rows[0].Values["birthDate"]);
+        Assert.Equal(new List<ParticipantLanguage> { ParticipantLanguage.English }, result.Rows[1].Values["activityLanguages"]);
+    }
+
+    [Fact]
+    public async Task Search_ALoneQuickSearchGoesToTheIdOrTheOnlyParticipantFound()
+    {
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => { p.FirstName = "Anna"; p.LastName = "Hansen"; });
+        await AddAsync(db, 2, p => { p.FirstName = "Anna"; p.LastName = "Jensen"; });
+        var controller = CreateController(db);
+
+        Assert.Equal(2, Ok(await controller.Search(Search(new ParticipantSearchStepDto("2", null)))).DirectId);
+        Assert.Equal(1, Ok(await controller.Search(Search(new ParticipantSearchStepDto("hansen", null)))).DirectId);
+        var two = Ok(await controller.Search(Search(new ParticipantSearchStepDto("anna", null))));
+        Assert.Null(two.DirectId);
+        Assert.Equal(2, two.Rows.Count);
+        // Only a lone quick search goes straight to a participant
+        var combined = Ok(await controller.Search(Search(
+            new ParticipantSearchStepDto("anna", null),
+            new ParticipantSearchStepDto(null, new ParticipantCriteria { LastName = "Hansen" }, SearchLogic.And, SearchCombination.Intersection))));
+        Assert.Null(combined.DirectId);
+        Assert.Equal([1], combined.Rows.Select(r => r.Id));
+    }
+
+    [Fact]
+    public async Task Search_CombinesWithThePreviousResultAlsoWithOr()
+    {
+        // Infosys gave the union for "Begræns" with "Or" (fixed on 2026-11-11)
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => { p.FirstName = "Anna"; p.City = "Aarhus"; });
+        await AddAsync(db, 2, p => { p.FirstName = "Bo"; p.City = "Odense"; });
+        await AddAsync(db, 3, p => { p.FirstName = "Carl"; p.City = "Vejle"; });
+
+        var result = Ok(await CreateController(db).Search(Search(
+            new ParticipantSearchStepDto(null, new ParticipantCriteria { City = "Aarhus" }, SearchLogic.And),
+            new ParticipantSearchStepDto(null, new ParticipantCriteria { FirstName = "Anna", City = "Odense" }, SearchLogic.Or, SearchCombination.Intersection))));
+
+        Assert.Equal([1], result.Rows.Select(r => r.Id));
+    }
+
+    [Fact]
+    public async Task Search_RefusesUnknownColumnsAndMixedSteps()
+    {
+        using var db = CreateDbContext();
+        var controller = CreateController(db);
+
+        Assert.IsType<BadRequestObjectResult>((await controller.Search(new SearchParticipantsDto(null, ["password"]))).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Search(Search(new ParticipantSearchStepDto("x", new ParticipantCriteria())))).Result);
+        Assert.IsType<BadRequestObjectResult>((await controller.Search(Search(new ParticipantSearchStepDto(null, null)))).Result);
+    }
+
+    [Fact]
+    public async Task Search_NoteColumnsAreOnlyForEditors()
+    {
+        // Infosys let its Read-only role add the notes to the list (fixed with the participant page)
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.AdminNote = "Intern");
+
+        var viewer = await CreateController(db, canEdit: false).Search(new SearchParticipantsDto(null, ["adminNote"]));
+        var editor = Ok(await CreateController(db).Search(new SearchParticipantsDto(null, ["adminNote"])));
+
+        Assert.IsType<ForbidResult>(viewer.Result);
+        Assert.Equal("Intern", editor.Rows[0].Values["adminNote"]);
+    }
+
     [Fact]
     public async Task Create_GivesTheLowestFreeId()
     {
