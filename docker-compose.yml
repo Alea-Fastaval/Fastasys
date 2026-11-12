@@ -47,6 +47,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    # nginx proxies /api/ to this service, so start it after the API container exists
+    depends_on:
+      api:
+        condition: service_started
     ports:
       - "4200:80"
 
