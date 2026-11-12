@@ -47,6 +47,15 @@
       "Friday": "Friday",
       "Saturday": "Saturday",
       "Sunday": "Sunday"
+    },
+    "weekdaysShort": {
+      "Monday": "Mon",
+      "Tuesday": "Tue",
+      "Wednesday": "Wed",
+      "Thursday": "Thu",
+      "Friday": "Fri",
+      "Saturday": "Sat",
+      "Sunday": "Sun"
     }
   },
   "users": {
@@ -305,6 +314,25 @@
       "received": "Handed out",
       "notReceived": "Not handed out",
       "notPorted": "Wear has not been moved to Fastasys yet."
+    },
+    "entranceFood": {
+      "title": "Entrance / Food",
+      "entrance": "Entrance",
+      "sleeping": "Accommodation",
+      "other": "Other",
+      "meals": "Food",
+      "partout": "Partout",
+      "digital": "(Digital)",
+      "received": "Handed out",
+      "notReceived": "Not handed out",
+      "ticketsNotPorted": "Entrance has not been moved to Fastasys yet.",
+      "mealsNotPorted": "Food has not been moved to Fastasys yet."
+    },
+    "sleeping": {
+      "title": "Sleeping place",
+      "period": "Period",
+      "room": "Place",
+      "notPorted": "Sleeping places have not been moved to Fastasys yet."
     },
     "notes": {
       "adminNote": "Admin notes (internal)",

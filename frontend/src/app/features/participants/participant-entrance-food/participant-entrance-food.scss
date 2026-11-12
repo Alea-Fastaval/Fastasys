@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.line {
+  margin: 0 0 0.4rem;
+}
+
+.meals {
+  margin-bottom: 0;
+}
+
+.meal-list {
+  margin: 0.3rem 0 0;
+  padding-left: 1.25rem;
+
+  li + li {
+    margin-top: 0.2rem;
+  }
+}
+
+.not-ported {
+  margin: 0 0 0.4rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.meals .not-ported {
+  margin: 0.3rem 0 0;
+}

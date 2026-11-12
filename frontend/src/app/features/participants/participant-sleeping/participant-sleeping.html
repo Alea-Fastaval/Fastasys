@@ -1,0 +1,23 @@
+<app-card [title]="'participants.sleeping.title' | translate">
+  @if (places; as list) {
+  <!-- Infosys shows the table with its headers even when the participant has no sleeping place -->
+  <table class="sleeping-places">
+    <thead>
+      <tr>
+        <th>{{ 'participants.sleeping.period' | translate }}</th>
+        <th>{{ 'participants.sleeping.room' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (place of list; track $index) {
+      <tr>
+        <td>{{ sleepingDayText(place.starts) }} -&gt; {{ sleepingDayText(place.ends) }}</td>
+        <td>{{ place.room }}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } @else {
+  <p class="not-ported">{{ 'participants.sleeping.notPorted' | translate }}</p>
+  }
+</app-card>

@@ -333,8 +333,11 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
-        // Wear is not ported yet; the participant page shows that while this is null
+        // Wear, entrance, food and sleeping places are not ported yet; the participant page shows that while these are null
         Assert.Null(participant.Details.WearOrders);
+        Assert.Null(participant.Details.Tickets);
+        Assert.Null(participant.Details.Meals);
+        Assert.Null(participant.Details.SleepingPlaces);
     }
 
     [Fact]

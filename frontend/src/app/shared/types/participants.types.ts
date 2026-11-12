@@ -152,6 +152,44 @@ export interface ParticipantDetails {
   sleepingNote: string | null;
   // The Wear box: null until wear is ported, then the participant's orders
   wearOrders: ParticipantWearOrder[] | null;
+  // The Indgang/Mad box: null until entrance and food are ported, then the participant's tickets and meals
+  tickets: ParticipantTicket[] | null;
+  meals: ParticipantMeal[] | null;
+  // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
+  sleepingPlaces: ParticipantSleepingPlace[] | null;
+}
+
+// The line of the Indgang/Mad box a ticket is shown on: Indgang, Overnatning or Andet
+export type TicketLine = 'Entrance' | 'Sleeping' | 'Other';
+
+// One ticket in the Indgang/Mad box (see ParticipantTicketDto in the API)
+export interface ParticipantTicket {
+  line: TicketLine;
+  // Shown as "Partout" instead of a day
+  isAllConvention: boolean;
+  // UTC instant; the box shows its day in Copenhagen
+  start: string;
+  isDigital: boolean;
+  // What the Andet line shows, e.g. "Fest"
+  name: string;
+}
+
+// One meal in the Indgang/Mad box
+export interface ParticipantMeal {
+  // UTC instant; the box shows its day in Copenhagen
+  time: string;
+  // The food's name, e.g. "Aftensmad"
+  category: string;
+  isReceived: boolean;
+}
+
+// One row of the Soveplads box
+export interface ParticipantSleepingPlace {
+  // UTC instants; the box shows their days in Copenhagen
+  starts: string;
+  ends: string;
+  // The room's name
+  room: string;
 }
 
 // One order in the Wear box on the Infosys participant page

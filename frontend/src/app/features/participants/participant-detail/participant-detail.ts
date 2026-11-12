@@ -12,6 +12,8 @@ import { TranslatePipe } from '@shared/pipes';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { FocusOnShowDirective } from './focus-on-show.directive';
 import { ParticipantWearComponent } from '../participant-wear/participant-wear';
+import { ParticipantEntranceFoodComponent } from '../participant-entrance-food/participant-entrance-food';
+import { ParticipantSleepingComponent } from '../participant-sleeping/participant-sleeping';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -98,6 +100,8 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     TranslatePipe,
     FocusOnShowDirective,
     ParticipantWearComponent,
+    ParticipantEntranceFoodComponent,
+    ParticipantSleepingComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',

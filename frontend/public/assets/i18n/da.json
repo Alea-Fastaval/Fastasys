@@ -47,6 +47,15 @@
       "Friday": "Fredag",
       "Saturday": "Lørdag",
       "Sunday": "Søndag"
+    },
+    "weekdaysShort": {
+      "Monday": "Man",
+      "Tuesday": "Tir",
+      "Wednesday": "Ons",
+      "Thursday": "Tor",
+      "Friday": "Fre",
+      "Saturday": "Lør",
+      "Sunday": "Søn"
     }
   },
   "users": {
@@ -305,6 +314,25 @@
       "received": "Udleveret",
       "notReceived": "Ikke udleveret",
       "notPorted": "Wear er ikke flyttet til Fastasys endnu."
+    },
+    "entranceFood": {
+      "title": "Indgang / Mad",
+      "entrance": "Indgang",
+      "sleeping": "Overnatning",
+      "other": "Andet",
+      "meals": "Mad",
+      "partout": "Partout",
+      "digital": "(Digital)",
+      "received": "Udleveret",
+      "notReceived": "Ikke udleveret",
+      "ticketsNotPorted": "Indgang er ikke flyttet til Fastasys endnu.",
+      "mealsNotPorted": "Mad er ikke flyttet til Fastasys endnu."
+    },
+    "sleeping": {
+      "title": "Soveplads",
+      "period": "Tidsrum",
+      "room": "Sted",
+      "notPorted": "Sovepladser er ikke flyttet til Fastasys endnu."
     },
     "notes": {
       "adminNote": "Admin-noter (internt)",

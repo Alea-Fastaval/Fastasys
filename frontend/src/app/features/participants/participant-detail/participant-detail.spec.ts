@@ -44,6 +44,9 @@ const details: ParticipantDetails = {
   juniorComment: null,
   sleepingNote: null,
   wearOrders: null,
+  tickets: null,
+  meals: null,
+  sleepingPlaces: null,
 };
 
 const participant: Participant = {
@@ -190,7 +193,12 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     const notes = element.querySelectorAll('.notes app-card');
     expect(notes.length).toBe(4);
     expect(element.textContent).toContain('Glæder mig');
-    // The Wear box says wear is not ported while the API sends no orders
+    // The boxes are in Infosys's order and say that their features are not ported while the API sends no data
+    const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
+    expect(boxes).toEqual(['app-participant-entrance-food', 'app-participant-sleeping', 'app-participant-wear']);
+    expect(element.querySelector('.info-boxes app-participant-entrance-food .tickets-not-ported')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-entrance-food .meals-not-ported')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
   });
 
@@ -233,7 +241,10 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.textContent).toContain('Testa');
     expect(element.querySelector('.notes')).toBeNull();
     expect(element.querySelector('.editable')).toBeNull();
-    // Infosys hides the Wear box from its Read-only roles too
+    // Infosys hides the Indgang/Mad, Soveplads and Wear boxes from its Read-only roles too
+    expect(element.querySelector('.info-boxes')).toBeNull();
+    expect(element.querySelector('app-participant-entrance-food')).toBeNull();
+    expect(element.querySelector('app-participant-sleeping')).toBeNull();
     expect(element.querySelector('app-participant-wear')).toBeNull();
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));

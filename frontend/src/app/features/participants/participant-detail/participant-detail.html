@@ -157,8 +157,11 @@
 
   @if (p.details; as d) {
   <!-- Infosys shows these boxes next to the personal info: Indgang/Mad, IDkort, Soveplads, Wear and Pris breakdown.
-       They come with the features they show; Wear's data comes when wear is ported. -->
+       They come with the features they show: the data for Indgang/Mad, Soveplads and Wear comes when entrance, food,
+       sleeping places and wear are ported. -->
   <div class="info-boxes">
+    <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
+    <app-participant-sleeping [places]="d.sleepingPlaces" />
     <app-participant-wear [orders]="d.wearOrders" />
   </div>
 

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
 using Fastasys.ApiService.Services;
@@ -78,8 +79,63 @@ public record ParticipantDetailsDto(
     string? JuniorComment,
     string? SleepingNote,
     // The Wear box. null until wear is ported (see ParticipantWearOrderDto); then the participant's orders.
-    IReadOnlyList<ParticipantWearOrderDto>? WearOrders
+    IReadOnlyList<ParticipantWearOrderDto>? WearOrders,
+    // The Indgang/Mad box: the tickets (null until entrance is ported, see ParticipantTicketDto) and the meals
+    // (null until food is ported, see ParticipantMealDto)
+    IReadOnlyList<ParticipantTicketDto>? Tickets,
+    IReadOnlyList<ParticipantMealDto>? Meals,
+    // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
+    IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces
 );
+
+// The line of the Indgang/Mad box a ticket is shown on
+[JsonConverter(typeof(JsonStringEnumConverter<TicketLine>))]
+public enum TicketLine
+{
+    // "Indgang"
+    Entrance,
+    // "Overnatning"
+    Sleeping,
+    // "Andet"
+    Other
+}
+
+// One ticket (Infosys indgang) in the Indgang/Mad box of the Infosys participant page (visdeltager.phtml,
+// #indgang_mad_info). The Indgang and Overnatning lines show "Partout", or else the short Danish name of Start's day
+// ("Ons"), followed by " (Digital)" for a digital ticket (Indgang::getShortDescription). The Andet line shows Name.
+// Each line joins its tickets with ", ".
+// To fill it when entrance is ported:
+// - The tickets are the participant's deltagere_indgang rows, in indgang id order (DeltagereIndgang::getDeltagerIndgang).
+// - Line: Entrance when the type contains "indgang" or "Dagsbillet" (Indgang::isEntrance), Sleeping when it
+//   contains "overnatning" (Indgang::isSleepTicket), otherwise Other; case-insensitive. Infosys shows a type with
+//   both words on both lines, which one Line can't express. Give the Fastasys ticket types explicit flags instead
+//   of matching on their names, and decide that case then.
+// - IsAllConvention: the type contains "partout", "fastafamily", "alle" or "leje" (Indgang::spansAllConvention).
+// - Start: indgang.start (a UTC instant; the box shows its Copenhagen day).
+// - IsDigital: the type contains "digital".
+// - Name, for the Andet line (Indgang::getDescription in Danish): "Fest" for the type "Ottofest", "Champagne" for
+//   "Ottofest - Champagne", otherwise the type itself.
+public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateTime Start, bool IsDigital, string Name);
+
+// One meal on the Mad list of the Indgang/Mad box:
+// "{short Danish name of Time's day} {Category} — (Udleveret|Ikke udleveret)".
+// To fill it when food is ported:
+// - The meals are the participant's deltagere_madtider rows, ordered by madtider.dato
+//   (DeltagereMadtider::getDeltagerMadtider).
+// - Time is madtider.dato (a UTC instant; the box shows its Copenhagen day). Category is mad.kategori of the meal's
+//   mad_id.
+// - IsReceived is deltagere_madtider.received = 1.
+public record ParticipantMealDto(DateTime Time, string Category, bool IsReceived);
+
+// One row of the Soveplads box (visdeltager.phtml, #sleeping): Tidsrum "{Starts} -> {Ends}" and Sted (Room).
+// Infosys writes each day with PHP date('l, j/n'), e.g. "Wednesday, 24/3", with English day names on a Danish page.
+// To fill it when sleeping places are ported:
+// - The rows are the participant's participants_sleepingplaces rows, ordered by starts
+//   (ParticipantModel::getSleepDataForParticipant). Infosys's edit page saves each night as 22:00 to 10:00 the
+//   next day, or the whole convention as one row.
+// - Starts and Ends are UTC instants; the box shows their Copenhagen days.
+// - Room is the room's name (lokaler.beskrivelse).
+public record ParticipantSleepingPlaceDto(DateTime Starts, DateTime Ends, string Room);
 
 // One line of the Wear box on the Infosys participant page (visdeltager.phtml, #wear_info):
 // "{Amount} stk. {Name}, str. {Size} — {UnitPrice × Amount},- ({UnitPrice},-) — (Udleveret|Ikke udleveret)".
@@ -738,7 +794,13 @@ public class ParticipantsController : ControllerBase
                 p.JuniorComment,
                 p.SleepingNote,
                 // TODO when wear is ported: load the participant's orders here (see ParticipantWearOrderDto)
-                WearOrders: null)
+                WearOrders: null,
+                // TODO when entrance is ported: load the participant's tickets here (see ParticipantTicketDto)
+                Tickets: null,
+                // TODO when food is ported: load the participant's meals here (see ParticipantMealDto)
+                Meals: null,
+                // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)
+                SleepingPlaces: null)
             : null;
 
         return new ParticipantDto(

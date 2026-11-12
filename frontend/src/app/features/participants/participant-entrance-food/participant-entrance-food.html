@@ -1,0 +1,30 @@
+<app-card [title]="'participants.entranceFood.title' | translate">
+  @if (tickets; as list) {
+  <!-- The space after the colon is inside <strong>: Angular drops whitespace-only text between elements -->
+  <p class="line entrance">
+    <strong>{{ 'participants.entranceFood.entrance' | translate }}: </strong><em>{{ lineText(list, 'Entrance') }}</em>
+  </p>
+  <p class="line sleeping">
+    <strong>{{ 'participants.entranceFood.sleeping' | translate }}: </strong><em>{{ lineText(list, 'Sleeping') }}</em>
+  </p>
+  <p class="line other">
+    <strong>{{ 'participants.entranceFood.other' | translate }}: </strong><em>{{ lineText(list, 'Other') }}</em>
+  </p>
+  } @else {
+  <p class="not-ported tickets-not-ported">{{ 'participants.entranceFood.ticketsNotPorted' | translate }}</p>
+  }
+
+  <div class="line meals">
+    <strong>{{ 'participants.entranceFood.meals' | translate }}:</strong>
+    @if (meals === null) {
+    <p class="not-ported meals-not-ported">{{ 'participants.entranceFood.mealsNotPorted' | translate }}</p>
+    } @else if (meals.length) {
+    <!-- Infosys shows no list for a participant without meals -->
+    <ul class="meal-list">
+      @for (meal of meals; track $index) {
+      <li>{{ mealText(meal) }} — (<em>{{ receivedKey(meal) | translate }}</em>)</li>
+      }
+    </ul>
+    }
+  </div>
+</app-card>

@@ -76,6 +76,9 @@ const existing: Participant = {
     juniorComment: null,
     sleepingNote: null,
     wearOrders: null,
+    tickets: null,
+    meals: null,
+    sleepingPlaces: null,
   },
 };
 
