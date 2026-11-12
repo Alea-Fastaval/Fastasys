@@ -75,6 +75,7 @@ const existing: Participant = {
     juniorContact: null,
     juniorComment: null,
     sleepingNote: null,
+    wearOrders: null,
   },
 };
 

@@ -76,8 +76,23 @@ public record ParticipantDetailsDto(
     string? HeroForceNote,
     string? JuniorContact,
     string? JuniorComment,
-    string? SleepingNote
+    string? SleepingNote,
+    // The Wear box. null until wear is ported (see ParticipantWearOrderDto); then the participant's orders.
+    IReadOnlyList<ParticipantWearOrderDto>? WearOrders
 );
+
+// One line of the Wear box on the Infosys participant page (visdeltager.phtml, #wear_info):
+// "{Amount} stk. {Name}, str. {Size} — {UnitPrice × Amount},- ({UnitPrice},-) — (Udleveret|Ikke udleveret)".
+// To fill it when wear is ported:
+// - The orders are deltagere_wear_order for the participant, in id order (Infosys has no ORDER BY).
+// - Name is DeltagereWear::getWearName('da', false): the wear's navn, then "-" + desc_da of each non-size
+//   attribute (deltagere_wear_order_attributes → wear_attributes) in the order model, design, color.
+// - Size is desc_da of the order's attribute of type "size", or null when it has none.
+// - UnitPrice is wearpriser.pris of the order's wearpris_id (the price for the participant's category, chosen
+//   when the order was made). Whole DKK, like the rest of the prices. The price breakdown's "Wear" line is the
+//   sum of UnitPrice × Amount (Deltagere::calcWear).
+// - IsReceived is deltagere_wear_order.received = 't'.
+public record ParticipantWearOrderDto(int Amount, string Name, string? Size, int UnitPrice, bool IsReceived);
 
 public record ParticipantCategoryDto(int Id, string Name);
 
@@ -721,7 +736,9 @@ public class ParticipantsController : ControllerBase
                 p.HeroForceNote,
                 p.JuniorContact,
                 p.JuniorComment,
-                p.SleepingNote)
+                p.SleepingNote,
+                // TODO when wear is ported: load the participant's orders here (see ParticipantWearOrderDto)
+                WearOrders: null)
             : null;
 
         return new ParticipantDto(

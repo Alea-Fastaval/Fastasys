@@ -25,7 +25,7 @@
         <mat-label>{{ 'participants.search.category' | translate }}</mat-label>
         <mat-select name="categoryId" [(ngModel)]="form().categoryId">
           <mat-option [value]="null" />
-          @for (category of categories(); track category.id) {
+          @for (category of categories; track category.id) {
           <mat-option [value]="category.id">{{ category.name }}</mat-option>
           }
         </mat-select>
@@ -96,7 +96,7 @@
         <mat-label>{{ 'participants.search.organizerArea' | translate }}</mat-label>
         <mat-select name="organizerAreaId" [(ngModel)]="form().organizerAreaId">
           <mat-option [value]="null" />
-          @for (area of organizerAreas(); track area.id) {
+          @for (area of organizerAreas; track area.id) {
           <mat-option [value]="area.id">{{ area.nameDanish }}</mat-option>
           }
         </mat-select>

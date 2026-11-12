@@ -298,6 +298,14 @@
       "youthClub": "Ungdomsskole",
       "photoConsent": "Foto tiladelse"
     },
+    "wear": {
+      "title": "Wear",
+      "pieces": "stk.",
+      "size": "str.",
+      "received": "Udleveret",
+      "notReceived": "Ikke udleveret",
+      "notPorted": "Wear er ikke flyttet til Fastasys endnu."
+    },
     "notes": {
       "adminNote": "Admin-noter (internt)",
       "messageToParticipant": "Beskeder til deltageren (fra Fastaval)",

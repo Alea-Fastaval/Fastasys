@@ -298,6 +298,14 @@
       "youthClub": "Youth school/club",
       "photoConsent": "Photo consent"
     },
+    "wear": {
+      "title": "Wear",
+      "pieces": "pcs.",
+      "size": "size",
+      "received": "Handed out",
+      "notReceived": "Not handed out",
+      "notPorted": "Wear has not been moved to Fastasys yet."
+    },
     "notes": {
       "adminNote": "Admin notes (internal)",
       "messageToParticipant": "Messages to the participant (from Fastaval)",

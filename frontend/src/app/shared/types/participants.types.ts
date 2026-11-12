@@ -150,6 +150,20 @@ export interface ParticipantDetails {
   juniorContact: string | null;
   juniorComment: string | null;
   sleepingNote: string | null;
+  // The Wear box: null until wear is ported, then the participant's orders
+  wearOrders: ParticipantWearOrder[] | null;
+}
+
+// One order in the Wear box on the Infosys participant page
+export interface ParticipantWearOrder {
+  amount: number;
+  // The wear's name with its model/design/color, e.g. "T-shirt-Sort" (Danish, as Infosys shows it)
+  name: string;
+  // The size's Danish name, or null when the order has no size
+  size: string | null;
+  // Whole DKK for one piece
+  unitPrice: number;
+  isReceived: boolean;
 }
 
 export interface ParticipantCategory {

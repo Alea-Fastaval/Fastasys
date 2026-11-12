@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, Input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -163,9 +163,10 @@ export function toSearchStep(form: SearchForm): CriteriaSearchStep {
   styleUrl: './participant-search-form.scss',
 })
 export class ParticipantSearchFormComponent {
-  public readonly categories = input<ParticipantCategory[]>([]);
+  // Decorator inputs, like Card's: the unit tests run Angular in JIT mode, which doesn't know signal inputs
+  @Input() public categories: ParticipantCategory[] = [];
   // Sorted by Danish name
-  public readonly organizerAreas = input<OrganizerArea[]>([]);
+  @Input() public organizerAreas: OrganizerArea[] = [];
   public readonly searched = output<CriteriaSearchStep>();
 
   public readonly form = signal<SearchForm>(newSearchForm());

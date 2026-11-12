@@ -155,7 +155,13 @@
     }
   </app-card>
 
-  @if (p.details) {
+  @if (p.details; as d) {
+  <!-- Infosys shows these boxes next to the personal info: Indgang/Mad, IDkort, Soveplads, Wear and Pris breakdown.
+       They come with the features they show; Wear's data comes when wear is ported. -->
+  <div class="info-boxes">
+    <app-participant-wear [orders]="d.wearOrders" />
+  </div>
+
   <div class="notes">
     @for (note of visibleNotes(p); track note.field) {
     <app-card [title]="note.label | translate">

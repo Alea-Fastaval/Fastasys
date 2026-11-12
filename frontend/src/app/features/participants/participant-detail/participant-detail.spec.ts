@@ -43,6 +43,7 @@ const details: ParticipantDetails = {
   juniorContact: null,
   juniorComment: null,
   sleepingNote: null,
+  wearOrders: null,
 };
 
 const participant: Participant = {
@@ -189,6 +190,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     const notes = element.querySelectorAll('.notes app-card');
     expect(notes.length).toBe(4);
     expect(element.textContent).toContain('Glæder mig');
+    // The Wear box says wear is not ported while the API sends no orders
+    expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
   });
 
   it('shows each note as a box, with a hint in the empty ones', async () => {
@@ -230,6 +233,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.textContent).toContain('Testa');
     expect(element.querySelector('.notes')).toBeNull();
     expect(element.querySelector('.editable')).toBeNull();
+    // Infosys hides the Wear box from its Read-only roles too
+    expect(element.querySelector('app-participant-wear')).toBeNull();
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();

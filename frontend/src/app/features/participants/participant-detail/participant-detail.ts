@@ -11,6 +11,7 @@ import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { FocusOnShowDirective } from './focus-on-show.directive';
+import { ParticipantWearComponent } from '../participant-wear/participant-wear';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -96,6 +97,7 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     Card,
     TranslatePipe,
     FocusOnShowDirective,
+    ParticipantWearComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',

@@ -58,6 +58,7 @@ describe('ParticipantSearchFormComponent', () => {
     TestBed.inject(HttpTestingController)
       .match('/assets/i18n/en.json')
       .forEach(req => req.flush({}));
+    expect(fixture.componentInstance.categories).toEqual([{ id: 1, name: 'Deltager' }]);
     const sent: CriteriaSearchStep[] = [];
     fixture.componentInstance.searched.subscribe(step => sent.push(step));
 

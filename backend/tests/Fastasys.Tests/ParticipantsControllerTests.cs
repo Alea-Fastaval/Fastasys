@@ -333,6 +333,8 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
+        // Wear is not ported yet; the participant page shows that while this is null
+        Assert.Null(participant.Details.WearOrders);
     }
 
     [Fact]
