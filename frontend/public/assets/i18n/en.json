@@ -334,6 +334,23 @@
       "room": "Place",
       "notPorted": "Sleeping places have not been moved to Fastasys yet."
     },
+    "price": {
+      "title": "Price breakdown",
+      "originalPrice": "Original price from signup",
+      "entry": "Entrance + accommodation",
+      "food": "Food",
+      "wear": "Wear",
+      "activities": "Activities",
+      "other": "Other (party, fees, etc)",
+      "alea": "Alea",
+      "signupTotal": "Price for signup (including changes from infosys)",
+      "amountPaid": "Prepaid",
+      "signupDifference": "Difference for signup",
+      "unassignedActivities": "Price for activities not assigned",
+      "checkInTotal": "Total price at check-in",
+      "checkInDifference": "Difference at check-in ({{total}} - {{paid}}):",
+      "notPorted": "Prices have not been moved to Fastasys yet."
+    },
     "notes": {
       "adminNote": "Admin notes (internal)",
       "messageToParticipant": "Messages to the participant (from Fastaval)",

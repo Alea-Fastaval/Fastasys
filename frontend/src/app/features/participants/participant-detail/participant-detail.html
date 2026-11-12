@@ -155,16 +155,19 @@
     }
   </app-card>
 
-  @if (p.details; as d) {
   <!-- Infosys shows these boxes next to the personal info: Indgang/Mad, IDkort, Soveplads, Wear and Pris breakdown.
-       They come with the features they show: the data for Indgang/Mad, Soveplads and Wear comes when entrance, food,
-       sleeping places and wear are ported. -->
+       They come with the features they show: their data comes when entrance, food, sleeping places, wear and prices
+       are ported. Infosys hides all but the Pris breakdown from its Read-only roles. -->
   <div class="info-boxes">
+    @if (p.details; as d) {
     <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
     <app-participant-sleeping [places]="d.sleepingPlaces" />
     <app-participant-wear [orders]="d.wearOrders" />
+    }
+    <app-participant-price [price]="p.price" [amountPaid]="p.amountPaid" />
   </div>
 
+  @if (p.details) {
   <div class="notes">
     @for (note of visibleNotes(p); track note.field) {
     <app-card [title]="note.label | translate">

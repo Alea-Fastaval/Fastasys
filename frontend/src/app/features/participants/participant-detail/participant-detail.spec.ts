@@ -4,7 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { describe, afterEach, it, expect, vi } from 'vitest';
-import { Participant, ParticipantDetails, ParticipantOptions } from '@shared/types';
+import { Participant, ParticipantDetails, ParticipantOptions, ParticipantPrice } from '@shared/types';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantDetailComponent, editorValue } from './participant-detail';
 
@@ -72,6 +72,7 @@ const participant: Participant = {
   previousId: 3,
   nextId: 9,
   canEdit: true,
+  price: null,
   details,
 };
 
@@ -195,11 +196,38 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.textContent).toContain('Glæder mig');
     // The boxes are in Infosys's order and say that their features are not ported while the API sends no data
     const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
-    expect(boxes).toEqual(['app-participant-entrance-food', 'app-participant-sleeping', 'app-participant-wear']);
+    expect(boxes).toEqual([
+      'app-participant-entrance-food',
+      'app-participant-sleeping',
+      'app-participant-wear',
+      'app-participant-price',
+    ]);
     expect(element.querySelector('.info-boxes app-participant-entrance-food .tickets-not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-entrance-food .meals-not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
+  });
+
+  it('passes the price and the amount paid to the Pris breakdown box', async () => {
+    const price: ParticipantPrice = {
+      originalPrice: 900,
+      entry: 400,
+      food: 150,
+      wear: 200,
+      signedUpActivities: 90,
+      assignedActivities: 30,
+      other: 75,
+      alea: 50,
+      signupTotal: 965,
+      checkInTotal: 905,
+    };
+    const { element } = await setup({ ...participant, price });
+
+    // Prepaid 450 (amountPaid), so 965 - 450 is still to pay for the signup
+    expect(element.querySelector('app-participant-price .signup-difference .amount')?.textContent?.trim()).toBe(
+      '515,-',
+    );
   });
 
   it('shows each note as a box, with a hint in the empty ones', async () => {
@@ -241,11 +269,10 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.textContent).toContain('Testa');
     expect(element.querySelector('.notes')).toBeNull();
     expect(element.querySelector('.editable')).toBeNull();
-    // Infosys hides the Indgang/Mad, Soveplads and Wear boxes from its Read-only roles too
-    expect(element.querySelector('.info-boxes')).toBeNull();
-    expect(element.querySelector('app-participant-entrance-food')).toBeNull();
-    expect(element.querySelector('app-participant-sleeping')).toBeNull();
-    expect(element.querySelector('app-participant-wear')).toBeNull();
+    // Infosys hides the Indgang/Mad, Soveplads and Wear boxes from its Read-only roles too, but shows them the Pris
+    // breakdown
+    const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
+    expect(boxes).toEqual(['app-participant-price']);
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();

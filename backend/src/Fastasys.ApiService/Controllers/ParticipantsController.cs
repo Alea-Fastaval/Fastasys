@@ -15,7 +15,8 @@ namespace Fastasys.ApiService.Controllers;
 public record ParticipantSummaryDto(int Id, string Name);
 
 // Infosys deltager/visdeltager/:id:. Details is null for users who may only view participants: Infosys hides
-// everything below the personal info, the notes included, from its Read-only roles.
+// everything below the personal info, the notes included, from its Read-only roles. The exception is the Pris
+// breakdown box (Price), which Infosys shows to everyone who can open the page.
 public record ParticipantDto(
     int Id,
     string FirstName,
@@ -40,8 +41,60 @@ public record ParticipantDto(
     int? PreviousId,
     int? NextId,
     bool CanEdit,
+    // The Pris breakdown box. null until the ticket and payment system is ported (see ParticipantPriceDto).
+    ParticipantPriceDto? Price,
     ParticipantDetailsDto? Details
 );
+
+// The Pris breakdown box of the Infosys participant page (visdeltager.phtml, #prisbreakdown), in whole DKK like
+// Infosys. Infosys shows it to its Read-only roles and in "Betalings mode" too, unlike the other boxes.
+// The box shows each field below on its own line, then:
+// - "Pris for tilmelding (inklusiv ændringer fra infosys)" = SignupTotal
+// - "Forudbetalt" = AmountPaid
+// - "Difference for tilmelding" = SignupTotal - AmountPaid
+// - "Pris for ikke tildelte aktiviteter" = SignedUpActivities - AssignedActivities
+// - "Total pris ved chek-ind" = CheckInTotal
+// - "Difference ved check-ind (CheckInTotal - AmountPaid):" = CheckInTotal - AmountPaid
+//
+// To fill it when tickets, food, wear, activity signups and the signup's price are ported (Deltagere::calc*):
+// - OriginalPrice, "Oprindelig pris fra tilmelding": deltagere.original_price, the total the signup calculated and
+//   stored. It is not part of the totals. Fastasys has no column for it yet; it comes with the signup.
+// - Entry, "Indgang + overnatning" (calcEntry): the sum of indgang.pris over the participant's entrance tickets plus
+//   the sum over their sleep tickets (see ParticipantTicketDto.Line). Infosys counts a ticket type that is both twice.
+// - Food, "Mad" (calcFood): the sum of mad.pris over the participant's meals in madtider.dato order, skipping meals
+//   with a price of 0 or less. With Økonomisk støtte (FinancialSupport) the first 2 breakfasts (Copenhagen hour
+//   before 10) and the first 2 dinners (hour 16 or later) that have a price are free (Madtider::isBreakfast/isDinner).
+// - Wear, "Wear" (calcWear): the sum of UnitPrice × Amount over the wear orders (see ParticipantWearOrderDto).
+// - SignedUpActivities, "Aktiviteter" (calcActivities(true)): the sum of aktiviteter.pris over the participant's
+//   signup wishes (deltagere_tilmeldinger) with tilmeldingstype 'spiller'. Every wish counts, so wishing two runs
+//   of a paid activity counts its price twice.
+// - AssignedActivities (calcActivities(false)): the sum of Activity.Price over the participant's seats with Role
+//   Player. For participants with work_area 2 (Brætspilsdesigner), Infosys also counts the runs of activities with
+//   auto_signup_category 'designer' (Deltagere::getPladser and getAutoSpots). Seats and activity prices are ported
+//   already; the auto spots are not.
+// - Other, "Andet (fest, gebyrer, etc)" (calcOtherStuff): the sum of indgang.pris over the tickets that are neither
+//   entrance, sleep nor Alea membership: party, fees, "Rig onkel", mattress and the like.
+// - Alea, "Alea" (calcAlea): the sum of indgang.pris over the tickets whose type contains "medlemskab".
+// Infosys's totals also add 300 for each of rig_onkel and hemmelig_onkel (calcRichBastard), with no line in the box.
+// Those admin-only columns are not ported; new signups buy "Rig onkel" tickets instead, which are in Other.
+public record ParticipantPriceDto(
+    int OriginalPrice,
+    int Entry,
+    int Food,
+    int Wear,
+    int SignedUpActivities,
+    int AssignedActivities,
+    int Other,
+    int Alea)
+{
+    // Deltagere::calcSignupTotal: the price of what the participant signed up for, with activities from their signup
+    // wishes. Infosys's online payment and debtor list use it.
+    public int SignupTotal => Entry + Food + SignedUpActivities + Wear + Alea + Other;
+
+    // Deltagere::calcRealTotal: the same with activities from the seats they were given. Infosys's check-in settles
+    // the participant's balance against it.
+    public int CheckInTotal => Entry + Food + AssignedActivities + Wear + Alea + Other;
+}
 
 public record ParticipantDetailsDto(
     int? OrganizerAreaId,
@@ -826,6 +879,9 @@ public class ParticipantsController : ControllerBase
             previousId,
             nextId,
             canEdit,
+            // TODO when tickets, food, wear, activity signups and the signup's price are ported: calculate it here
+            // (see ParticipantPriceDto)
+            Price: null,
             details);
     }
 

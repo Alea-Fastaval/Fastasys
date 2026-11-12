@@ -14,6 +14,7 @@ import { FocusOnShowDirective } from './focus-on-show.directive';
 import { ParticipantWearComponent } from '../participant-wear/participant-wear';
 import { ParticipantEntranceFoodComponent } from '../participant-entrance-food/participant-entrance-food';
 import { ParticipantSleepingComponent } from '../participant-sleeping/participant-sleeping';
+import { ParticipantPriceComponent } from '../participant-price/participant-price';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -102,6 +103,7 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantWearComponent,
     ParticipantEntranceFoodComponent,
     ParticipantSleepingComponent,
+    ParticipantPriceComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',

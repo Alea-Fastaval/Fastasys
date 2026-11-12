@@ -110,7 +110,30 @@ export interface Participant {
   previousId: number | null;
   nextId: number | null;
   canEdit: boolean;
+  // The Pris breakdown box, shown to everyone who can open the page: null until prices are ported
+  price: ParticipantPrice | null;
   details: ParticipantDetails | null;
+}
+
+// The amounts of the Pris breakdown box in whole DKK (see ParticipantPriceDto in the API)
+export interface ParticipantPrice {
+  // "Oprindelig pris fra tilmelding": the price the signup calculated; not part of the totals
+  originalPrice: number;
+  // "Indgang + overnatning"
+  entry: number;
+  food: number;
+  wear: number;
+  // "Aktiviteter": the activities the participant signed up for
+  signedUpActivities: number;
+  // The activities the participant was given a seat on
+  assignedActivities: number;
+  // "Andet (fest, gebyrer, etc)"
+  other: number;
+  alea: number;
+  // "Pris for tilmelding": calculated by the API from the lines above with signedUpActivities
+  signupTotal: number;
+  // "Total pris ved chek-ind": the same with assignedActivities
+  checkInTotal: number;
 }
 
 export interface ParticipantDetails {

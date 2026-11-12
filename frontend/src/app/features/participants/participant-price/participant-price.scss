@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+.price-breakdown {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.2rem 0;
+    vertical-align: top;
+  }
+
+  // Infosys right-aligns the amounts in their own column, with a little room on the right
+  .amount {
+    padding-left: 1rem;
+    padding-right: 0.3rem;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Infosys underlines the last line before a sum and the two differences
+  .underline td {
+    border-bottom: 1px solid #374151;
+  }
+
+  // Infosys highlights the two differences with a grey background
+  .difference .amount {
+    background-color: #e0e0e0;
+  }
+
+  .divider td {
+    padding: 0.3rem 0;
+  }
+
+  hr {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+.not-ported {
+  margin: 0;
+  color: #6b7280;
+  font-style: italic;
+}

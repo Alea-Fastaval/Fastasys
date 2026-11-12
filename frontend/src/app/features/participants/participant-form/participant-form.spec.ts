@@ -40,6 +40,7 @@ const existing: Participant = {
   previousId: null,
   nextId: null,
   canEdit: true,
+  price: null,
   details: {
     organizerAreaId: null,
     organizerAreaName: null,

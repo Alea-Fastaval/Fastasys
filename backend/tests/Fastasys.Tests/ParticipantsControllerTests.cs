@@ -333,17 +333,20 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
-        // Wear, entrance, food and sleeping places are not ported yet; the participant page shows that while these are null
+        // Wear, entrance, food, sleeping places and prices are not ported yet; the participant page shows that while
+        // these are null
         Assert.Null(participant.Details.WearOrders);
         Assert.Null(participant.Details.Tickets);
         Assert.Null(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
+        Assert.Null(participant.Price);
     }
 
     [Fact]
     public async Task Get_HidesEverythingBelowThePersonalInfoFromViewers()
     {
-        // Infosys visdeltager hides the rest of the page, notes included, from the Read-only roles
+        // Infosys visdeltager hides the rest of the page, notes included, from the Read-only roles. Only the Pris
+        // breakdown box (Price, null until prices are ported) is left for them.
         using var db = CreateDbContext();
         await AddAsync(db, 1, p => { p.AdminNote = "Intern note"; p.Email = "x@example.invalid"; });
 
@@ -351,6 +354,7 @@ public class ParticipantsControllerTests
 
         Assert.False(participant.CanEdit);
         Assert.Null(participant.Details);
+        Assert.Null(participant.Price);
         Assert.Equal("x@example.invalid", participant.Email);
     }
 

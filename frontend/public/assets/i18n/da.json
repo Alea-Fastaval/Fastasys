@@ -334,6 +334,23 @@
       "room": "Sted",
       "notPorted": "Sovepladser er ikke flyttet til Fastasys endnu."
     },
+    "price": {
+      "title": "Pris breakdown",
+      "originalPrice": "Oprindelig pris fra tilmelding",
+      "entry": "Indgang + overnatning",
+      "food": "Mad",
+      "wear": "Wear",
+      "activities": "Aktiviteter",
+      "other": "Andet (fest, gebyrer, etc)",
+      "alea": "Alea",
+      "signupTotal": "Pris for tilmelding (inklusiv ændringer fra infosys)",
+      "amountPaid": "Forudbetalt",
+      "signupDifference": "Difference for tilmelding",
+      "unassignedActivities": "Pris for ikke tildelte aktiviteter",
+      "checkInTotal": "Total pris ved chek-ind",
+      "checkInDifference": "Difference ved check-ind ({{total}} - {{paid}}):",
+      "notPorted": "Priser er ikke flyttet til Fastasys endnu."
+    },
     "notes": {
       "adminNote": "Admin-noter (internt)",
       "messageToParticipant": "Beskeder til deltageren (fra Fastaval)",
