@@ -15,6 +15,7 @@ import { ParticipantWearComponent } from '../participant-wear/participant-wear';
 import { ParticipantEntranceFoodComponent } from '../participant-entrance-food/participant-entrance-food';
 import { ParticipantSleepingComponent } from '../participant-sleeping/participant-sleeping';
 import { ParticipantPriceComponent } from '../participant-price/participant-price';
+import { ParticipantActivitiesComponent } from '../participant-activities/participant-activities';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -104,6 +105,7 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantEntranceFoodComponent,
     ParticipantSleepingComponent,
     ParticipantPriceComponent,
+    ParticipantActivitiesComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',

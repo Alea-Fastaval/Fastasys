@@ -180,6 +180,27 @@ export interface ParticipantDetails {
   meals: ParticipantMeal[] | null;
   // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
   sleepingPlaces: ParticipantSleepingPlace[] | null;
+  // The Aktiviteter box, in start time order
+  activities: ParticipantActivity[];
+}
+
+// What the participant is on a row of the Aktiviteter box: spiller, spilleder, or designer of their own game
+export type ParticipantActivityRole = 'Player' | 'GameMaster' | 'Designer';
+
+// One row of the Aktiviteter box (see ParticipantActivityDto in the API)
+export interface ParticipantActivity {
+  activityId: number;
+  title: string;
+  // UTC instants; the box shows them in Copenhagen time
+  start: string;
+  end: string;
+  role: ParticipantActivityRole;
+  // null for a designer's own game and for automatic signups, which have no run
+  runId: number | null;
+  runNumber: number | null;
+  // null when there is no room (a schedule without a meeting room)
+  roomName: string | null;
+  roomLocation: string | null;
 }
 
 // The line of the Indgang/Mad box a ticket is shown on: Indgang, Overnatning or Andet

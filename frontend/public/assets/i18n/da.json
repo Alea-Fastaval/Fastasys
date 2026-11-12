@@ -351,6 +351,21 @@
       "checkInDifference": "Difference ved check-ind ({{total}} - {{paid}}):",
       "notPorted": "Priser er ikke flyttet til Fastasys endnu."
     },
+    "activities": {
+      "title": "Aktiviteter",
+      "activity": "Aktivitet",
+      "time": "Tid",
+      "role": "S / SL",
+      "run": "Hold",
+      "room": "Sted",
+      "showActivity": "Se aktivitet",
+      "showRun": "Se hold",
+      "roles": {
+        "Player": "spiller",
+        "GameMaster": "spilleder",
+        "Designer": "designer"
+      }
+    },
     "notes": {
       "adminNote": "Admin-noter (internt)",
       "messageToParticipant": "Beskeder til deltageren (fra Fastaval)",

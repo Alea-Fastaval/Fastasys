@@ -80,6 +80,7 @@ const existing: Participant = {
     tickets: null,
     meals: null,
     sleepingPlaces: null,
+    activities: [],
   },
 };
 

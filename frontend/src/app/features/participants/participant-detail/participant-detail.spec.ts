@@ -47,6 +47,19 @@ const details: ParticipantDetails = {
   tickets: null,
   meals: null,
   sleepingPlaces: null,
+  activities: [
+    {
+      activityId: 4,
+      title: 'Andet spil',
+      start: '2027-03-24T09:00:00Z',
+      end: '2027-03-24T13:00:00Z',
+      role: 'Player',
+      runId: 400,
+      runNumber: 2,
+      roomName: 'Lokale A1',
+      roomLocation: 'Skolen',
+    },
+  ],
 };
 
 const participant: Participant = {
@@ -207,6 +220,11 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
+    // Aktiviteter comes after the notes, as in Infosys
+    expect(element.querySelector('.notes + .activity-boxes app-participant-activities')).not.toBeNull();
+    expect(element.querySelector('app-participant-activities .activity-table tbody')?.textContent).toContain(
+      'Andet spil',
+    );
   });
 
   it('passes the price and the amount paid to the Pris breakdown box', async () => {
@@ -273,6 +291,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     // breakdown
     const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
     expect(boxes).toEqual(['app-participant-price']);
+    // and the Aktiviteter box from its Read-only role
+    expect(element.querySelector('app-participant-activities')).toBeNull();
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();

@@ -351,6 +351,21 @@
       "checkInDifference": "Difference at check-in ({{total}} - {{paid}}):",
       "notPorted": "Prices have not been moved to Fastasys yet."
     },
+    "activities": {
+      "title": "Activities",
+      "activity": "Activity",
+      "time": "Time",
+      "role": "P / GM",
+      "run": "Run",
+      "room": "Place",
+      "showActivity": "Show activity",
+      "showRun": "Show run",
+      "roles": {
+        "Player": "player",
+        "GameMaster": "game master",
+        "Designer": "designer"
+      }
+    },
     "notes": {
       "adminNote": "Admin notes (internal)",
       "messageToParticipant": "Messages to the participant (from Fastaval)",

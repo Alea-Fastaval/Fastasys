@@ -167,7 +167,7 @@
     <app-participant-price [price]="p.price" [amountPaid]="p.amountPaid" />
   </div>
 
-  @if (p.details) {
+  @if (p.details; as d) {
   <div class="notes">
     @for (note of visibleNotes(p); track note.field) {
     <app-card [title]="note.label | translate">
@@ -210,6 +210,12 @@
       </div>
     </app-card>
     }
+  </div>
+
+  <!-- Infosys shows Aktiviteter after the notes, with Heltestyrke, Opgaver next to it; the activity signups and hero
+       force signups come in the row below. Those boxes come with their features. -->
+  <div class="activity-boxes">
+    <app-participant-activities [activities]="d.activities" />
   </div>
   } }
 </div>
