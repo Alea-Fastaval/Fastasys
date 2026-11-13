@@ -2,6 +2,10 @@
   display: block;
 }
 
+.card-actions {
+  margin-bottom: 0.75rem;
+}
+
 // The table can be wider than the card on a phone; it scrolls instead of the page
 app-card {
   overflow-x: auto;

@@ -109,4 +109,31 @@ public class ParticipantRulesTests
         Assert.Equal(1234, ParticipantRules.IdFromBarcode("0000000012348", 27));
         Assert.Null(ParticipantRules.IdFromBarcode("0000000012345", 27));
     }
+
+    // Infosys Deltagere::isBusyBetween: a period is busy when it starts inside a busy period, ends inside one, or
+    // covers one. Busy 10:00-14:00.
+    [Theory]
+    [InlineData(10, 14, true)]
+    [InlineData(11, 12, true)]
+    [InlineData(8, 11, true)]
+    [InlineData(13, 16, true)]
+    [InlineData(9, 15, true)]
+    [InlineData(8, 10, false)]
+    [InlineData(14, 16, false)]
+    [InlineData(15, 18, false)]
+    public void IsBusyBetween_WhenThePeriodOverlapsABusyOne(int startHour, int endHour, bool expected)
+    {
+        var day = new DateTime(2027, 3, 24, 0, 0, 0, DateTimeKind.Utc);
+        var busy = new[] { (day.AddHours(10), day.AddHours(14)) };
+
+        Assert.Equal(expected, ParticipantRules.IsBusyBetween(busy, day.AddHours(startHour), day.AddHours(endHour)));
+    }
+
+    [Fact]
+    public void IsBusyBetween_IsNeverTrueWithoutBusyPeriods()
+    {
+        var day = new DateTime(2027, 3, 24, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.False(ParticipantRules.IsBusyBetween([], day, day.AddHours(4)));
+    }
 }

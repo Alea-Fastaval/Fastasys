@@ -1,5 +1,11 @@
 <app-card [title]="'participants.activities.title' | translate">
-  @if (activities.length) {
+  @if (canEdit) {
+  <div class="card-actions">
+    <a mat-stroked-button class="edit-seats" [routerLink]="['/participants', participantId, 'activities']">
+      <mat-icon>edit</mat-icon> {{ 'participants.activities.editDelete' | translate }}
+    </a>
+  </div>
+  } @if (activities.length) {
   <table class="activity-table">
     <thead>
       <tr>

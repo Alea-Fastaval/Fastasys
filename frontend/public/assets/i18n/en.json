@@ -360,6 +360,7 @@
       "room": "Place",
       "showActivity": "Show activity",
       "showRun": "Show run",
+      "editDelete": "Edit/delete",
       "roles": {
         "Player": "player",
         "GameMaster": "game master",
@@ -400,7 +401,19 @@
       "deleteFailed": "Could not delete the participant.",
       "fieldUpdateFailed": "Could not update the participant.",
       "notFound": "Oops! Could not find any participants from what you typed.",
-      "listFailed": "Could not load the participants."
+      "listFailed": "Could not load the participants.",
+      "activitiesLocked": "The participant's activities cannot be changed.",
+      "activitiesUpdateFailed": "Could not update the participant."
+    },
+    "seats": {
+      "title": "Update activities",
+      "backToParticipant": "Back to the participant",
+      "noSchedules": "No schedules",
+      "noRuns": "No runs",
+      "add": "Add activity",
+      "run": "run",
+      "delete": "Delete",
+      "update": "Update"
     }
   },
   "activities": {

@@ -360,6 +360,7 @@
       "room": "Sted",
       "showActivity": "Se aktivitet",
       "showRun": "Se hold",
+      "editDelete": "Ret/slet",
       "roles": {
         "Player": "spiller",
         "GameMaster": "spilleder",
@@ -400,7 +401,19 @@
       "deleteFailed": "Kunne ikke slette deltageren.",
       "fieldUpdateFailed": "Kunne ikke opdatere deltageren.",
       "notFound": "Ups! Kunne ikke finde nogen deltagere efter hvad du tastede.",
-      "listFailed": "Kunne ikke hente deltagerne."
+      "listFailed": "Kunne ikke hente deltagerne.",
+      "activitiesLocked": "Deltagerens aktiviteter kan ikke ændres.",
+      "activitiesUpdateFailed": "Kunne ikke opdatere deltageren."
+    },
+    "seats": {
+      "title": "Opdater Aktiviteter",
+      "backToParticipant": "Tilbage til deltageren",
+      "noSchedules": "Ingen afviklinger",
+      "noRuns": "Ingen hold",
+      "add": "Tilføj Aktivitet",
+      "run": "hold",
+      "delete": "Slet",
+      "update": "Opdater"
     }
   },
   "activities": {

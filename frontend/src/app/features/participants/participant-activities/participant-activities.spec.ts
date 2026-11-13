@@ -55,13 +55,15 @@ describe('activityRoomText (the Sted column of the Infosys Aktiviteter box)', ()
 });
 
 describe('ParticipantActivitiesComponent', () => {
-  const render = async (activities: ParticipantActivity[]) => {
+  const render = async (activities: ParticipantActivity[], canEdit = false) => {
     await TestBed.configureTestingModule({
       imports: [ParticipantActivitiesComponent],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(ParticipantActivitiesComponent);
     fixture.componentRef.setInput('activities', activities);
+    fixture.componentRef.setInput('participantId', 7);
+    fixture.componentRef.setInput('canEdit', canEdit);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
       .match('/assets/i18n/en.json')
@@ -110,6 +112,20 @@ describe('ParticipantActivitiesComponent', () => {
       '',
     ]);
     expect(element.querySelector('.run a')).toBeNull();
+  });
+
+  it('links "Ret/slet" to the seat editor when the page allows it', async () => {
+    const element = await render([seat], true);
+
+    const link = element.querySelector('a.edit-seats');
+    expect(link?.getAttribute('href')).toBe('/participants/7/activities');
+    expect(link?.textContent).toContain('participants.activities.editDelete');
+  });
+
+  it('has no "Ret/slet" link when the page does not allow it', async () => {
+    const element = await render([seat]);
+
+    expect(element.querySelector('a.edit-seats')).toBeNull();
   });
 
   it('shows no table when the participant has no activities, like Infosys', async () => {

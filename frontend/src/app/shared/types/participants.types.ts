@@ -1,3 +1,5 @@
+import { RunSeatRole } from './runs.types';
+
 // Infosys deltagere.main_lang (da, en)
 export const PREFERRED_LANGUAGES = ['Danish', 'English'] as const;
 export type PreferredLanguage = (typeof PREFERRED_LANGUAGES)[number];
@@ -315,4 +317,53 @@ export type CreateParticipantDto = ParticipantFieldsDto;
 // The edit form adds Annulleret
 export interface UpdateParticipantDto extends ParticipantFieldsDto {
   isAnnulled: boolean;
+}
+
+// Infosys deltager/updateaktivitet ("Opdater Aktiviteter", the "Ret/slet" link of the Aktiviteter box)
+export interface ParticipantSeats {
+  participantId: number;
+  // The participant's seats on runs, by start time
+  seats: ParticipantSeat[];
+  // The "Aktivitet" select: the activities that can be signed up for, by title
+  activities: SeatActivityOption[];
+}
+
+export interface ParticipantSeat {
+  runId: number;
+  runNumber: number;
+  role: RunSeatRole;
+  title: string;
+  titleEnglish: string;
+  // UTC instants
+  start: string;
+  end: string;
+}
+
+export interface SeatActivityOption {
+  id: number;
+  title: string;
+  titleEnglish: string;
+  schedules: SeatScheduleOption[];
+}
+
+// The "Tid" select; a busy schedule is shown but can't be chosen
+export interface SeatScheduleOption {
+  id: number;
+  start: string;
+  end: string;
+  isBusy: boolean;
+  runs: SeatRunOption[];
+}
+
+// The "Hold" select; the role select disables Spiller unless canUsePlayers and Spilleder unless needsGameMasters
+export interface SeatRunOption {
+  id: number;
+  number: number;
+  canUsePlayers: boolean;
+  needsGameMasters: boolean;
+}
+
+// "Opdater": the list replaces the participant's seats
+export interface UpdateParticipantSeatsDto {
+  seats: { runId: number; role: RunSeatRole }[];
 }

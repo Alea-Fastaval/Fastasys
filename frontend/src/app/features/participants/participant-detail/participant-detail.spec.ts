@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angul
 import { BehaviorSubject } from 'rxjs';
 import { describe, afterEach, it, expect, vi } from 'vitest';
 import { Participant, ParticipantDetails, ParticipantOptions, ParticipantPrice } from '@shared/types';
+import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantDetailComponent, editorValue } from './participant-detail';
 
@@ -130,7 +131,7 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     httpMock.verify();
   });
 
-  const setup = async (loaded: Participant = participant) => {
+  const setup = async (loaded: Participant = participant, mayEditActivities = false) => {
     const params = new BehaviorSubject(convertToParamMap({ id: String(loaded.id) }));
     await TestBed.configureTestingModule({
       imports: [ParticipantDetailComponent],
@@ -143,6 +144,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
+    // Only the seat editor link asks; it needs activities_edit
+    vi.spyOn(TestBed.inject(AuthService), 'hasPrivilege').mockReturnValue(mayEditActivities);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(ParticipantDetailComponent);
     fixture.detectChanges();
@@ -278,6 +281,24 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
 
     expect(element.querySelector('.notes textarea')).toBeNull();
     expect(element.querySelector('.note.saved')?.textContent).toContain('Husk at hente nøglen');
+  });
+
+  it('links the Aktiviteter box to the seat editor for users who may edit activities', async () => {
+    const { element } = await setup(participant, true);
+
+    expect(element.querySelector('app-participant-activities a.edit-seats')?.getAttribute('href')).toBe(
+      '/participants/7/activities',
+    );
+  });
+
+  it('has no seat editor link for users who may not edit activities, or when the participant is activity-locked', async () => {
+    // Infosys hides "Ret/slet" when Aktivitets-låst is ja; without Activity-admin, Infonaut or admin it shows "no access"
+    const withoutRight = await setup(participant, false);
+    expect(withoutRight.element.querySelector('a.edit-seats')).toBeNull();
+
+    TestBed.resetTestingModule();
+    const locked = await setup({ ...participant, details: { ...details, isActivityLocked: true } }, true);
+    expect(locked.element.querySelector('a.edit-seats')).toBeNull();
   });
 
   it('shows only the personal info to users who may only view participants', async () => {

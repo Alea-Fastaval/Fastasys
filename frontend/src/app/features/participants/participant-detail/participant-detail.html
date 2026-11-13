@@ -215,7 +215,7 @@
   <!-- Infosys shows Aktiviteter after the notes, with Heltestyrke, Opgaver next to it; the activity signups and hero
        force signups come in the row below. Those boxes come with their features. -->
   <div class="activity-boxes">
-    <app-participant-activities [activities]="d.activities" />
+    <app-participant-activities [activities]="d.activities" [participantId]="p.id" [canEdit]="canEditSeats(d)" />
   </div>
   } }
 </div>

@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Participant, ParticipantDetails, ParticipantOptions } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
+import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { FocusOnShowDirective } from './focus-on-show.directive';
 import { ParticipantWearComponent } from '../participant-wear/participant-wear';
@@ -115,6 +116,9 @@ export class ParticipantDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly flashService = inject(ParticipantFlashService);
+  // The seat editor (Aktiviteter "Ret/slet") also needs the right to edit activities. Infosys: Activity-admin,
+  // Infonaut or admin.
+  private readonly mayEditSeats = inject(AuthService).hasPrivilege('activities_edit');
 
   public readonly flash = signal(this.flashService.take());
   public readonly participant = signal<Participant | null>(null);
@@ -407,6 +411,11 @@ export class ParticipantDetailComponent {
 
   public visibleNotes(p: Participant): NoteField[] {
     return this.noteFields.filter(note => !note.optional || note.value(p) !== null);
+  }
+
+  // Infosys shows the Aktiviteter "Ret/slet" link unless the participant is activity-locked (Aktivitets-låst: ja)
+  public canEditSeats(details: ParticipantDetails): boolean {
+    return this.mayEditSeats && !details.isActivityLocked;
   }
 
   public selectedLabel(def: EditableField, p: Participant): string {

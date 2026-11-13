@@ -11,6 +11,7 @@ import { LoginComponent } from './features/login/login';
 import { ParticipantsComponent } from './features/participants/participants';
 import { ParticipantDetailComponent } from './features/participants/participant-detail/participant-detail';
 import { ParticipantFormComponent } from './features/participants/participant-form/participant-form';
+import { ParticipantSeatsComponent } from './features/participants/participant-seats/participant-seats';
 import { FoodComponent } from './features/resources/food/food';
 import { RoomsComponent } from './features/resources/rooms/rooms';
 import { WearComponent } from './features/resources/wear/wear';
@@ -30,6 +31,7 @@ export const routes: Routes = [
   { path: 'participants/new', component: ParticipantFormComponent, canActivate: [authGuard] },
   { path: 'participants/:id', component: ParticipantDetailComponent, canActivate: [authGuard] },
   { path: 'participants/:id/edit', component: ParticipantFormComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/activities', component: ParticipantSeatsComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
   { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },

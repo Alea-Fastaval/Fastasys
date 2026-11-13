@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -915,69 +914,12 @@ public class ParticipantsController : ControllerBase
             details);
     }
 
-    // Infosys Deltagere::getPladser, as the Aktiviteter box shows it: the participant's seats on runs, by start time.
-    // For a Brætspilsdesigner (work_area 2) Infosys adds a "designer" row for every schedule of their own game
-    // (game_id; getDesignerDuties) and a "spiller" row for every schedule of the activities with automatic signup for
-    // designers (getAutoSpots). It does that only for work_area 2: getAutoSpots also knows authors and other designer
-    // areas, but getPladser never asks for them.
-    // TODO: the user decided (2026-11-13) to keep this legacy behaviour for now and add the automatic signups for
-    // authors (Infosys work_area 1, 54-56, auto_signup_category 'author') and the other designer areas (17-19) later.
-    // Infosys never uses the 'all' and 'organizer' categories either. The organizer area ids were renumbered in
-    // Fastasys, so map 54-56 and 17-19 to the new ids first.
-    // The rows are then sorted by start time. PHP's uasort is stable, so at equal times the seats come first, then
-    // the designer rows, then the automatic ones.
-    private async Task<IReadOnlyList<ParticipantActivityDto>> LoadActivitiesAsync(Participant p)
-    {
-        var seats = await _db.RunSeats
-            .AsNoTracking()
-            .Where(s => s.ParticipantId == p.Id)
-            .OrderBy(s => s.Run.Schedule.StartTime)
-            .ThenBy(s => s.RunId)
+    // The Aktiviteter box: Infosys Deltagere::getPladser (see ParticipantSpots.LoadAsync)
+    private async Task<IReadOnlyList<ParticipantActivityDto>> LoadActivitiesAsync(Participant p) =>
+        (await ParticipantSpots.LoadAsync(_db, p))
             .Select(s => new ParticipantActivityDto(
-                s.Run.Schedule.ActivityId,
-                s.Run.Schedule.Activity.Title,
-                s.Run.Schedule.StartTime,
-                s.Run.Schedule.EndTime,
-                s.Role == RunSeatRole.Player ? ParticipantActivityRole.Player : ParticipantActivityRole.GameMaster,
-                s.RunId,
-                s.Run.Number,
-                s.Run.Room.Name,
-                s.Run.Room.Location))
-            .ToListAsync();
-
-        if (p.OrganizerAreaId != OrganizerArea.BoardGameDesignerId)
-        {
-            return seats;
-        }
-
-        var ownGame = p.GameActivityId is int gameId
-            ? await SchedulesAsActivitiesAsync(s => s.ActivityId == gameId, ParticipantActivityRole.Designer)
-            : [];
-        var automatic = await SchedulesAsActivitiesAsync(
-            s => s.Activity.AutoSignupCategory == AutoSignupCategory.Designer, ParticipantActivityRole.Player);
-
-        // OrderBy is stable, like uasort
-        return seats.Concat(ownGame).Concat(automatic).OrderBy(a => a.Start).ToList();
-    }
-
-    // Rows for schedules the participant has no seat on (Infosys SpecialSpot): no run, and the schedule's meeting room
-    private async Task<List<ParticipantActivityDto>> SchedulesAsActivitiesAsync(
-        Expression<Func<Schedule, bool>> filter, ParticipantActivityRole role) =>
-        await _db.Schedules
-            .AsNoTracking()
-            .Where(filter)
-            .OrderBy(s => s.Id)
-            .Select(s => new ParticipantActivityDto(
-                s.ActivityId,
-                s.Activity.Title,
-                s.StartTime,
-                s.EndTime,
-                role,
-                null,
-                null,
-                s.Room != null ? s.Room.Name : null,
-                s.Room != null ? s.Room.Location : null))
-            .ToListAsync();
+                s.ActivityId, s.Title, s.Start, s.End, s.Role, s.RunId, s.RunNumber, s.RoomName, s.RoomLocation))
+            .ToList();
 
     private string? CurrentUserId() => User?.FindFirstValue(ClaimTypes.NameIdentifier);
 }
