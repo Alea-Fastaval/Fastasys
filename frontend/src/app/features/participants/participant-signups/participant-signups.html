@@ -1,0 +1,89 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button [routerLink]="['/participants', participantId]"
+      ><mat-icon>arrow_back</mat-icon> {{ 'participants.seats.backToParticipant' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  } @if (page(); as p) {
+  <app-card [title]="'participants.signups.editTitle' | translate">
+    <form (ngSubmit)="submit()">
+      <div class="choose">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.activities.activity' | translate }}</mat-label>
+          <mat-select name="activityId" [(ngModel)]="activityId" (ngModelChange)="activityChanged()">
+            @for (activity of activities(p); track activity.id) {
+            <mat-option [value]="activity.id">{{ activity.title }} / {{ activity.titleEnglish }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (activity(); as a) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.activities.time' | translate }}</mat-label>
+          <mat-select name="scheduleId" [(ngModel)]="scheduleId">
+            @for (schedule of a.schedules; track schedule.id) {
+            <mat-option [value]="schedule.id">{{ schedule.start | timeSpan: schedule.end }}</mat-option>
+            } @empty {
+            <mat-option [value]="null" disabled>{{ 'participants.seats.noSchedules' | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        } @if (schedule() && activity(); as a) {
+        <mat-form-field appearance="outline" class="narrow">
+          <mat-label>{{ 'participants.activities.role' | translate }}</mat-label>
+          <mat-select name="role" [(ngModel)]="role">
+            <mat-option value="Player">{{ 'runs.roleOptions.Player' | translate }}</mat-option>
+            <mat-option value="GameMaster" [disabled]="!a.hasGameMasters"
+              >{{ 'runs.roleOptions.GameMaster' | translate }}</mat-option
+            >
+          </mat-select>
+        </mat-form-field>
+        } @if (role === 'Player') {
+        <mat-form-field appearance="outline" class="narrow">
+          <mat-label>{{ 'participants.signups.priority' | translate }}</mat-label>
+          <mat-select name="priority" [(ngModel)]="priority">
+            @for (value of priorities; track value) {
+            <mat-option [value]="value"
+              >{{ 'participants.signups.priorityText' | translate: { priority: value.toString() } }}</mat-option
+            >
+            }
+          </mat-select>
+        </mat-form-field>
+        }
+
+        <button mat-stroked-button type="button" class="add" [disabled]="!canAdd()" (click)="add()">
+          <mat-icon>add</mat-icon> {{ 'participants.signups.add' | translate }}
+        </button>
+      </div>
+
+      <table class="signup-list">
+        <tbody>
+          @for (signup of signups(); track signup.scheduleId + signup.role) {
+          <tr>
+            <td class="signup">
+              {{ signup.title }} / {{ signup.titleEnglish }} — {{ 'participants.activities.roles.' + signup.role |
+              translate }}, {{ signup.start | timeSpan: signup.end }}, {{ 'participants.signups.priorityText' |
+              translate: { priority: signup.priority.toString() } }}
+            </td>
+            <td class="actions">
+              <button mat-button type="button" color="warn" (click)="remove(signup)">
+                {{ 'participants.seats.delete' | translate }}
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy()">
+          {{ 'participants.signups.update' | translate }}
+        </button>
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

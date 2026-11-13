@@ -403,7 +403,12 @@
       "notFound": "Oops! Could not find any participants from what you typed.",
       "listFailed": "Could not load the participants.",
       "activitiesLocked": "The participant's activities cannot be changed.",
-      "activitiesUpdateFailed": "Could not update the participant."
+      "activitiesUpdateFailed": "Could not update the participant.",
+      "signupAlreadySignedUp": "Cannot move the signup - the participant is already signed up for the schedule it is moved to",
+      "signupNotFound": "Cannot find the schedule",
+      "signupNoGameMasters": "The activity has no game masters.",
+      "signupUpdateFailed": "Could not update the participant.",
+      "signupDeleteFailed": "Could not delete the signup"
     },
     "seats": {
       "title": "Update activities",
@@ -413,7 +418,20 @@
       "add": "Add activity",
       "run": "run",
       "delete": "Delete",
-      "update": "Update"
+      "update": "Update",
+      "wishesTitle": "The participant's signups",
+      "addWish": "Add"
+    },
+    "signups": {
+      "title": "Activity signups",
+      "editTitle": "Update activity signups",
+      "priority": "Prio",
+      "priorityText": "{{priority}}. priority",
+      "add": "Add signup",
+      "update": "Update",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure?",
+      "sortTitle": "Sort by priority"
     }
   },
   "activities": {
@@ -515,7 +533,8 @@
       "scheduleNotUpdated": "The schedule was not updated.",
       "scheduleDeleted": "The schedule was deleted.",
       "scheduleDeleteFailed": "The schedule could not be deleted.",
-      "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first."
+      "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first.",
+      "scheduleDeleteHasSignups": "The schedule could not be deleted because participants have signed up for it."
     }
   },
   "runs": {

@@ -539,6 +539,24 @@ public class ActivitySchedulesTests
     }
 
     [Fact]
+    public async Task DeleteSchedule_WithSignupWishes_IsRefused_AndSaysWhy()
+    {
+        // Infosys: deltagere_tilmeldinger's foreign key has no ON DELETE CASCADE either (agreed 2026-11-13)
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        db.Participants.Add(new Participant { Id = 1, FirstName = "Testa", LastName = "Testesen" });
+        db.ScheduleSignups.Add(new ScheduleSignup { ParticipantId = 1, ScheduleId = schedule.Id, Role = RunSeatRole.Player, Priority = 1 });
+        await db.SaveChangesAsync(Ct);
+
+        var result = Assert.IsType<ConflictObjectResult>(await CreateController(db).DeleteSchedule(activity.Id, schedule.Id));
+
+        Assert.Equal("signups", result.Value?.GetType().GetProperty("reason")?.GetValue(result.Value));
+        Assert.Single(db.Schedules);
+        Assert.Single(db.ScheduleSignups);
+    }
+
+    [Fact]
     public async Task DeleteSchedule_DoesNotTouchActivityUpdatedAt()
     {
         // Infosys deleteAfvikling, unlike opretAfvikling and updateAfvikling, doesn't set aktiviteter.updated

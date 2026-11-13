@@ -403,7 +403,12 @@
       "notFound": "Ups! Kunne ikke finde nogen deltagere efter hvad du tastede.",
       "listFailed": "Kunne ikke hente deltagerne.",
       "activitiesLocked": "Deltagerens aktiviteter kan ikke ændres.",
-      "activitiesUpdateFailed": "Kunne ikke opdatere deltageren."
+      "activitiesUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "signupAlreadySignedUp": "Kan ikke flytte afvikling - deltageren er allerede tilmeldt afviklingen der flyttes til",
+      "signupNotFound": "Kan ikke finde afvikling",
+      "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
+      "signupUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "signupDeleteFailed": "Kunne ikke slette tilmeldingen"
     },
     "seats": {
       "title": "Opdater Aktiviteter",
@@ -413,7 +418,20 @@
       "add": "Tilføj Aktivitet",
       "run": "hold",
       "delete": "Slet",
-      "update": "Opdater"
+      "update": "Opdater",
+      "wishesTitle": "Deltagerens tilmeldinger",
+      "addWish": "Tilføj"
+    },
+    "signups": {
+      "title": "Aktivitetstilmeldinger",
+      "editTitle": "Opdater Aktivitets-tilmeldinger",
+      "priority": "Prio",
+      "priorityText": "{{priority}}. prioritet",
+      "add": "Tilføj Tilmelding",
+      "update": "Opdater",
+      "delete": "Slet",
+      "confirmDelete": "Er du sikker?",
+      "sortTitle": "Sorter efter prioritet"
     }
   },
   "activities": {
@@ -515,7 +533,8 @@
       "scheduleNotUpdated": "Afviklingen blev ikke opdateret.",
       "scheduleDeleted": "Afviklingen blev slettet.",
       "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
-      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først."
+      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først.",
+      "scheduleDeleteHasSignups": "Afviklingen kunne ikke slettes, fordi der er deltagere tilmeldt den."
     }
   },
   "runs": {

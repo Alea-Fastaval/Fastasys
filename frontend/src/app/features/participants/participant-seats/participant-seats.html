@@ -87,6 +87,34 @@
         </button>
       </div>
     </form>
+
+    @if (p.wishes.length) {
+    <table class="wish-list">
+      <thead>
+        <tr>
+          <th colspan="2">{{ 'participants.seats.wishesTitle' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (wish of p.wishes; track wish.scheduleId + wish.role) {
+        <tr>
+          <td class="wish">
+            {{ wish.title }} / {{ wish.titleEnglish }} — {{ wish.start | timeSpan: wish.end }}, {{
+            'participants.activities.roles.' + wish.role | translate }}, {{ 'participants.signups.priorityText' |
+            translate: { priority: wish.priority.toString() } }}
+          </td>
+          <td class="actions">
+            @if (wish.runId !== null) {
+            <button mat-stroked-button type="button" [disabled]="!canAddWish(wish)" (click)="addWish(wish)">
+              {{ 'participants.seats.addWish' | translate }}
+            </button>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
   </app-card>
   }
 </div>

@@ -46,6 +46,7 @@ const page: ParticipantSeats = {
       ],
     },
   ],
+  wishes: [],
 };
 
 const run = (canUsePlayers: boolean, needsGameMasters: boolean): SeatRunOption => ({
@@ -169,6 +170,57 @@ describe('ParticipantSeatsComponent (Infosys deltager/updateaktivitet)', () => {
     component.activityId = 2;
     component.activityChanged();
     expect([component.scheduleId, component.runId, component.role]).toEqual([null, null, null]);
+  });
+
+  it('lists the wishes and adds a seat from one with "Tilføj"', async () => {
+    // Fixed: Infosys's "Tilføj" needed Prototype.js and never worked
+    const { fixture, element } = await setup();
+    httpMock.expectOne('/api/participants/7/seats').flush({
+      ...page,
+      wishes: [
+        {
+          scheduleId: 20,
+          role: 'GameMaster',
+          priority: 0,
+          title: 'Natspil',
+          titleEnglish: 'Night game',
+          start: '2027-03-24T21:00:00Z',
+          end: '2027-03-25T01:00:00Z',
+          runId: 201,
+          runNumber: 2,
+        },
+        {
+          scheduleId: 30,
+          role: 'Player',
+          priority: 1,
+          title: 'Fuldt',
+          titleEnglish: 'Full',
+          start: '2027-03-24T09:00:00Z',
+          end: '2027-03-24T13:00:00Z',
+          runId: null,
+          runNumber: null,
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const wishRows = () => [...element.querySelectorAll('.wish-list tbody tr')];
+    expect(element.querySelector('.wish-list th')?.textContent).toContain('participants.seats.wishesTitle');
+    expect(wishRows().map(tr => tr.querySelector('td.wish')?.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'Natspil / Night game — Onsdag 22:00-02:00, participants.activities.roles.GameMaster, participants.signups.priorityText',
+      'Fuldt / Full — Onsdag 10:00-14:00, participants.activities.roles.Player, participants.signups.priorityText',
+    ]);
+    // No run of that schedule has room, or the participant is busy then
+    expect(wishRows()[1].querySelector('button')).toBeNull();
+
+    wishRows()[0].querySelector<HTMLButtonElement>('button')?.click();
+    fixture.detectChanges();
+
+    expect(rows(element)[1]).toBe(
+      'Natspil / Night game — participants.activities.roles.GameMaster, participants.seats.run 2, Onsdag 22:00-02:00',
+    );
+    // The run is in the list now
+    expect(wishRows()[0].querySelector<HTMLButtonElement>('button')?.disabled).toBe(true);
   });
 
   it('removes a seat from the list with "Slet"', async () => {

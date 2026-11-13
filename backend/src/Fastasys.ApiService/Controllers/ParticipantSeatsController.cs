@@ -15,8 +15,26 @@ public record ParticipantSeatsDto(
     // they can't be edited, so they are left out.
     IReadOnlyList<ParticipantSeatDto> Seats,
     // The "Aktivitet" select and what Infosys's AJAX endpoints offer below it
-    IReadOnlyList<SeatActivityOptionDto> Activities
+    IReadOnlyList<SeatActivityOptionDto> Activities,
+    // "Deltagerens tilmeldinger": the participant's signup wishes, by the schedule's start
+    IReadOnlyList<SeatWishDto> Wishes
 );
+
+// A row of "Deltagerens tilmeldinger": "{Title} / {TitleEnglish} — {Onsdag 10:00-14:00}, {spiller}, {Priority}.
+// prioritet". RunId is the run its "Tilføj" button gives the participant a seat on: the first run of the schedule (id
+// order) with room for the role (Afviklinger::getGroupNeeding, ActivityController::ajaxGetRandomHold). It is null, and
+// the button is not shown, when no run has room or when the activity is time-exclusive and the participant is busy
+// then. Infosys's button never worked (it needs Prototype.js, which the page doesn't load); fixed on 2026-11-13.
+public record SeatWishDto(
+    int ScheduleId,
+    RunSeatRole Role,
+    int Priority,
+    string Title,
+    string TitleEnglish,
+    DateTime Start,
+    DateTime End,
+    int? RunId,
+    int? RunNumber);
 
 // A row of the seat list: "{Title} / {TitleEnglish} — {spiller|spilleder}, hold {RunNumber}, {Onsdag 10:00-14:00}"
 public record ParticipantSeatDto(
@@ -146,7 +164,41 @@ public class ParticipantSeatsController : ControllerBase
                     .ToList()))
             .ToList();
 
-        return Ok(new ParticipantSeatsDto(participantId, seats, options));
+        return Ok(new ParticipantSeatsDto(participantId, seats, options, await LoadWishesAsync(participantId, busy)));
+    }
+
+    private async Task<List<SeatWishDto>> LoadWishesAsync(int participantId, List<(DateTime Start, DateTime End)> busy)
+    {
+        var wishes = await ParticipantSignupRows.LoadAsync(_db, participantId);
+        var scheduleIds = wishes.Select(w => w.ScheduleId).Distinct().ToList();
+        var runs = await _db.Runs
+            .AsNoTracking()
+            .Where(r => scheduleIds.Contains(r.ScheduleId))
+            .OrderBy(r => r.Id)
+            .Select(r => new
+            {
+                r.Id,
+                r.Number,
+                r.ScheduleId,
+                r.Schedule.Activity.MaxPlayersPerTeam,
+                r.Schedule.Activity.GameMastersPerTeam,
+                Players = r.Seats.Count(s => s.Role == RunSeatRole.Player),
+                GameMasters = r.Seats.Count(s => s.Role == RunSeatRole.GameMaster)
+            })
+            .ToListAsync();
+
+        return wishes
+            .Select(w =>
+            {
+                var isBusy = w.IsTimeExclusive && ParticipantRules.IsBusyBetween(busy, w.Start, w.End);
+                var run = isBusy
+                    ? null
+                    : runs.FirstOrDefault(r => r.ScheduleId == w.ScheduleId && (w.Role == RunSeatRole.Player
+                        ? RunRules.CanUsePlayers(r.Players, r.MaxPlayersPerTeam)
+                        : RunRules.NeedsGameMasters(r.GameMasters, r.GameMastersPerTeam)));
+                return new SeatWishDto(w.ScheduleId, w.Role, w.Priority, w.Title, w.TitleEnglish, w.Start, w.End, run?.Id, run?.Number);
+            })
+            .ToList();
     }
 
     // "Opdater": Infosys ParticipantModel::updateAktiviteter. The posted list replaces the participant's seats:

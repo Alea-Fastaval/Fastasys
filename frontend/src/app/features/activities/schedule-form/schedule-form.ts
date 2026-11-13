@@ -14,6 +14,14 @@ import { conventionLocalToIso, toConventionLocalInput } from '@shared/utils';
 import { ActivityFlashService } from '../activity-flash.service';
 import { ScheduleForm } from '../activity-detail/activity-detail';
 
+// The message after a failed delete. The API refuses a schedule with runs or signups with 409; "signups" says which.
+export function deleteErrorKey(err: HttpErrorResponse): string {
+  if (err.status !== HttpStatusCode.Conflict) return 'scheduleDeleteFailed';
+  return (err.error as { reason?: string } | null)?.reason === 'signups'
+    ? 'scheduleDeleteHasSignups'
+    : 'scheduleDeleteHasRuns';
+}
+
 // Infosys fills in the schedule's start and end (Copenhagen time) and selects its meeting room
 export function toScheduleForm(schedule: ActivitySchedule): ScheduleForm {
   return {
@@ -99,17 +107,13 @@ export class ScheduleFormComponent implements OnInit {
     this.confirmingDelete.set(true);
   }
 
-  // Infosys can't delete a schedule that has runs and then shows a generic error page.
-  // Here the message says why (agreed 2026-11-05).
+  // Infosys can't delete a schedule that has runs or signups and then shows a generic error page.
+  // Here the message says why (agreed 2026-11-05 for runs, 2026-11-13 for signups).
   public confirmDelete(): void {
     this.busy.set(true);
     this.http.delete(this.scheduleUrl()).subscribe({
       next: () => this.returnToActivity('success', 'scheduleDeleted'),
-      error: (err: HttpErrorResponse) =>
-        this.returnToActivity(
-          'error',
-          err.status === HttpStatusCode.Conflict ? 'scheduleDeleteHasRuns' : 'scheduleDeleteFailed',
-        ),
+      error: (err: HttpErrorResponse) => this.returnToActivity('error', deleteErrorKey(err)),
     });
   }
 

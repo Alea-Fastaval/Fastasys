@@ -179,6 +179,48 @@ public class ParticipantSeatsControllerTests
     }
 
     [Fact]
+    public async Task Get_ListsTheWishesWithTheRunTheirAddButtonGivesASeatOn()
+    {
+        // Infosys editaktiviteter.phtml shows "Tilføj" for a wish when a run of the schedule has room for the role
+        // (Afviklinger::getGroupNeeding) and the participant isn't busy then (for time-exclusive activities). Infosys's
+        // button never worked; fixed on 2026-11-13.
+        static ScheduleSignup Wish(int scheduleId, RunSeatRole role, int priority) =>
+            new() { ParticipantId = 1, ScheduleId = scheduleId, Role = role, Priority = priority };
+
+        using var db = await SeedAsync(d =>
+        {
+            AddGame(d, 1, "Andet hold har plads", Wednesday(8));
+            d.Runs.Add(new Run { Id = 101, ScheduleId = 10, Number = 2, RoomId = 1 });
+            d.RunSeats.AddRange(Seat(100, 1, 2), Seat(100, 2, 3), Seat(100, 3, 4));
+            AddGame(d, 2, "Har spilleder", Wednesday(18));
+            d.RunSeats.Add(Seat(200, 1, 2, RunSeatRole.GameMaster));
+            AddGame(d, 3, "Optaget", Wednesday(13));
+            AddGame(d, 4, "Siddeplads", Wednesday(14));
+            d.RunSeats.Add(Seat(400, 1, 1));
+            AddGame(d, 5, "Ikke eksklusiv", Wednesday(14), timeExclusive: false);
+            d.ScheduleSignups.AddRange(
+                Wish(10, RunSeatRole.Player, 1),
+                Wish(20, RunSeatRole.GameMaster, 0),
+                Wish(30, RunSeatRole.Player, 2),
+                Wish(50, RunSeatRole.Player, 3));
+        });
+
+        var wishes = Ok(await CreateController(db).Get(1)).Wishes;
+
+        Assert.Equal(
+            new[]
+            {
+                new SeatWishDto(10, RunSeatRole.Player, 1, "Andet hold har plads", "Andet hold har plads (en)", Wednesday(8), Wednesday(12), 101, 2),
+                // Busy with the seat at 14:00 on a time-exclusive activity
+                new SeatWishDto(30, RunSeatRole.Player, 2, "Optaget", "Optaget (en)", Wednesday(13), Wednesday(17), null, null),
+                new SeatWishDto(50, RunSeatRole.Player, 3, "Ikke eksklusiv", "Ikke eksklusiv (en)", Wednesday(14), Wednesday(18), 500, 1),
+                // The run has its one game master
+                new SeatWishDto(20, RunSeatRole.GameMaster, 0, "Har spilleder", "Har spilleder (en)", Wednesday(18), Wednesday(22), null, null),
+            },
+            wishes);
+    }
+
+    [Fact]
     public async Task Update_ReplacesTheSeatsWithTheList()
     {
         using var db = await SeedAsync(d =>

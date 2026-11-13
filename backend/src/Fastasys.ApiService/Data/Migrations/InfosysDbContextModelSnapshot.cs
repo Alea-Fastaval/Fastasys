@@ -2472,28 +2472,6 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("ParticipantFoods");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantSchedule", b =>
-                {
-                    b.Property<int>("ParticipantId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ScheduleId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("SignedUpAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("ParticipantId", "ScheduleId");
-
-                    b.HasIndex("ScheduleId");
-
-                    b.ToTable("participant_schedules");
-                });
-
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
                 {
                     b.Property<int>("ParticipantId")
@@ -2787,6 +2765,27 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("schedule");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ScheduleSignup", b =>
+                {
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ParticipantId", "ScheduleId", "Role");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.ToTable("schedule_signups");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupConfig", b =>
@@ -3191,25 +3190,6 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Participant");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantSchedule", b =>
-                {
-                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
-                        .WithMany("Schedules")
-                        .HasForeignKey("ParticipantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fastasys.ApiService.Data.Entities.Schedule", "Schedule")
-                        .WithMany("ParticipantSchedules")
-                        .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Participant");
-
-                    b.Navigation("Schedule");
-                });
-
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
@@ -3331,6 +3311,25 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ScheduleSignup", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithMany("Signups")
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Schedule", "Schedule")
+                        .WithMany("Signups")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("Schedule");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupPageElement", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.SignupPage", "Page")
@@ -3431,7 +3430,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Navigation("Payments");
 
-                    b.Navigation("Schedules");
+                    b.Navigation("Signups");
 
                     b.Navigation("Wears");
                 });
@@ -3465,9 +3464,9 @@ namespace Fastasys.ApiService.Data.Migrations
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Schedule", b =>
                 {
-                    b.Navigation("ParticipantSchedules");
-
                     b.Navigation("Runs");
+
+                    b.Navigation("Signups");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupPage", b =>

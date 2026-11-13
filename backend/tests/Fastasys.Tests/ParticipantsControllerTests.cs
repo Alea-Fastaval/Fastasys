@@ -394,6 +394,31 @@ public class ParticipantsControllerTests
     }
 
     [Fact]
+    public async Task Get_ListsTheSignupWishesByTheSchedulesStart()
+    {
+        // Infosys visdeltager's Aktivitetstilmeldinger box (DeltagereTilmeldinger::getDeltagerTilmeldinger)
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        var late = Game(1, "Sent spil");
+        var early = Game(2, "Tidligt spil");
+        db.AddRange(late, early, ScheduleOf(10, late, Wednesday(18)), ScheduleOf(20, early, Wednesday(8)));
+        db.ScheduleSignups.AddRange(
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 2 },
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 20, Role = RunSeatRole.GameMaster, Priority = 0 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var signups = Ok(await CreateController(db).Get(1)).Details!.ActivitySignups;
+
+        Assert.Equal(
+            new[]
+            {
+                new ParticipantActivitySignupDto(2, "Tidligt spil", "", 20, Wednesday(8), Wednesday(12), 0, RunSeatRole.GameMaster),
+                new ParticipantActivitySignupDto(1, "Sent spil", "", 10, Wednesday(18), Wednesday(22), 2, RunSeatRole.Player),
+            },
+            signups);
+    }
+
+    [Fact]
     public async Task Get_AddsTheOwnGameAndAutomaticSignupsForBoardGameDesigners()
     {
         // Infosys getPladser adds SpecialSpots for work_area 2: every schedule of the designer's own game as
@@ -673,6 +698,26 @@ public class ParticipantsControllerTests
 
         Assert.IsType<ConflictObjectResult>(result);
         Assert.Single(db.Participants);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsSignupWishes()
+    {
+        // Infosys removes deltagere_tilmeldinger with the participant
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        var activity = Game(1, "Spil");
+        db.AddRange(activity, ScheduleOf(10, activity, Wednesday(8)));
+        db.ScheduleSignups.AddRange(
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 1 },
+            new ScheduleSignup { ParticipantId = 2, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        await CreateController(db).Delete(1);
+
+        Assert.Equal([2], db.ScheduleSignups.Select(s => s.ParticipantId));
     }
 
     [Fact]

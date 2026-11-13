@@ -184,6 +184,22 @@ export interface ParticipantDetails {
   sleepingPlaces: ParticipantSleepingPlace[] | null;
   // The Aktiviteter box, in start time order
   activities: ParticipantActivity[];
+  // The Aktivitetstilmeldinger box: the signup wishes, by the schedule's start
+  activitySignups: ParticipantActivitySignup[];
+}
+
+// One row of the Aktivitetstilmeldinger box (see ParticipantActivitySignupDto in the API). Priority is 1-4 for players;
+// a game master wish has 0 (from the Infosys signup) or 1.
+export interface ParticipantActivitySignup {
+  activityId: number;
+  title: string;
+  titleEnglish: string;
+  scheduleId: number;
+  // UTC instants
+  start: string;
+  end: string;
+  priority: number;
+  role: RunSeatRole;
 }
 
 // What the participant is on a row of the Aktiviteter box: spiller, spilleder, or designer of their own game
@@ -326,6 +342,21 @@ export interface ParticipantSeats {
   seats: ParticipantSeat[];
   // The "Aktivitet" select: the activities that can be signed up for, by title
   activities: SeatActivityOption[];
+  // "Deltagerens tilmeldinger": the signup wishes, each with the run its "Tilføj" button gives a seat on
+  wishes: SeatWish[];
+}
+
+// runId is null, and "Tilføj" is not shown, when no run has room or the participant is busy then
+export interface SeatWish {
+  scheduleId: number;
+  role: RunSeatRole;
+  priority: number;
+  title: string;
+  titleEnglish: string;
+  start: string;
+  end: string;
+  runId: number | null;
+  runNumber: number | null;
 }
 
 export interface ParticipantSeat {
@@ -366,4 +397,53 @@ export interface SeatRunOption {
 // "Opdater": the list replaces the participant's seats
 export interface UpdateParticipantSeatsDto {
   seats: { runId: number; role: RunSeatRole }[];
+}
+
+// Infosys deltager/updatetilmelding ("Opdater Aktivitets-tilmeldinger") and the row dialog of the Aktivitetstilmeldinger box
+export interface ParticipantSignups {
+  participantId: number;
+  signups: ParticipantActivitySignup[];
+  // In id order. The edit page offers those with canSignUp; the row dialog offers the schedules of the wish's activity.
+  activities: SignupActivityOption[];
+}
+
+export interface SignupActivityOption {
+  id: number;
+  title: string;
+  titleEnglish: string;
+  canSignUp: boolean;
+  // false: the activity can't get a game master wish
+  hasGameMasters: boolean;
+  schedules: SignupScheduleOption[];
+}
+
+export interface SignupScheduleOption {
+  id: number;
+  start: string;
+  end: string;
+}
+
+export interface SignupChoice {
+  scheduleId: number;
+  role: RunSeatRole;
+  priority: number;
+}
+
+// The edit page's "Opdater": the list replaces the participant's wishes
+export interface UpdateParticipantSignupsDto {
+  signups: SignupChoice[];
+}
+
+// The row dialog's "Opdater": the wish's new schedule, role and priority
+export type UpdateSignupDto = SignupChoice;
+
+// "conflict": player wishes at the same time share a priority, and the user must sort them ("Sorter efter prioritet")
+export interface SignupUpdateResult {
+  status: 'fine' | 'conflict';
+  conflicts: ParticipantActivitySignup[];
+}
+
+// The schedules of the player wishes in the order the user sorted them
+export interface SignupPrioritiesDto {
+  scheduleIds: number[];
 }

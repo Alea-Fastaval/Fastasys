@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
@@ -8,6 +9,7 @@ import { Participant, ParticipantDetails, ParticipantOptions, ParticipantPrice }
 import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantDetailComponent, editorValue } from './participant-detail';
+import { ParticipantActivitySignupsComponent } from '../participant-activity-signups/participant-activity-signups';
 
 const details: ParticipantDetails = {
   organizerAreaId: 2,
@@ -59,6 +61,18 @@ const details: ParticipantDetails = {
       runNumber: 2,
       roomName: 'Lokale A1',
       roomLocation: 'Skolen',
+    },
+  ],
+  activitySignups: [
+    {
+      activityId: 4,
+      title: 'Andet spil',
+      titleEnglish: 'Other game',
+      scheduleId: 40,
+      start: '2027-03-24T09:00:00Z',
+      end: '2027-03-24T13:00:00Z',
+      priority: 1,
+      role: 'Player',
     },
   ],
 };
@@ -281,6 +295,31 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
 
     expect(element.querySelector('.notes textarea')).toBeNull();
     expect(element.querySelector('.note.saved')?.textContent).toContain('Husk at hente nøglen');
+  });
+
+  it('shows the Aktivitetstilmeldinger box after Aktiviteter and reloads the participant when a wish changes', async () => {
+    const { fixture, element } = await setup();
+
+    const boxes = [...element.querySelectorAll('.activity-boxes > *')].map(box => box.tagName.toLowerCase());
+    expect(boxes).toEqual(['app-participant-activities', 'app-participant-activity-signups']);
+    expect(element.querySelector('app-participant-activity-signups tbody')?.textContent).toContain(
+      'Andet spil / Other game',
+    );
+    expect(element.querySelector('app-participant-activity-signups a.edit-signups')).not.toBeNull();
+
+    const box = fixture.debugElement.query(By.directive(ParticipantActivitySignupsComponent))
+      .componentInstance as ParticipantActivitySignupsComponent;
+    box.changed.emit();
+    httpMock.expectOne('/api/participants/7').flush({ ...participant, details: { ...details, activitySignups: [] } });
+    fixture.detectChanges();
+
+    expect(element.querySelector('app-participant-activity-signups tbody tr.signup')).toBeNull();
+  });
+
+  it("doesn't let the wishes of an activity-locked participant be changed", async () => {
+    const { element } = await setup({ ...participant, details: { ...details, isActivityLocked: true } });
+
+    expect(element.querySelector('app-participant-activity-signups a.edit-signups')).toBeNull();
   });
 
   it('links the Aktiviteter box to the seat editor for users who may edit activities', async () => {

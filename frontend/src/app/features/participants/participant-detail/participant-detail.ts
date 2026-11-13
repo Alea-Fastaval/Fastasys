@@ -17,6 +17,7 @@ import { ParticipantEntranceFoodComponent } from '../participant-entrance-food/p
 import { ParticipantSleepingComponent } from '../participant-sleeping/participant-sleeping';
 import { ParticipantPriceComponent } from '../participant-price/participant-price';
 import { ParticipantActivitiesComponent } from '../participant-activities/participant-activities';
+import { ParticipantActivitySignupsComponent } from '../participant-activity-signups/participant-activity-signups';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -107,6 +108,7 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantSleepingComponent,
     ParticipantPriceComponent,
     ParticipantActivitiesComponent,
+    ParticipantActivitySignupsComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',
@@ -484,6 +486,16 @@ export class ParticipantDetailComponent {
     const participant = this.participant();
     const id = event.key === 'ArrowLeft' ? participant?.previousId : participant?.nextId;
     if (id) this.router.navigate(['/participants', id]);
+  }
+
+  // After a signup wish was changed or deleted in the Aktivitetstilmeldinger box (Infosys reloads the page)
+  public refresh(): void {
+    const id = this.participant()?.id;
+    if (id === undefined) return;
+    this.http.get<Participant>(`/api/participants/${id}`).subscribe({
+      next: participant => this.participant.set(participant),
+      error: () => this.notFound.set(true),
+    });
   }
 
   private load(id: string): void {

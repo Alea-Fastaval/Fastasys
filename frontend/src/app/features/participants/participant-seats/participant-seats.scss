@@ -55,3 +55,29 @@
   gap: 0.75rem;
   margin-top: 1.5rem;
 }
+
+// "Deltagerens tilmeldinger" below "Opdater"
+.wish-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
+}

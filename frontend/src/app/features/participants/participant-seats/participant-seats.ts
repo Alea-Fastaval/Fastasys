@@ -13,6 +13,7 @@ import {
   SeatActivityOption,
   SeatRunOption,
   SeatScheduleOption,
+  SeatWish,
   UpdateParticipantSeatsDto,
 } from '@shared/types';
 import { Card } from '@shared/components';
@@ -50,7 +51,8 @@ export function canAddSeat(
 // Infosys deltager/updateaktivitet/:id: ("Opdater Aktiviteter", the "Ret/slet" link of the Aktiviteter box). Pick an
 // activity, a time, a run and a role, add it to the list, remove what should go, and "Opdater" saves the list.
 // The list holds the participant's seats; Infosys also lists a designer's rows without a run, which can't be edited.
-// Infosys shows the participant's signup wishes below with a "Tilføj" button each; that comes with the signup wishes.
+// Below "Opdater", Infosys lists the participant's signup wishes, each with a "Tilføj" button that adds a seat on a run
+// of the wish's schedule with room for the role.
 @Component({
   selector: 'app-participant-seats',
   imports: [
@@ -153,6 +155,29 @@ export class ParticipantSeatsComponent implements OnInit {
         titleEnglish: activity.titleEnglish,
         start: schedule.start,
         end: schedule.end,
+      },
+    ]);
+  }
+
+  // "Deltagerens tilmeldinger": a wish's "Tilføj" adds a seat on the run the API picked for it, once (fixed
+  // 2026-11-13: Infosys's button needed Prototype.js and never worked)
+  public canAddWish(wish: SeatWish): boolean {
+    return wish.runId !== null && !this.seats().some(seat => seat.runId === wish.runId);
+  }
+
+  public addWish(wish: SeatWish): void {
+    if (wish.runId === null || wish.runNumber === null || !this.canAddWish(wish)) return;
+    const { runId, runNumber } = wish;
+    this.seats.update(seats => [
+      ...seats,
+      {
+        runId,
+        runNumber,
+        role: wish.role,
+        title: wish.title,
+        titleEnglish: wish.titleEnglish,
+        start: wish.start,
+        end: wish.end,
       },
     ]);
   }

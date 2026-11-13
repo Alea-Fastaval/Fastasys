@@ -216,6 +216,14 @@
        force signups come in the row below. Those boxes come with their features. -->
   <div class="activity-boxes">
     <app-participant-activities [activities]="d.activities" [participantId]="p.id" [canEdit]="canEditSeats(d)" />
+    <!-- Infosys: below Aktiviteter, with Heltestyrken, Tilmeldinger next to it (not ported yet). Changes are refused
+         for an activity-locked participant. -->
+    <app-participant-activity-signups
+      [signups]="d.activitySignups"
+      [participantId]="p.id"
+      [canEdit]="!d.isActivityLocked"
+      (changed)="refresh()"
+    />
   </div>
   } }
 </div>
