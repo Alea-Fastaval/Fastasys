@@ -920,6 +920,10 @@ public class ParticipantsController : ControllerBase
     // (game_id; getDesignerDuties) and a "spiller" row for every schedule of the activities with automatic signup for
     // designers (getAutoSpots). It does that only for work_area 2: getAutoSpots also knows authors and other designer
     // areas, but getPladser never asks for them.
+    // TODO: the user decided (2026-11-13) to keep this legacy behaviour for now and add the automatic signups for
+    // authors (Infosys work_area 1, 54-56, auto_signup_category 'author') and the other designer areas (17-19) later.
+    // Infosys never uses the 'all' and 'organizer' categories either. The organizer area ids were renumbered in
+    // Fastasys, so map 54-56 and 17-19 to the new ids first.
     // The rows are then sorted by start time. PHP's uasort is stable, so at equal times the seats come first, then
     // the designer rows, then the automatic ones.
     private async Task<IReadOnlyList<ParticipantActivityDto>> LoadActivitiesAsync(Participant p)

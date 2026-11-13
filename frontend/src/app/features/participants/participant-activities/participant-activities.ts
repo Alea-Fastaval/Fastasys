@@ -3,12 +3,16 @@ import { RouterLink } from '@angular/router';
 import { ParticipantActivity } from '@shared/types';
 import { Card } from '@shared/components';
 import { TimeSpanPipe, TranslatePipe } from '@shared/pipes';
+import { roomLabel } from '../../runs/run-form/run-form';
 
-// The Sted column: Infosys writes "beskrivelse, skole" as is, so a room without a location ends in ", ". A row
-// without a room (a designer's schedule without a meeting room) is left empty; Infosys only printed ", " there
-// because PHP read the name of a room that doesn't exist.
+// The Sted column: "room, location". Infosys writes "beskrivelse, skole" as is, so a room without a location ends in
+// ", "; Fastasys trims that like the run form does (agreed 2026-11-13). A row without a room (a designer's schedule
+// without a meeting room) is left empty; Infosys only printed ", " there because PHP read the name of a room that
+// doesn't exist.
 export function activityRoomText(activity: ParticipantActivity): string {
-  return activity.roomName === null ? '' : `${activity.roomName}, ${activity.roomLocation ?? ''}`;
+  return activity.roomName === null
+    ? ''
+    : roomLabel({ name: activity.roomName, location: activity.roomLocation ?? '' });
 }
 
 // The Aktiviteter box of the Infosys participant page (visdeltager.phtml, .aktivitetboxen): one row per activity

@@ -453,7 +453,8 @@ public class ParticipantsControllerTests
     public async Task Get_AddsNoAutomaticSignupsForOtherOrganizerAreas(int organizerAreaId)
     {
         // Legacy: getAutoSpots knows authors (1, 54-56) and designers (2, 17-19), but getPladser only asks for
-        // work_area 2, so authors and the other designer areas get no extra rows
+        // work_area 2, so authors and the other designer areas get no extra rows. Kept on purpose for now; the user
+        // wants the other areas added later (see LoadActivitiesAsync).
         using var db = CreateDbContext();
         var ownGame = Game(1, "Mit scenarie");
         var authorMeeting = Game(2, "Forfattermøde", AutoSignupCategory.Author);

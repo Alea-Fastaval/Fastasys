@@ -11,7 +11,7 @@ import { TranslatePipe } from '@shared/pipes';
 import { RunFlashService } from '../run-flash.service';
 
 // Infosys shows a room as trim("beskrivelse, omraade, skole", ' ,'); Fastasys rooms have a name and a location
-export function roomLabel(room: RunRoom): string {
+export function roomLabel(room: Pick<RunRoom, 'name' | 'location'>): string {
   return `${room.name}, ${room.location}`.replace(/^[ ,]+|[ ,]+$/g, '');
 }
 

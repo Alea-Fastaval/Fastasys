@@ -45,8 +45,8 @@ describe('activityRoomText (the Sted column of the Infosys Aktiviteter box)', ()
     expect(activityRoomText(seat)).toBe('Lokale A1, Skolen');
   });
 
-  it('keeps the ", " of a room without a location, as Infosys does', () => {
-    expect(activityRoomText(gameMaster)).toBe('Lokale A1, ');
+  it('trims the ", " of a room without a location (Infosys keeps it; trimming was agreed)', () => {
+    expect(activityRoomText(gameMaster)).toBe('Lokale A1');
   });
 
   it('is empty for a row without a room', () => {
@@ -86,7 +86,7 @@ describe('ParticipantActivitiesComponent', () => {
     const rows = [...element.querySelectorAll('.activity-table tbody tr')].map(cells);
     expect(rows).toEqual([
       ['Andet spil', 'Onsdag 10:00 -> Onsdag 14:00', 'participants.activities.roles.Player', '2', 'Lokale A1, Skolen'],
-      ['Natspil', 'Onsdag 22:00 -> Torsdag 02:00', 'participants.activities.roles.GameMaster', '1', 'Lokale A1,'],
+      ['Natspil', 'Onsdag 22:00 -> Torsdag 02:00', 'participants.activities.roles.GameMaster', '1', 'Lokale A1'],
     ]);
   });
 
