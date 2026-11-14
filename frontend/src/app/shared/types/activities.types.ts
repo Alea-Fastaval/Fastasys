@@ -1,4 +1,35 @@
-import { Run } from './runs.types';
+import { Run, RunSeatRole } from './runs.types';
+import { ParticipantLanguage } from './participants.types';
+
+// The "Tilmeldinger" table under a schedule on the activity page (see ScheduleSignupsDto in the API)
+export interface ScheduleSignups {
+  scheduleId: number;
+  // Game masters first, then by priority. Rows with isOnTeam are hidden, like Infosys's "on-team".
+  signups: SignupPoolRow[];
+}
+
+export interface SignupPoolRow {
+  participantId: number;
+  // "Fornavn Efternavn"
+  name: string;
+  role: RunSeatRole;
+  priority: number;
+  // Not ported yet: always null
+  karma: number | null;
+  // null when the birth date is unknown
+  age: number | null;
+  language: 'dk' | 'uk' | null;
+  activityLanguages: ParticipantLanguage[];
+  desiredActivities: number;
+  // The heart: null for none, true for a filled one, false for an empty one
+  desiredActivitiesReached: boolean | null;
+  // "Andre kommentarer"; only sent to users who may edit participants
+  note: string | null;
+  isOnTeam: boolean;
+  isBusy: boolean;
+  isLocked: boolean;
+  isDoubleBooked: boolean;
+}
 
 // Display order of the types (list grouping and type dropdown)
 export const ACTIVITY_TYPES = ['Scenario', 'Quest', 'BoardGame', 'Junior', 'System'] as const;

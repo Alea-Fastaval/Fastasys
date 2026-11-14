@@ -33,7 +33,39 @@ public static class SignupRules
         priorities.Where(p => p < LowestPriority).GroupBy(p => p).Any(g => g.Count() > 1);
 
     // Infosys ParticipantModel::updateSignupPriorities: the wishes in the order the user sorted them get 1, 2, 3 and
-    // then 4 for the rest
+    // then 4 for the rest. The user decided on 2026-11-13 to keep that.
     public static IReadOnlyList<int> PrioritiesInOrder(int count) =>
         Enumerable.Range(1, count).Select(i => Math.Min(i, LowestPriority)).ToList();
+
+    // --- The "Tilmeldinger" table on the activity page (Infosys visaktivitet.phtml, .afviklingsbox-signups) ---
+
+    // A row is "on-team", and hidden, when the participant has a seat on a run of the schedule (any role), or when it
+    // is a player wish, the participant plays on a run of the activity and the activity can't be replayed
+    public static bool IsOnTeam(bool hasSeatOnSchedule, RunSeatRole wishRole, bool playsActivity, bool isReplayable) =>
+        hasSeatOnSchedule || (wishRole == RunSeatRole.Player && playsActivity && !isReplayable);
+
+    // The heart (Infosys ActivityModel::getDesiredActivityStats): null for a participant who didn't say how many
+    // activities they want; otherwise whether their player seats reach the number exactly (a filled heart) or not (an
+    // empty one). Legacy: Infosys's query joins the participant's wishes on the activity with their seats, so it counts
+    // each seat once per wish (reported 2026-11-14; kept until the user decides).
+    public static bool? DesiredActivitiesReached(int desiredActivities, int wishesOnActivity, int playerSeats) =>
+        desiredActivities > 0 ? desiredActivities - (wishesOnActivity * playerSeats) == 0 : null;
+
+    // The flag: Infosys shows dk or uk only when the participant's activity languages are exactly Danish or exactly
+    // English (deltagere.sprog 'dansk' or 'engelsk'); any other set gets none
+    public static string? LanguageFlag(IReadOnlyCollection<ParticipantLanguage> languages) =>
+        languages.Count != 1 ? null : languages.Single() switch
+        {
+            ParticipantLanguage.Danish => "dk",
+            ParticipantLanguage.English => "uk",
+            _ => null
+        };
+
+    // Infosys ActivityModel::getDoubleBookings: a game master wish is double-booked when the participant has another
+    // wish whose schedule overlaps it. This is Infosys's own test (the game master's schedule starts inside the other
+    // one, covers it, or ends inside it); schedules that only touch don't overlap.
+    public static bool OverlapsForDoubleBooking(DateTime start, DateTime end, DateTime otherStart, DateTime otherEnd) =>
+        (start > otherStart && start < otherEnd)
+        || (start <= otherStart && end >= otherEnd)
+        || (end > otherStart && end < otherEnd);
 }

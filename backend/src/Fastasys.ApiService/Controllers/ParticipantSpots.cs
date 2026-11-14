@@ -32,40 +32,60 @@ internal static class ParticipantSpots
     // Fastasys, so map 54-56 and 17-19 to the new ids first.
     // The rows are then sorted by start time. PHP's uasort is stable, so at equal times the seats come first, then
     // the designer rows, then the automatic ones.
-    public static async Task<List<ParticipantSpot>> LoadAsync(InfosysDbContext db, Participant p)
+    public static async Task<List<ParticipantSpot>> LoadAsync(InfosysDbContext db, Participant p) =>
+        (await LoadManyAsync(db, [p]))[p.Id];
+
+    // The same for several participants at once, with one query for each kind of spot (the activity page's signup
+    // table needs it for every participant on it)
+    public static async Task<Dictionary<int, List<ParticipantSpot>>> LoadManyAsync(InfosysDbContext db, IReadOnlyCollection<Participant> participants)
     {
+        var ids = participants.Select(p => p.Id).ToList();
         var seats = await db.RunSeats
             .AsNoTracking()
-            .Where(s => s.ParticipantId == p.Id)
+            .Where(s => ids.Contains(s.ParticipantId))
             .OrderBy(s => s.Run.Schedule.StartTime)
             .ThenBy(s => s.RunId)
-            .Select(s => new ParticipantSpot(
-                s.Run.Schedule.ActivityId,
-                s.Run.Schedule.Activity.Title,
-                s.Run.Schedule.Activity.TitleEnglish,
-                s.Run.Schedule.Activity.IsTimeExclusive,
-                s.Run.Schedule.StartTime,
-                s.Run.Schedule.EndTime,
-                s.Role == RunSeatRole.Player ? ParticipantActivityRole.Player : ParticipantActivityRole.GameMaster,
-                s.RunId,
-                s.Run.Number,
-                s.Run.Room.Name,
-                s.Run.Room.Location))
+            .Select(s => new
+            {
+                s.ParticipantId,
+                Spot = new ParticipantSpot(
+                    s.Run.Schedule.ActivityId,
+                    s.Run.Schedule.Activity.Title,
+                    s.Run.Schedule.Activity.TitleEnglish,
+                    s.Run.Schedule.Activity.IsTimeExclusive,
+                    s.Run.Schedule.StartTime,
+                    s.Run.Schedule.EndTime,
+                    s.Role == RunSeatRole.Player ? ParticipantActivityRole.Player : ParticipantActivityRole.GameMaster,
+                    s.RunId,
+                    s.Run.Number,
+                    s.Run.Room.Name,
+                    s.Run.Room.Location)
+            })
             .ToListAsync();
 
-        if (p.OrganizerAreaId != OrganizerArea.BoardGameDesignerId)
+        var designers = participants.Where(p => p.OrganizerAreaId == OrganizerArea.BoardGameDesignerId).ToList();
+        var gameIds = designers.Where(p => p.GameActivityId != null).Select(p => p.GameActivityId!.Value).Distinct().ToList();
+        var ownGames = gameIds.Count == 0
+            ? []
+            : await SchedulesAsSpotsAsync(db, s => gameIds.Contains(s.ActivityId), ParticipantActivityRole.Designer);
+        var automatic = designers.Count == 0
+            ? []
+            : await SchedulesAsSpotsAsync(
+                db, s => s.Activity.AutoSignupCategory == AutoSignupCategory.Designer, ParticipantActivityRole.Player);
+
+        return participants.ToDictionary(p => p.Id, p =>
         {
-            return seats;
-        }
+            var own = seats.Where(s => s.ParticipantId == p.Id).Select(s => s.Spot).ToList();
+            if (p.OrganizerAreaId != OrganizerArea.BoardGameDesignerId)
+            {
+                return own;
+            }
 
-        var ownGame = p.GameActivityId is int gameId
-            ? await SchedulesAsSpotsAsync(db, s => s.ActivityId == gameId, ParticipantActivityRole.Designer)
-            : [];
-        var automatic = await SchedulesAsSpotsAsync(
-            db, s => s.Activity.AutoSignupCategory == AutoSignupCategory.Designer, ParticipantActivityRole.Player);
+            var ownGame = p.GameActivityId is int gameId ? ownGames.Where(s => s.ActivityId == gameId) : [];
 
-        // OrderBy is stable, like uasort
-        return seats.Concat(ownGame).Concat(automatic).OrderBy(a => a.Start).ToList();
+            // OrderBy is stable, like uasort
+            return own.Concat(ownGame).Concat(automatic).OrderBy(a => a.Start).ToList();
+        });
     }
 
     // Infosys Deltagere::isBusyBetween's busy periods: the spots on time-exclusive activities

@@ -136,4 +136,21 @@ public class ParticipantRulesTests
 
         Assert.False(ParticipantRules.IsBusyBetween([], day, day.AddHours(4)));
     }
+
+    // Infosys Deltagere alder: full years to today
+    [Theory]
+    [InlineData("2000-03-24", "2027-03-24", 27)]
+    [InlineData("2000-03-25", "2027-03-24", 26)]
+    [InlineData("2004-02-29", "2027-02-28", 22)]
+    [InlineData("2004-02-29", "2027-03-01", 23)]
+    public void AgeOn_CountsFullYears(string born, string today, int expected)
+    {
+        Assert.Equal(expected, ParticipantRules.AgeOn(DateOnly.Parse(born), DateOnly.Parse(today)));
+    }
+
+    [Fact]
+    public void AgeOn_IsUnknownWithoutABirthDate()
+    {
+        Assert.Null(ParticipantRules.AgeOn(null, new DateOnly(2027, 3, 24)));
+    }
 }

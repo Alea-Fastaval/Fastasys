@@ -49,4 +49,56 @@ public class SignupRulesTests
         Assert.Equal([1, 2, 3, 4, 4, 4], SignupRules.PrioritiesInOrder(6));
         Assert.Equal([1, 2], SignupRules.PrioritiesInOrder(2));
     }
+
+    // --- The activity page's Tilmeldinger tables ---
+
+    [Theory]
+    [InlineData(true, RunSeatRole.GameMaster, false, false, true)]
+    [InlineData(false, RunSeatRole.Player, true, false, true)]
+    [InlineData(false, RunSeatRole.GameMaster, true, false, false)]
+    [InlineData(false, RunSeatRole.Player, true, true, false)]
+    [InlineData(false, RunSeatRole.Player, false, false, false)]
+    public void IsOnTeam_SeatedOnTheScheduleOrPlayingANonReplayableActivity(bool seatedHere, RunSeatRole role, bool playsActivity, bool replayable, bool expected)
+    {
+        Assert.Equal(expected, SignupRules.IsOnTeam(seatedHere, role, playsActivity, replayable));
+    }
+
+    [Theory]
+    [InlineData(0, 1, 0, null)]
+    [InlineData(2, 1, 2, true)]
+    [InlineData(3, 1, 1, false)]
+    [InlineData(1, 1, 2, false)]
+    // Legacy: each seat counted once per wish on the activity
+    [InlineData(2, 2, 2, false)]
+    [InlineData(4, 2, 2, true)]
+    public void DesiredActivitiesReached_ComparesTheWantedNumberWithTheSeats(int desired, int wishes, int seats, bool? expected)
+    {
+        Assert.Equal(expected, SignupRules.DesiredActivitiesReached(desired, wishes, seats));
+    }
+
+    [Fact]
+    public void LanguageFlag_OnlyForExactlyDanishOrExactlyEnglish()
+    {
+        Assert.Equal("dk", SignupRules.LanguageFlag([ParticipantLanguage.Danish]));
+        Assert.Equal("uk", SignupRules.LanguageFlag([ParticipantLanguage.English]));
+        Assert.Null(SignupRules.LanguageFlag([ParticipantLanguage.Scandinavian]));
+        Assert.Null(SignupRules.LanguageFlag([ParticipantLanguage.Danish, ParticipantLanguage.English]));
+        Assert.Null(SignupRules.LanguageFlag([]));
+    }
+
+    // The game master's schedule is 10-14
+    [Theory]
+    [InlineData(12, 16, true)]
+    [InlineData(8, 12, true)]
+    [InlineData(11, 13, true)]
+    [InlineData(8, 16, true)]
+    [InlineData(10, 14, true)]
+    [InlineData(14, 18, false)]
+    [InlineData(6, 10, false)]
+    public void OverlapsForDoubleBooking_InfosysTest(int otherStart, int otherEnd, bool expected)
+    {
+        var day = new DateTime(2027, 3, 24, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.Equal(expected, SignupRules.OverlapsForDoubleBooking(day.AddHours(10), day.AddHours(14), day.AddHours(otherStart), day.AddHours(otherEnd)));
+    }
 }

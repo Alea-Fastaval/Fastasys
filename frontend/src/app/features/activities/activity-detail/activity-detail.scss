@@ -48,9 +48,21 @@ app-card {
   margin-top: 0;
 }
 
+// Infosys puts the runs on the left (40%) and the signups on the right; on a narrow screen the signups go below
+.schedule-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .runs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -59,6 +71,103 @@ app-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 0.75rem;
+}
+
+// Infosys: the run under the dragged participant turns green, and the other schedules grey
+.run.hovered {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+
+.schedule.inactive {
+  opacity: 0.45;
+}
+
+tr.draggable {
+  cursor: grab;
+}
+
+// Infosys flashes a refused drop red
+tr.failed {
+  background: #fecaca;
+}
+
+.signups {
+  margin: 1rem 0 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  legend {
+    padding: 0 0.35rem;
+    font-weight: 600;
+  }
+}
+
+.signup-pool {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.2rem 0.35rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    border-top: 1px solid #f3f4f6;
+  }
+
+  .icon {
+    width: 1.75rem;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+    }
+  }
+
+  .name {
+    width: 100%;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  .flag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0 0.25rem;
+    border: 1px solid #9ca3af;
+    border-radius: 3px;
+  }
+
+  // Infosys: busy participants in grey italics, activity-locked ones dark, double-booked game masters dashed
+  tr.busy,
+  tr.busy a {
+    color: #888;
+    font-style: italic;
+  }
+
+  tr.locked,
+  tr.locked a {
+    background: #666;
+    color: #ddd;
+  }
+
+  tr.double-booked td {
+    border-top: 1px dashed #000;
+    border-bottom: 1px dashed #000;
+  }
 }
 
 .run-header {

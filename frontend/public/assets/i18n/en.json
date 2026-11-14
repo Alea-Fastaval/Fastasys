@@ -535,6 +535,16 @@
       "scheduleDeleteFailed": "The schedule could not be deleted.",
       "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first.",
       "scheduleDeleteHasSignups": "The schedule could not be deleted because participants have signed up for it."
+    },
+    "signups": {
+      "title": "Signups",
+      "gameMaster": "Game master",
+      "name": "Name",
+      "priority": "Pri",
+      "karma": "Karma",
+      "age": "Age",
+      "language": "Language",
+      "busy": "The participant is busy at this time"
     }
   },
   "runs": {

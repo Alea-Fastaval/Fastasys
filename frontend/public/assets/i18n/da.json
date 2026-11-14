@@ -535,6 +535,16 @@
       "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
       "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først.",
       "scheduleDeleteHasSignups": "Afviklingen kunne ikke slettes, fordi der er deltagere tilmeldt den."
+    },
+    "signups": {
+      "title": "Tilmeldinger",
+      "gameMaster": "Spilleder",
+      "name": "Name",
+      "priority": "Pri",
+      "karma": "Karma",
+      "age": "Alder",
+      "language": "Sprog",
+      "busy": "Deltageren er optaget på dette tidspunkt"
     }
   },
   "runs": {

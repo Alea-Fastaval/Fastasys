@@ -158,4 +158,20 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         Assert.Equal(12, json.RootElement.GetProperty("minAge").GetInt32());
         Assert.False(json.RootElement.TryGetProperty("maxAge", out _));
     }
+
+    // Infosys shows the activity page's signup tables to everyone who may see the activity page
+    [Fact]
+    public async Task SignupTables_AreOpenToTheActivityViewRight()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var viewer = await CreateClientWithPrivilegeAsync("activities_view");
+        var other = await CreateClientWithPrivilegeAsync("participants_view");
+        var editor = await CreateClientWithPrivilegeAsync("activities_edit");
+        var created = await (await editor.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Tilmeldinger"), ct)).Content.ReadFromJsonAsync<ActivityDto>(ct);
+        Assert.NotNull(created);
+
+        Assert.Equal(HttpStatusCode.OK, (await viewer.GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _factory.CreateClient().GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
+    }
 }
