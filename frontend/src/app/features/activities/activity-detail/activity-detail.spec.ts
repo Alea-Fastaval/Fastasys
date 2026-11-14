@@ -297,7 +297,7 @@ describe('ActivityDetailComponent', () => {
     {
       scheduleId: 9,
       signups: [
-        // Test Spilleder is on run 21 as game master, so the row is hidden; a player wish of theirs lets them be dragged
+        // Test Spilleder is on run 21 as game master, so the rows are hidden; having a row lets them be dragged off it
         row({ participantId: 11, name: 'Test Spilleder', role: 'GameMaster', priority: 0, isOnTeam: true }),
         row({
           participantId: 30,
@@ -370,14 +370,14 @@ describe('ActivityDetailComponent', () => {
     const fixture = renderLoaded([schedule], signups);
     const component = fixture.componentInstance;
 
-    component.startSeatDrag(dragEvent(), 9, fullRun, 11);
+    component.startSeatDrag(dragEvent(), 9, fullRun, fullRun.seats[0]);
     component.dropOnRun(dragEvent(), 9, emptyRun);
     component.endDrag();
 
     httpMock.expectOne(r => r.url === '/api/runs/21/seats/11' && r.method === 'DELETE').flush(fullRun);
-    // Infosys gives them the role of their last row: the player wish
+    // They keep the role of their seat (agreed 2026-11-14; Infosys gave them the role of their last row: player)
     const req = httpMock.expectOne(r => r.url === '/api/runs/20/seats' && r.method === 'POST');
-    expect(req.request.body).toEqual({ participantId: 11, role: 'Player' });
+    expect(req.request.body).toEqual({ participantId: 11, role: 'GameMaster' });
     req.flush(emptyRun);
     flushSchedules([schedule], signups);
   });
@@ -386,7 +386,7 @@ describe('ActivityDetailComponent', () => {
     const fixture = renderLoaded([schedule], signups);
     const component = fixture.componentInstance;
 
-    component.startSeatDrag(dragEvent(), 9, fullRun, 11);
+    component.startSeatDrag(dragEvent(), 9, fullRun, fullRun.seats[0]);
     component.endDrag();
 
     httpMock.expectOne(r => r.url === '/api/runs/21/seats/11' && r.method === 'DELETE').flush(fullRun);

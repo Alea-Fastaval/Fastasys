@@ -218,7 +218,7 @@
                 [class.draggable]="canDragSeat(schedule.id, seat.participantId)"
                 [class.failed]="isFailed(schedule.id, seat.participantId)"
                 [attr.draggable]="canDragSeat(schedule.id, seat.participantId) ? 'true' : null"
-                (dragstart)="startSeatDrag($event, schedule.id, run, seat.participantId)"
+                (dragstart)="startSeatDrag($event, schedule.id, run, seat)"
                 (dragend)="endDrag()"
               >
                 <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>

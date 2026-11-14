@@ -140,10 +140,7 @@ public class ActivitySignupsController : ControllerBase
                         SignupRules.LanguageFlag(p.ActivityLanguages),
                         p.ActivityLanguages,
                         p.DesiredActivities,
-                        SignupRules.DesiredActivitiesReached(
-                            p.DesiredActivities,
-                            wishes.Count(x => x.ParticipantId == p.Id),
-                            playerSeats.GetValueOrDefault(p.Id)),
+                        SignupRules.DesiredActivitiesReached(p.DesiredActivities, playerSeats.GetValueOrDefault(p.Id)),
                         note,
                         isOnTeam,
                         isBusy,

@@ -29,12 +29,11 @@ export function seatChangeForDrop(item: DragItem, targetRunId: number | null): S
 }
 
 // Infosys can only drag a participant off a run when they have a row in the schedule's table
-// (FVActivity.locateParticipantForRow), and they then get the role of their last row there: their player wish when
-// they also want to run it. An activity-locked participant can't be dragged.
-export function seatDragRole(rows: SignupPoolRow[], participantId: number): RunSeatRole | null {
+// (FVActivity.locateParticipantForRow). An activity-locked participant can't be dragged. Moved to another run, they
+// keep the role of their seat (agreed 2026-11-14; Infosys gave them the role of their last row in the table).
+export function canDragSeat(rows: SignupPoolRow[], participantId: number): boolean {
   const own = rows.filter(row => row.participantId === participantId);
-  if (own.length === 0 || own.some(row => row.isLocked)) return null;
-  return own[own.length - 1].role;
+  return own.length > 0 && !own.some(row => row.isLocked);
 }
 
 // Infosys FVActivity.startParticipantDrag: busy and activity-locked rows can't be dragged

@@ -16,6 +16,7 @@ import {
   CreateScheduleDto,
   Room,
   Run,
+  RunSeat,
   ScheduleSignups,
   SignupPoolRow,
 } from '@shared/types';
@@ -24,7 +25,7 @@ import { TimeSpanPipe, TranslatePipe } from '@shared/pipes';
 import { AuthService, TranslationService } from '@shared/services';
 import { conventionLocalToIso } from '@shared/utils';
 import { ActivityFlashService } from '../activity-flash.service';
-import { DragItem, SeatChange, canDragRow, seatChangeForDrop, seatDragRole, visibleRows } from './signup-pool';
+import { DragItem, SeatChange, canDragRow, canDragSeat, seatChangeForDrop, visibleRows } from './signup-pool';
 
 // datetime-local values in Copenhagen time
 export interface ScheduleForm {
@@ -178,7 +179,7 @@ export class ActivityDetailComponent implements OnInit {
   }
 
   public canDragSeat(scheduleId: number, participantId: number): boolean {
-    return this.mayPlace && seatDragRole(this.allRows(scheduleId), participantId) !== null;
+    return this.mayPlace && canDragSeat(this.allRows(scheduleId), participantId);
   }
 
   // Hovering a row shows the participant's languages, age, wanted activities and note (Infosys's info popup)
@@ -202,10 +203,10 @@ export class ActivityDetailComponent implements OnInit {
     this.startDrag(event, { scheduleId, participantId: row.participantId, role: row.role, fromRunId: null });
   }
 
-  public startSeatDrag(event: DragEvent, scheduleId: number, run: Run, participantId: number): void {
-    const role = this.mayPlace ? seatDragRole(this.allRows(scheduleId), participantId) : null;
-    if (role === null) return;
-    this.startDrag(event, { scheduleId, participantId, role, fromRunId: run.id });
+  // A participant moved to another run keeps the role of their seat (agreed 2026-11-14)
+  public startSeatDrag(event: DragEvent, scheduleId: number, run: Run, seat: RunSeat): void {
+    if (!this.canDragSeat(scheduleId, seat.participantId)) return;
+    this.startDrag(event, { scheduleId, participantId: seat.participantId, role: seat.role, fromRunId: run.id });
   }
 
   // Only the runs of the dragged participant's schedule take a drop; the other schedules are greyed out

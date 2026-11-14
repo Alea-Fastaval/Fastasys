@@ -46,10 +46,10 @@ public static class SignupRules
 
     // The heart (Infosys ActivityModel::getDesiredActivityStats): null for a participant who didn't say how many
     // activities they want; otherwise whether their player seats reach the number exactly (a filled heart) or not (an
-    // empty one). Legacy: Infosys's query joins the participant's wishes on the activity with their seats, so it counts
-    // each seat once per wish (reported 2026-11-14; kept until the user decides).
-    public static bool? DesiredActivitiesReached(int desiredActivities, int wishesOnActivity, int playerSeats) =>
-        desiredActivities > 0 ? desiredActivities - (wishesOnActivity * playerSeats) == 0 : null;
+    // empty one). Fixed on 2026-11-14, as agreed: Infosys's query joined the participant's wishes on the activity with
+    // their seats, so it counted each seat once per wish.
+    public static bool? DesiredActivitiesReached(int desiredActivities, int playerSeats) =>
+        desiredActivities > 0 ? desiredActivities == playerSeats : null;
 
     // The flag: Infosys shows dk or uk only when the participant's activity languages are exactly Danish or exactly
     // English (deltagere.sprog 'dansk' or 'engelsk'); any other set gets none

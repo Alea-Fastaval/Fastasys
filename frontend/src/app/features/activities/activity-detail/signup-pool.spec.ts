@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SignupPoolRow } from '@shared/types';
-import { DragItem, canDragRow, seatChangeForDrop, seatDragRole, visibleRows } from './signup-pool';
+import { DragItem, canDragRow, canDragSeat, seatChangeForDrop, visibleRows } from './signup-pool';
 
 const row = (overrides: Partial<SignupPoolRow>): SignupPoolRow => ({
   participantId: 1,
@@ -43,16 +43,14 @@ describe('seatChangeForDrop (Infosys Participant.dropElement)', () => {
   });
 });
 
-describe('seatDragRole (dragging a participant off a run)', () => {
-  it("gives the role of the participant's last row in the table: the player wish when there is one", () => {
-    const rows = [row({ role: 'GameMaster', priority: 0 }), row({ role: 'Player', priority: 2 })];
-    expect(seatDragRole(rows, 1)).toBe('Player');
-    expect(seatDragRole([row({ role: 'GameMaster' })], 1)).toBe('GameMaster');
+describe('canDragSeat (dragging a participant off a run)', () => {
+  it('needs a row of the participant in the table, like Infosys', () => {
+    expect(canDragSeat([row({ role: 'GameMaster', priority: 0 }), row({ role: 'Player', priority: 2 })], 1)).toBe(true);
+    expect(canDragSeat([row({ participantId: 2 })], 1)).toBe(false);
   });
 
-  it("can't drag a participant without a row, or an activity-locked one", () => {
-    expect(seatDragRole([row({ participantId: 2 })], 1)).toBeNull();
-    expect(seatDragRole([row({ isLocked: true })], 1)).toBeNull();
+  it("can't drag an activity-locked participant", () => {
+    expect(canDragSeat([row({ isLocked: true })], 1)).toBe(false);
   });
 });
 

@@ -244,8 +244,8 @@ public class ActivitySignupsControllerTests
     public async Task Get_ShowsTheHeartFromTheWantedNumberOfActivities()
     {
         // Participant 1 wants 2 and plays 2: a filled heart. Participant 2 wants 3 and plays 1: an empty one.
-        // Participant 3 wants none: no heart. Participant 4 wants 2 and plays 2, but has two wishes on the activity:
-        // Infosys counts each seat once per wish, so 2 - 4 gives an empty heart (legacy, reported 2026-11-14).
+        // Participant 3 wants none: no heart. Participant 4 wants 2 and plays 2 with two wishes on the activity: a filled
+        // heart (fixed 2026-11-14: Infosys counted each seat once per wish, so it showed an empty one).
         using var db = await SeedAsync(d =>
         {
             d.Participants.Single(p => p.Id == 1).DesiredActivities = 2;
@@ -265,6 +265,6 @@ public class ActivitySignupsControllerTests
         Assert.True(hearts[1]);
         Assert.False(hearts[2]);
         Assert.Null(hearts[3]);
-        Assert.False(hearts[4]);
+        Assert.True(hearts[4]);
     }
 }

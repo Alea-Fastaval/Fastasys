@@ -64,16 +64,13 @@ public class SignupRulesTests
     }
 
     [Theory]
-    [InlineData(0, 1, 0, null)]
-    [InlineData(2, 1, 2, true)]
-    [InlineData(3, 1, 1, false)]
-    [InlineData(1, 1, 2, false)]
-    // Legacy: each seat counted once per wish on the activity
-    [InlineData(2, 2, 2, false)]
-    [InlineData(4, 2, 2, true)]
-    public void DesiredActivitiesReached_ComparesTheWantedNumberWithTheSeats(int desired, int wishes, int seats, bool? expected)
+    [InlineData(0, 0, null)]
+    [InlineData(2, 2, true)]
+    [InlineData(3, 1, false)]
+    [InlineData(1, 2, false)]
+    public void DesiredActivitiesReached_ComparesTheWantedNumberWithTheSeats(int desired, int seats, bool? expected)
     {
-        Assert.Equal(expected, SignupRules.DesiredActivitiesReached(desired, wishes, seats));
+        Assert.Equal(expected, SignupRules.DesiredActivitiesReached(desired, seats));
     }
 
     [Fact]
