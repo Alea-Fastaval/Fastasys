@@ -1,0 +1,83 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+// Infosys puts the four selects next to each other with "Tilføj Aktivitet" after them
+.choose {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1rem;
+
+  mat-form-field {
+    min-width: 260px;
+  }
+
+  .narrow {
+    min-width: 140px;
+    width: 140px;
+  }
+}
+
+.seat-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+
+  td {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+// "Deltagerens tilmeldinger" below "Opdater"
+.wish-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  td {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
+}

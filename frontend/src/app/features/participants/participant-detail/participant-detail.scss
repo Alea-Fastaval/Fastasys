@@ -135,6 +135,13 @@ hr {
   gap: 0 1.5rem;
 }
 
+// Below the notes. Infosys puts Heltestyrke, Opgaver next to Aktiviteter; until it comes, Aktiviteter is full width.
+.activity-boxes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 1.5rem;
+}
+
 // A note looks like a text field, so it is clear that it can be clicked and written in. Clicking turns it into a
 // textarea of the same size.
 .note-box {

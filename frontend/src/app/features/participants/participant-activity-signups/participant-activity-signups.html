@@ -1,0 +1,112 @@
+<app-card [title]="'participants.signups.title' | translate">
+  @if (canEdit) {
+  <div class="card-actions">
+    <a mat-stroked-button class="edit-signups" [routerLink]="['/participants', participantId, 'signups']">
+      <mat-icon>edit</mat-icon> {{ 'participants.activities.editDelete' | translate }}
+    </a>
+  </div>
+  } @if (errorKey(); as key) {
+  <p class="error">{{ 'participants.messages.' + key | translate }}</p>
+  }
+
+  <!-- Infosys shows the headers even when the participant has no wishes -->
+  <table class="signup-table" [class.editable]="canEdit">
+    <thead>
+      <tr>
+        <th>{{ 'participants.activities.activity' | translate }}</th>
+        <th>{{ 'participants.activities.time' | translate }}</th>
+        <th class="priority">{{ 'participants.signups.priority' | translate }}</th>
+        <th>{{ 'participants.activities.role' | translate }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (signup of signups; track signup.scheduleId + signup.role) { @if (isEditing(signup) && editor(); as e) {
+      <tr class="editor">
+        <td>{{ signup.title }} / {{ signup.titleEnglish }}</td>
+        <td>
+          <select
+            name="scheduleId"
+            [(ngModel)]="e.scheduleId"
+            [attr.aria-label]="'participants.activities.time' | translate"
+          >
+            @for (schedule of schedules(e); track schedule.id) {
+            <option [ngValue]="schedule.id">{{ schedule.start | timeSpan: schedule.end }}</option>
+            }
+          </select>
+        </td>
+        <td class="priority">
+          <input
+            type="number"
+            name="priority"
+            min="1"
+            max="4"
+            [(ngModel)]="e.priority"
+            [attr.aria-label]="'participants.signups.priority' | translate"
+          />
+        </td>
+        <td>
+          <select name="role" [(ngModel)]="e.role" [attr.aria-label]="'participants.activities.role' | translate">
+            <option value="Player">{{ 'participants.activities.roles.Player' | translate }}</option>
+            <option value="GameMaster" [disabled]="gameMasterDisabled(e)">
+              {{ 'participants.activities.roles.GameMaster' | translate }}
+            </option>
+          </select>
+        </td>
+      </tr>
+      <tr class="editor-actions">
+        <td colspan="4">
+          <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="update()">
+            {{ 'participants.signups.update' | translate }}
+          </button>
+          <button mat-button color="warn" type="button" [disabled]="busy()" (click)="remove()">
+            {{ 'participants.signups.delete' | translate }}
+          </button>
+          <button mat-button type="button" (click)="cancel()">{{ 'participants.cancel' | translate }}</button>
+        </td>
+      </tr>
+      } @else {
+      <tr
+        class="signup"
+        [attr.tabindex]="canEdit ? 0 : null"
+        [title]="canEdit ? ('participants.clickToEdit' | translate) : ''"
+        (click)="startEdit(signup)"
+        (keydown.enter)="startEdit(signup)"
+      >
+        <td class="title">
+          <a
+            [routerLink]="['/activities', signup.activityId]"
+            [title]="'participants.activities.showActivity' | translate"
+            (click)="$event.stopPropagation()"
+            >{{ signup.title }} / {{ signup.titleEnglish }}</a
+          >
+        </td>
+        <td class="time">
+          <em>{{ signup.start | timeSpan: signup.end : true : ' -> ' }}</em>
+        </td>
+        <td class="priority">
+          <em>{{ signup.priority }}</em>
+        </td>
+        <td class="role">{{ 'participants.activities.roles.' + signup.role | translate }}</td>
+      </tr>
+      } }
+    </tbody>
+  </table>
+
+  @if (conflicts(); as list) {
+  <!-- Infosys's "Sorter efter prioritet" dialog: the wishes at the same time, sorted by dragging -->
+  <div class="conflict-sort">
+    <h4>{{ 'participants.signups.sortTitle' | translate }}</h4>
+    <ol cdkDropList (cdkDropListDropped)="drop($event)">
+      @for (conflict of list; track conflict.scheduleId) {
+      <li cdkDrag>
+        <mat-icon cdkDragHandle class="handle">drag_indicator</mat-icon>
+        <span>{{ conflict.title }}</span>
+      </li>
+      }
+    </ol>
+    <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="savePriorities()">
+      {{ 'participants.signups.update' | translate }}
+    </button>
+  </div>
+  }
+</app-card>

@@ -342,6 +342,156 @@ public class ParticipantsControllerTests
         Assert.Null(participant.Price);
     }
 
+    // Wednesday 24 March 2027 at the given UTC hour (Copenhagen is UTC+1 that week until Sunday)
+    private static DateTime Wednesday(int hour) => new(2027, 3, 24, hour, 0, 0, DateTimeKind.Utc);
+
+    private static Activity Game(int id, string title, AutoSignupCategory autoSignup = AutoSignupCategory.None) =>
+        new() { Id = id, Title = title, AutoSignupCategory = autoSignup };
+
+    private static Schedule ScheduleOf(int id, Activity activity, DateTime start, Room? room = null) =>
+        new() { Id = id, ActivityId = activity.Id, StartTime = start, EndTime = start.AddHours(4), RoomId = room?.Id };
+
+    [Fact]
+    public async Task Get_ListsTheParticipantsSeatsByStartTime()
+    {
+        // Infosys Deltagere::getPladser: the participant's seats, ordered by the schedule's start
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddAsync(db, 2);
+        var roomA = new Room { Id = 1, Name = "Lokale A1", Location = "Skolen" };
+        var roomB = new Room { Id = 2, Name = "Lokale B2", Location = "" };
+        var late = Game(1, "Sent spil");
+        var early = Game(2, "Tidligt spil");
+        db.AddRange(roomA, roomB, late, early);
+        db.AddRange(ScheduleOf(10, late, Wednesday(18)), ScheduleOf(20, early, Wednesday(8)));
+        db.Runs.AddRange(
+            new Run { Id = 100, ScheduleId = 10, Number = 3, RoomId = 2 },
+            new Run { Id = 200, ScheduleId = 20, Number = 1, RoomId = 1 });
+        db.RunSeats.AddRange(
+            new RunSeat { RunId = 100, SeatNumber = 1, ParticipantId = 1, Role = RunSeatRole.GameMaster },
+            new RunSeat { RunId = 200, SeatNumber = 1, ParticipantId = 1, Role = RunSeatRole.Player },
+            new RunSeat { RunId = 200, SeatNumber = 2, ParticipantId = 2, Role = RunSeatRole.Player });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+
+        Assert.Equal(
+            new ParticipantActivityDto[]
+            {
+                new ParticipantActivityDto(2, "Tidligt spil", Wednesday(8), Wednesday(12), ParticipantActivityRole.Player, 200, 1, "Lokale A1", "Skolen"),
+                new ParticipantActivityDto(1, "Sent spil", Wednesday(18), Wednesday(22), ParticipantActivityRole.GameMaster, 100, 3, "Lokale B2", ""),
+            },
+            activities);
+    }
+
+    [Fact]
+    public async Task Get_ListsNoActivitiesForAParticipantWithoutSeats()
+    {
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+
+        Assert.Empty(Ok(await CreateController(db).Get(1)).Details!.Activities);
+    }
+
+    [Fact]
+    public async Task Get_ListsTheSignupWishesByTheSchedulesStart()
+    {
+        // Infosys visdeltager's Aktivitetstilmeldinger box (DeltagereTilmeldinger::getDeltagerTilmeldinger)
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        var late = Game(1, "Sent spil");
+        var early = Game(2, "Tidligt spil");
+        db.AddRange(late, early, ScheduleOf(10, late, Wednesday(18)), ScheduleOf(20, early, Wednesday(8)));
+        db.ScheduleSignups.AddRange(
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 2 },
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 20, Role = RunSeatRole.GameMaster, Priority = 0 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var signups = Ok(await CreateController(db).Get(1)).Details!.ActivitySignups;
+
+        Assert.Equal(
+            new[]
+            {
+                new ParticipantActivitySignupDto(2, "Tidligt spil", "", 20, Wednesday(8), Wednesday(12), 0, RunSeatRole.GameMaster),
+                new ParticipantActivitySignupDto(1, "Sent spil", "", 10, Wednesday(18), Wednesday(22), 2, RunSeatRole.Player),
+            },
+            signups);
+    }
+
+    [Fact]
+    public async Task Get_AddsTheOwnGameAndAutomaticSignupsForBoardGameDesigners()
+    {
+        // Infosys getPladser adds SpecialSpots for work_area 2: every schedule of the designer's own game as
+        // "designer" (getDesignerDuties) and every schedule of the activities with automatic signup for designers as
+        // "spiller" (getAutoSpots). They have no run, and the room is the schedule's meeting room.
+        using var db = CreateDbContext();
+        var room = new Room { Id = 1, Name = "Brætspilscafeen", Location = "Hallen" };
+        var ownGame = Game(1, "Mit spil");
+        var designerMeeting = Game(2, "Designermøde", AutoSignupCategory.Designer);
+        var authorMeeting = Game(3, "Forfattermøde", AutoSignupCategory.Author);
+        var seatGame = Game(4, "Andet spil");
+        db.AddRange(room, ownGame, designerMeeting, authorMeeting, seatGame);
+        db.AddRange(
+            ScheduleOf(10, ownGame, Wednesday(14), room),
+            ScheduleOf(11, ownGame, Wednesday(9)),
+            ScheduleOf(20, designerMeeting, Wednesday(9), room),
+            ScheduleOf(30, authorMeeting, Wednesday(9), room),
+            ScheduleOf(40, seatGame, Wednesday(9), room));
+        db.Runs.Add(new Run { Id = 400, ScheduleId = 40, Number = 2, RoomId = 1 });
+        db.RunSeats.Add(new RunSeat { RunId = 400, SeatNumber = 1, ParticipantId = 1, Role = RunSeatRole.Player });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await AddAsync(db, 1, p => { p.OrganizerAreaId = OrganizerArea.BoardGameDesignerId; p.GameActivityId = 1; });
+
+        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+
+        // At 9:00 the seat comes first, then the own game, then the automatic signup, as PHP's stable uasort keeps them.
+        // The author meeting is not for designers.
+        Assert.Equal(
+            new ParticipantActivityDto[]
+            {
+                new ParticipantActivityDto(4, "Andet spil", Wednesday(9), Wednesday(13), ParticipantActivityRole.Player, 400, 2, "Brætspilscafeen", "Hallen"),
+                new ParticipantActivityDto(1, "Mit spil", Wednesday(9), Wednesday(13), ParticipantActivityRole.Designer, null, null, null, null),
+                new ParticipantActivityDto(2, "Designermøde", Wednesday(9), Wednesday(13), ParticipantActivityRole.Player, null, null, "Brætspilscafeen", "Hallen"),
+                new ParticipantActivityDto(1, "Mit spil", Wednesday(14), Wednesday(18), ParticipantActivityRole.Designer, null, null, "Brætspilscafeen", "Hallen"),
+            },
+            activities);
+    }
+
+    [Fact]
+    public async Task Get_AddsOnlyTheAutomaticSignupsForADesignerWithoutAGame()
+    {
+        using var db = CreateDbContext();
+        var designerMeeting = Game(2, "Designermøde", AutoSignupCategory.Designer);
+        db.Add(designerMeeting);
+        db.Add(ScheduleOf(20, designerMeeting, Wednesday(9)));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await AddAsync(db, 1, p => p.OrganizerAreaId = OrganizerArea.BoardGameDesignerId);
+
+        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+
+        Assert.Equal(ParticipantActivityRole.Player, Assert.Single(activities).Role);
+    }
+
+    [Theory]
+    [InlineData(OrganizerArea.ScenarioAuthorId)]
+    [InlineData(17)]
+    public async Task Get_AddsNoAutomaticSignupsForOtherOrganizerAreas(int organizerAreaId)
+    {
+        // Legacy: getAutoSpots knows authors (1, 54-56) and designers (2, 17-19), but getPladser only asks for
+        // work_area 2, so authors and the other designer areas get no extra rows. Kept on purpose for now; the user
+        // wants the other areas added later (see LoadActivitiesAsync).
+        using var db = CreateDbContext();
+        var ownGame = Game(1, "Mit scenarie");
+        var authorMeeting = Game(2, "Forfattermøde", AutoSignupCategory.Author);
+        var designerMeeting = Game(3, "Designermøde", AutoSignupCategory.Designer);
+        db.AddRange(ownGame, authorMeeting, designerMeeting);
+        db.AddRange(ScheduleOf(10, ownGame, Wednesday(9)), ScheduleOf(20, authorMeeting, Wednesday(9)), ScheduleOf(30, designerMeeting, Wednesday(9)));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await AddAsync(db, 1, p => { p.OrganizerAreaId = organizerAreaId; p.GameActivityId = 1; });
+
+        Assert.Empty(Ok(await CreateController(db).Get(1)).Details!.Activities);
+    }
+
     [Fact]
     public async Task Get_HidesEverythingBelowThePersonalInfoFromViewers()
     {
@@ -548,6 +698,26 @@ public class ParticipantsControllerTests
 
         Assert.IsType<ConflictObjectResult>(result);
         Assert.Single(db.Participants);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsSignupWishes()
+    {
+        // Infosys removes deltagere_tilmeldinger with the participant
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        var activity = Game(1, "Spil");
+        db.AddRange(activity, ScheduleOf(10, activity, Wednesday(8)));
+        db.ScheduleSignups.AddRange(
+            new ScheduleSignup { ParticipantId = 1, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 1 },
+            new ScheduleSignup { ParticipantId = 2, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        await CreateController(db).Delete(1);
+
+        Assert.Equal([2], db.ScheduleSignups.Select(s => s.ParticipantId));
     }
 
     [Fact]

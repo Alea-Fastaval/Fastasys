@@ -351,6 +351,22 @@
       "checkInDifference": "Difference ved check-ind ({{total}} - {{paid}}):",
       "notPorted": "Priser er ikke flyttet til Fastasys endnu."
     },
+    "activities": {
+      "title": "Aktiviteter",
+      "activity": "Aktivitet",
+      "time": "Tid",
+      "role": "S / SL",
+      "run": "Hold",
+      "room": "Sted",
+      "showActivity": "Se aktivitet",
+      "showRun": "Se hold",
+      "editDelete": "Ret/slet",
+      "roles": {
+        "Player": "spiller",
+        "GameMaster": "spilleder",
+        "Designer": "designer"
+      }
+    },
     "notes": {
       "adminNote": "Admin-noter (internt)",
       "messageToParticipant": "Beskeder til deltageren (fra Fastaval)",
@@ -385,7 +401,37 @@
       "deleteFailed": "Kunne ikke slette deltageren.",
       "fieldUpdateFailed": "Kunne ikke opdatere deltageren.",
       "notFound": "Ups! Kunne ikke finde nogen deltagere efter hvad du tastede.",
-      "listFailed": "Kunne ikke hente deltagerne."
+      "listFailed": "Kunne ikke hente deltagerne.",
+      "activitiesLocked": "Deltagerens aktiviteter kan ikke ændres.",
+      "activitiesUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "signupAlreadySignedUp": "Kan ikke flytte afvikling - deltageren er allerede tilmeldt afviklingen der flyttes til",
+      "signupNotFound": "Kan ikke finde afvikling",
+      "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
+      "signupUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "signupDeleteFailed": "Kunne ikke slette tilmeldingen"
+    },
+    "seats": {
+      "title": "Opdater Aktiviteter",
+      "backToParticipant": "Tilbage til deltageren",
+      "noSchedules": "Ingen afviklinger",
+      "noRuns": "Ingen hold",
+      "add": "Tilføj Aktivitet",
+      "run": "hold",
+      "delete": "Slet",
+      "update": "Opdater",
+      "wishesTitle": "Deltagerens tilmeldinger",
+      "addWish": "Tilføj"
+    },
+    "signups": {
+      "title": "Aktivitetstilmeldinger",
+      "editTitle": "Opdater Aktivitets-tilmeldinger",
+      "priority": "Prio",
+      "priorityText": "{{priority}}. prioritet",
+      "add": "Tilføj Tilmelding",
+      "update": "Opdater",
+      "delete": "Slet",
+      "confirmDelete": "Er du sikker?",
+      "sortTitle": "Sorter efter prioritet"
     }
   },
   "activities": {
@@ -487,7 +533,18 @@
       "scheduleNotUpdated": "Afviklingen blev ikke opdateret.",
       "scheduleDeleted": "Afviklingen blev slettet.",
       "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
-      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først."
+      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først.",
+      "scheduleDeleteHasSignups": "Afviklingen kunne ikke slettes, fordi der er deltagere tilmeldt den."
+    },
+    "signups": {
+      "title": "Tilmeldinger",
+      "gameMaster": "Spilleder",
+      "name": "Name",
+      "priority": "Pri",
+      "karma": "Karma",
+      "age": "Alder",
+      "language": "Sprog",
+      "busy": "Deltageren er optaget på dette tidspunkt"
     }
   },
   "runs": {

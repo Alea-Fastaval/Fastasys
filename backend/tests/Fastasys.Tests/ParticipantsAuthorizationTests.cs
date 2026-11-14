@@ -33,7 +33,9 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         }
     }
 
-    private async Task<HttpClient> CreateClientWithPrivilegeAsync(string privilegeKey)
+    private Task<HttpClient> CreateClientWithPrivilegeAsync(string privilegeKey) => CreateClientWithPrivilegesAsync(privilegeKey);
+
+    private async Task<HttpClient> CreateClientWithPrivilegesAsync(params string[] privilegeKeys)
     {
         var suffix = Guid.NewGuid().ToString("N");
         const string password = "test-password";
@@ -42,7 +44,10 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         {
             var db = scope.ServiceProvider.GetRequiredService<InfosysDbContext>();
             var role = new Role { Name = $"role-{suffix}" };
-            role.RolePrivileges.Add(new RolePrivilege { Privilege = new Privilege { Name = privilegeKey, Key = privilegeKey } });
+            foreach (var privilegeKey in privilegeKeys)
+            {
+                role.RolePrivileges.Add(new RolePrivilege { Privilege = new Privilege { Name = privilegeKey, Key = privilegeKey } });
+            }
             var user = new User
             {
                 Username = $"user-{suffix}",
@@ -185,5 +190,65 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         Assert.Equal(HttpStatusCode.OK, annul.StatusCode);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, deleted.StatusCode);
+    }
+
+    // Infosys deltager/updateaktivitet: the ParticipantController roles, and in the method Activity-admin, Infonaut or
+    // admin. Fastasys asks for both participants_edit and activities_edit.
+    [Theory]
+    [InlineData("participants_view,activities_edit")]
+    [InlineData("participants_edit")]
+    [InlineData("activities_edit")]
+    public async Task SeatEditor_NeedsTheRightToEditBothParticipantsAndActivities(string privileges)
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
+        var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
+        Assert.NotNull(created);
+        var client = await CreateClientWithPrivilegesAsync(privileges.Split(','));
+
+        var get = await client.GetAsync($"/api/participants/{created.Id}/seats", ct);
+        var update = await client.PutAsJsonAsync($"/api/participants/{created.Id}/seats", new UpdateParticipantSeatsDto([]), ct);
+
+        Assert.Equal(HttpStatusCode.Forbidden, get.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
+    }
+
+    // Infosys: every role with ParticipantController/* may change a participant's signup wishes; no activity role is
+    // needed (agreed 2026-11-13)
+    [Fact]
+    public async Task SignupWishes_NeedOnlyTheRightToEditParticipants()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participants_view", "activities_edit");
+        var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
+        Assert.NotNull(created);
+        var url = $"/api/participants/{created.Id}/signups";
+
+        Assert.Equal(HttpStatusCode.OK, (await editor.GetAsync(url, ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await editor.PutAsJsonAsync(url, new UpdateParticipantSignupsDto([]), ct)).StatusCode);
+        // The role in the address is bound by name; the participant has no such wish
+        Assert.Equal(HttpStatusCode.NotFound, (await editor.DeleteAsync($"{url}/1/GameMaster", ct)).StatusCode);
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.GetAsync(url, ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.PutAsJsonAsync(url, new UpdateParticipantSignupsDto([]), ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.PutAsJsonAsync($"{url}/1/Player", new UpdateSignupDto(1, RunSeatRole.Player, 1), ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.PutAsJsonAsync($"{url}/priorities", new SignupPrioritiesDto([1]), ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.DeleteAsync($"{url}/1/Player", ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task SeatEditor_IsOpenToUsersWhoMayEditParticipantsAndActivities()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var client = await CreateClientWithPrivilegesAsync("participants_edit", "activities_edit");
+        var created = await (await client.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
+        Assert.NotNull(created);
+
+        var get = await client.GetAsync($"/api/participants/{created.Id}/seats", ct);
+        var update = await client.PutAsJsonAsync($"/api/participants/{created.Id}/seats", new UpdateParticipantSeatsDto([]), ct);
+
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
     }
 }
