@@ -138,8 +138,51 @@ public record ParticipantDetailsDto(
     IReadOnlyList<ParticipantTicketDto>? Tickets,
     IReadOnlyList<ParticipantMealDto>? Meals,
     // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
-    IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces
+    IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces,
+    // The Aktiviteter box: the participant's seats on runs and, for board game designers, their designer rows
+    IReadOnlyList<ParticipantActivityDto> Activities,
+    // The Aktivitetstilmeldinger box: the participant's signup wishes, by the schedule's start
+    IReadOnlyList<ParticipantActivitySignupDto> ActivitySignups
 );
+
+// One row of the Aktivitetstilmeldinger box of the Infosys participant page (visdeltager.phtml, .activity-signup):
+// Aktivitet ("Title / TitleEnglish", linked to the activity), Tid ("Onsdag 10:00 -> Onsdag 14:00"), Prio and S / SL.
+// Priority is shown as it is: 1-4 for players, and 0 (from the Infosys signup) or 1 for game masters.
+public record ParticipantActivitySignupDto(
+    int ActivityId,
+    string Title,
+    string TitleEnglish,
+    int ScheduleId,
+    DateTime Start,
+    DateTime End,
+    int Priority,
+    RunSeatRole Role);
+
+// What the participant is on a row of the Aktiviteter box (Infosys pladser.type): "spiller", "spilleder", or
+// "designer" for a designer's own game
+[JsonConverter(typeof(JsonStringEnumConverter<ParticipantActivityRole>))]
+public enum ParticipantActivityRole
+{
+    Player,
+    GameMaster,
+    Designer
+}
+
+// One row of the Aktiviteter box of the Infosys participant page (visdeltager.phtml, .aktivitetboxen):
+// Aktivitet (Title, linked to the activity), Tid ("Onsdag 10:00 -> Onsdag 14:00"), S / SL (Role), Hold (RunNumber,
+// linked to the run) and Sted ("RoomName, RoomLocation").
+// The rows of a board game designer's own game and of the activities with automatic signup have no run, so RunId and
+// RunNumber are null and the room is the schedule's meeting room, which can be missing.
+public record ParticipantActivityDto(
+    int ActivityId,
+    string Title,
+    DateTime Start,
+    DateTime End,
+    ParticipantActivityRole Role,
+    int? RunId,
+    int? RunNumber,
+    string? RoomName,
+    string? RoomLocation);
 
 // The line of the Indgang/Mad box a ticket is shown on
 [JsonConverter(typeof(JsonStringEnumConverter<TicketLine>))]
@@ -497,7 +540,7 @@ public class ParticipantsController : ControllerBase
     }
 
     // Infosys deltager/delete/:id: ("Slet for pokker"). Infosys only offers it for annulled participants; that is
-    // now checked here too. Their seats on runs are removed with them, as in Infosys.
+    // now checked here too. Their seats on runs and their signup wishes are removed with them, as in Infosys.
     [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Delete(int id)
@@ -511,6 +554,7 @@ public class ParticipantsController : ControllerBase
         }
 
         _db.RunSeats.RemoveRange(_db.RunSeats.Where(s => s.ParticipantId == id));
+        _db.ScheduleSignups.RemoveRange(_db.ScheduleSignups.Where(s => s.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -853,7 +897,9 @@ public class ParticipantsController : ControllerBase
                 // TODO when food is ported: load the participant's meals here (see ParticipantMealDto)
                 Meals: null,
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)
-                SleepingPlaces: null)
+                SleepingPlaces: null,
+                Activities: await LoadActivitiesAsync(p),
+                ActivitySignups: (await ParticipantSignupRows.LoadAsync(_db, p.Id)).Select(s => s.ToDto()).ToList())
             : null;
 
         return new ParticipantDto(
@@ -884,6 +930,13 @@ public class ParticipantsController : ControllerBase
             Price: null,
             details);
     }
+
+    // The Aktiviteter box: Infosys Deltagere::getPladser (see ParticipantSpots.LoadAsync)
+    private async Task<IReadOnlyList<ParticipantActivityDto>> LoadActivitiesAsync(Participant p) =>
+        (await ParticipantSpots.LoadAsync(_db, p))
+            .Select(s => new ParticipantActivityDto(
+                s.ActivityId, s.Title, s.Start, s.End, s.Role, s.RunId, s.RunNumber, s.RoomName, s.RoomLocation))
+            .ToList();
 
     private string? CurrentUserId() => User?.FindFirstValue(ClaimTypes.NameIdentifier);
 }

@@ -163,6 +163,7 @@
   } @for (schedule of schedules(); track schedule.id) {
   <app-card
     class="schedule"
+    [class.inactive]="dragging() !== null && dragging()?.scheduleId !== schedule.id"
     [title]="
       'activities.scheduleLegend'
         | translate: { time: (schedule.startTime | timeSpan: schedule.endTime : true), id: schedule.id.toString() }
@@ -182,38 +183,126 @@
       </button>
     </div>
 
-    <div class="runs">
-      @for (run of schedule.runs; track run.id) {
-      <section class="run">
-        <header class="run-header">
-          <a [routerLink]="['/runs', run.id]">{{ 'runs.runLink' | translate: { number: run.number.toString() } }}</a>
-          <span [class.missing]="run.needsPlayers">
-            {{ 'runs.fields.needsPlayers' | translate }}: {{ (run.needsPlayers ? 'activities.yes' : 'activities.no') |
-            translate }}
-          </span>
-          <span [class.missing]="run.needsGameMasters">
-            {{ 'runs.fields.needsGameMasters' | translate }}: {{ (run.needsGameMasters ? 'activities.yes' :
-            'activities.no') | translate }}
-          </span>
-          <button mat-button color="warn" type="button" [disabled]="busy()" (click)="deleteRun(run)">
-            {{ 'runs.deleteRun' | translate }}
-          </button>
-        </header>
-        @if (run.seats.length > 0) {
-        <table class="seats">
-          <tbody>
-            @for (seat of run.seats; track seat.seatNumber) {
+    <!-- Infosys: the runs on the left, the schedule's signups on the right. A row of the signups, or a participant on a
+         run, can be dragged onto a run of the same schedule; a participant dragged off a run and dropped anywhere else
+         leaves it. -->
+    <div class="schedule-body">
+      <div class="runs">
+        @for (run of schedule.runs; track run.id) {
+        <section
+          class="run"
+          [class.hovered]="hoveredRunId() === run.id"
+          (dragover)="dragOverRun($event, schedule.id, run)"
+          (dragleave)="dragLeaveRun(run)"
+          (drop)="dropOnRun($event, schedule.id, run)"
+        >
+          <header class="run-header">
+            <a [routerLink]="['/runs', run.id]">{{ 'runs.runLink' | translate: { number: run.number.toString() } }}</a>
+            <span [class.missing]="run.needsPlayers">
+              {{ 'runs.fields.needsPlayers' | translate }}: {{ (run.needsPlayers ? 'activities.yes' : 'activities.no') |
+              translate }}
+            </span>
+            <span [class.missing]="run.needsGameMasters">
+              {{ 'runs.fields.needsGameMasters' | translate }}: {{ (run.needsGameMasters ? 'activities.yes' :
+              'activities.no') | translate }}
+            </span>
+            <button mat-button color="warn" type="button" [disabled]="busy()" (click)="deleteRun(run)">
+              {{ 'runs.deleteRun' | translate }}
+            </button>
+          </header>
+          @if (run.seats.length > 0) {
+          <table class="seats">
+            <tbody>
+              @for (seat of run.seats; track seat.seatNumber) {
+              <tr
+                [class.draggable]="canDragSeat(schedule.id, seat.participantId)"
+                [class.failed]="isFailed(schedule.id, seat.participantId)"
+                [attr.draggable]="canDragSeat(schedule.id, seat.participantId) ? 'true' : null"
+                (dragstart)="startSeatDrag($event, schedule.id, run, seat)"
+                (dragend)="endDrag()"
+              >
+                <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>
+                <td>{{ seat.participantName }}</td>
+                <td class="karma">{{ seat.karma }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+          }
+        </section>
+        }
+      </div>
+
+      <!-- Infosys visaktivitet.phtml, fieldset.afviklingsbox-signups -->
+      <fieldset class="signups">
+        <legend>{{ 'activities.signups.title' | translate }}</legend>
+        <table class="signup-pool">
+          <thead>
             <tr>
-              <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>
-              <td>{{ seat.participantName }}</td>
-              <td class="karma">{{ seat.karma }}</td>
+              <th class="icon">
+                <mat-icon [title]="'activities.signups.gameMaster' | translate">military_tech</mat-icon>
+              </th>
+              <th class="name">{{ 'activities.signups.name' | translate }}</th>
+              <th>{{ 'activities.signups.priority' | translate }}</th>
+              <th class="icon"><mat-icon [title]="'activities.signups.karma' | translate">balance</mat-icon></th>
+              <th class="icon"><mat-icon [title]="'activities.signups.age' | translate">cake</mat-icon></th>
+              <th class="icon">
+                <mat-icon [title]="'participants.fields.desiredActivities' | translate">favorite_border</mat-icon>
+              </th>
+              <th class="icon"><mat-icon [title]="'activities.signups.language' | translate">flag</mat-icon></th>
+              <th class="icon"><mat-icon [title]="'participants.notes.commentNote' | translate">chat</mat-icon></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of poolRows(schedule.id); track row.participantId + row.role) {
+            <tr
+              class="participant"
+              [class.busy]="row.isBusy"
+              [class.locked]="row.isLocked"
+              [class.double-booked]="row.isDoubleBooked"
+              [class.draggable]="canDragRow(row)"
+              [class.failed]="isFailed(schedule.id, row.participantId)"
+              [attr.draggable]="canDragRow(row) ? 'true' : null"
+              [title]="rowInfo(row)"
+              (dragstart)="startRowDrag($event, schedule.id, row)"
+              (dragend)="endDrag()"
+            >
+              <td class="icon">
+                @if (row.role === 'GameMaster') {
+                <mat-icon [title]="'activities.signups.gameMaster' | translate">military_tech</mat-icon>
+                }
+              </td>
+              <td class="name">
+                <a
+                  draggable="false"
+                  [routerLink]="['/participants', row.participantId]"
+                  [title]="row.isBusy ? ('activities.signups.busy' | translate) : ''"
+                  >{{ row.name }}</a
+                >
+              </td>
+              <td>{{ row.priority }}</td>
+              <td class="karma">{{ row.karma }}</td>
+              <td>{{ row.age }}</td>
+              <td class="icon">
+                @if (row.desiredActivitiesReached !== null) {
+                <mat-icon class="heart">{{ row.desiredActivitiesReached ? 'favorite' : 'favorite_border' }}</mat-icon>
+                }
+              </td>
+              <td class="language">
+                @if (row.language) {
+                <span class="flag">{{ row.language.toUpperCase() }}</span>
+                }
+              </td>
+              <td class="icon">
+                @if (row.note) {
+                <mat-icon>chat</mat-icon>
+                }
+              </td>
             </tr>
             }
           </tbody>
         </table>
-        }
-      </section>
-      }
+      </fieldset>
     </div>
   </app-card>
   } }

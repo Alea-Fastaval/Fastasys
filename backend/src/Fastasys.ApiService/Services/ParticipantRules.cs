@@ -12,14 +12,34 @@ public static partial class ParticipantRules
     public const string AskForPronouns = "ask";
     public static readonly IReadOnlyList<string> PronounCodes = ["ns", "no", "fs", "fo", "ms", "mo"];
 
+    // Infosys Deltagere's "alder": the full years from the birth date to today. Infosys's empty birth date
+    // (0000-00-00) gave the years since 1970; here an unknown birth date has no age.
+    public static int? AgeOn(DateOnly? birthDate, DateOnly today)
+    {
+        if (birthDate is not DateOnly born) return null;
+        var age = today.Year - born.Year;
+        return (today.Month, today.Day).CompareTo((born.Month, born.Day)) < 0 ? age - 1 : age;
+    }
+
+    // Infosys Deltagere::isBusyBetween: whether the period overlaps one of the participant's busy periods. Infosys's
+    // busy periods are the schedules of their seats (designer rows included) on time-exclusive activities, those
+    // schedules' multiblocks, and their hero force shifts; multiblocks and hero force are not ported yet.
+    public static bool IsBusyBetween(IEnumerable<(DateTime Start, DateTime End)> busyPeriods, DateTime start, DateTime end) =>
+        busyPeriods.Any(busy => RunRules.Overlaps(start, end, busy.Start, busy.End));
+
     // Infosys Deltagere::setInsertId gives a new participant the lowest id that isn't used. The Infonaut range
     // (900-929), the id reserved for one e-mail address and the 1-5000 search window were dropped on 2026-11-11.
+    // The search is bounded: it checks 1 up to the highest used id, and if all of those are taken, the next one is free.
     public static int LowestFreeId(IEnumerable<int> usedIds)
     {
         var used = usedIds.Where(id => id > 0).ToHashSet();
-        var candidate = 1;
-        while (used.Contains(candidate)) candidate++;
-        return candidate;
+        var highest = used.Count == 0 ? 0 : used.Max();
+        for (var candidate = 1; candidate <= highest; candidate++)
+        {
+            if (!used.Contains(candidate)) return candidate;
+        }
+
+        return checked(highest + 1);
     }
 
     // Infosys Deltagere::normalizePhone, run on every save: trims the number and removes a Danish prefix in front

@@ -9,12 +9,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { Participant, ParticipantDetails, ParticipantOptions } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
+import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { FocusOnShowDirective } from './focus-on-show.directive';
 import { ParticipantWearComponent } from '../participant-wear/participant-wear';
 import { ParticipantEntranceFoodComponent } from '../participant-entrance-food/participant-entrance-food';
 import { ParticipantSleepingComponent } from '../participant-sleeping/participant-sleeping';
 import { ParticipantPriceComponent } from '../participant-price/participant-price';
+import { ParticipantActivitiesComponent } from '../participant-activities/participant-activities';
+import { ParticipantActivitySignupsComponent } from '../participant-activity-signups/participant-activity-signups';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -104,6 +107,8 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantEntranceFoodComponent,
     ParticipantSleepingComponent,
     ParticipantPriceComponent,
+    ParticipantActivitiesComponent,
+    ParticipantActivitySignupsComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',
@@ -113,6 +118,9 @@ export class ParticipantDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly flashService = inject(ParticipantFlashService);
+  // The seat editor (Aktiviteter "Ret/slet") also needs the right to edit activities. Infosys: Activity-admin,
+  // Infonaut or admin.
+  private readonly mayEditSeats = inject(AuthService).hasPrivilege('activities_edit');
 
   public readonly flash = signal(this.flashService.take());
   public readonly participant = signal<Participant | null>(null);
@@ -407,6 +415,11 @@ export class ParticipantDetailComponent {
     return this.noteFields.filter(note => !note.optional || note.value(p) !== null);
   }
 
+  // Infosys shows the Aktiviteter "Ret/slet" link unless the participant is activity-locked (Aktivitets-låst: ja)
+  public canEditSeats(details: ParticipantDetails): boolean {
+    return this.mayEditSeats && !details.isActivityLocked;
+  }
+
   public selectedLabel(def: EditableField, p: Participant): string {
     if (def.text) return def.text(p);
     const option = def.options?.().find(o => o.value === def.value(p));
@@ -473,6 +486,16 @@ export class ParticipantDetailComponent {
     const participant = this.participant();
     const id = event.key === 'ArrowLeft' ? participant?.previousId : participant?.nextId;
     if (id) this.router.navigate(['/participants', id]);
+  }
+
+  // After a signup wish was changed or deleted in the Aktivitetstilmeldinger box (Infosys reloads the page)
+  public refresh(): void {
+    const id = this.participant()?.id;
+    if (id === undefined) return;
+    this.http.get<Participant>(`/api/participants/${id}`).subscribe({
+      next: participant => this.participant.set(participant),
+      error: () => this.notFound.set(true),
+    });
   }
 
   private load(id: string): void {

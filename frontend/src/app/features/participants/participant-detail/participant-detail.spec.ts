@@ -1,12 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { describe, afterEach, it, expect, vi } from 'vitest';
 import { Participant, ParticipantDetails, ParticipantOptions, ParticipantPrice } from '@shared/types';
+import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantDetailComponent, editorValue } from './participant-detail';
+import { ParticipantActivitySignupsComponent } from '../participant-activity-signups/participant-activity-signups';
 
 const details: ParticipantDetails = {
   organizerAreaId: 2,
@@ -47,6 +50,31 @@ const details: ParticipantDetails = {
   tickets: null,
   meals: null,
   sleepingPlaces: null,
+  activities: [
+    {
+      activityId: 4,
+      title: 'Andet spil',
+      start: '2027-03-24T09:00:00Z',
+      end: '2027-03-24T13:00:00Z',
+      role: 'Player',
+      runId: 400,
+      runNumber: 2,
+      roomName: 'Lokale A1',
+      roomLocation: 'Skolen',
+    },
+  ],
+  activitySignups: [
+    {
+      activityId: 4,
+      title: 'Andet spil',
+      titleEnglish: 'Other game',
+      scheduleId: 40,
+      start: '2027-03-24T09:00:00Z',
+      end: '2027-03-24T13:00:00Z',
+      priority: 1,
+      role: 'Player',
+    },
+  ],
 };
 
 const participant: Participant = {
@@ -117,7 +145,7 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     httpMock.verify();
   });
 
-  const setup = async (loaded: Participant = participant) => {
+  const setup = async (loaded: Participant = participant, mayEditActivities = false) => {
     const params = new BehaviorSubject(convertToParamMap({ id: String(loaded.id) }));
     await TestBed.configureTestingModule({
       imports: [ParticipantDetailComponent],
@@ -130,6 +158,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
+    // Only the seat editor link asks; it needs activities_edit
+    vi.spyOn(TestBed.inject(AuthService), 'hasPrivilege').mockReturnValue(mayEditActivities);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(ParticipantDetailComponent);
     fixture.detectChanges();
@@ -207,6 +237,11 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
+    // Aktiviteter comes after the notes, as in Infosys
+    expect(element.querySelector('.notes + .activity-boxes app-participant-activities')).not.toBeNull();
+    expect(element.querySelector('app-participant-activities .activity-table tbody')?.textContent).toContain(
+      'Andet spil',
+    );
   });
 
   it('passes the price and the amount paid to the Pris breakdown box', async () => {
@@ -262,6 +297,49 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('.note.saved')?.textContent).toContain('Husk at hente nøglen');
   });
 
+  it('shows the Aktivitetstilmeldinger box after Aktiviteter and reloads the participant when a wish changes', async () => {
+    const { fixture, element } = await setup();
+
+    const boxes = [...element.querySelectorAll('.activity-boxes > *')].map(box => box.tagName.toLowerCase());
+    expect(boxes).toEqual(['app-participant-activities', 'app-participant-activity-signups']);
+    expect(element.querySelector('app-participant-activity-signups tbody')?.textContent).toContain(
+      'Andet spil / Other game',
+    );
+    expect(element.querySelector('app-participant-activity-signups a.edit-signups')).not.toBeNull();
+
+    const box = fixture.debugElement.query(By.directive(ParticipantActivitySignupsComponent))
+      .componentInstance as ParticipantActivitySignupsComponent;
+    box.changed.emit();
+    httpMock.expectOne('/api/participants/7').flush({ ...participant, details: { ...details, activitySignups: [] } });
+    fixture.detectChanges();
+
+    expect(element.querySelector('app-participant-activity-signups tbody tr.signup')).toBeNull();
+  });
+
+  it("doesn't let the wishes of an activity-locked participant be changed", async () => {
+    const { element } = await setup({ ...participant, details: { ...details, isActivityLocked: true } });
+
+    expect(element.querySelector('app-participant-activity-signups a.edit-signups')).toBeNull();
+  });
+
+  it('links the Aktiviteter box to the seat editor for users who may edit activities', async () => {
+    const { element } = await setup(participant, true);
+
+    expect(element.querySelector('app-participant-activities a.edit-seats')?.getAttribute('href')).toBe(
+      '/participants/7/activities',
+    );
+  });
+
+  it('has no seat editor link for users who may not edit activities, or when the participant is activity-locked', async () => {
+    // Infosys hides "Ret/slet" when Aktivitets-låst is ja; without Activity-admin, Infonaut or admin it shows "no access"
+    const withoutRight = await setup(participant, false);
+    expect(withoutRight.element.querySelector('a.edit-seats')).toBeNull();
+
+    TestBed.resetTestingModule();
+    const locked = await setup({ ...participant, details: { ...details, isActivityLocked: true } }, true);
+    expect(locked.element.querySelector('a.edit-seats')).toBeNull();
+  });
+
   it('shows only the personal info to users who may only view participants', async () => {
     const { component, element } = await setup({ ...participant, canEdit: false, details: null });
 
@@ -273,6 +351,8 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     // breakdown
     const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
     expect(boxes).toEqual(['app-participant-price']);
+    // and the Aktiviteter box from its Read-only role
+    expect(element.querySelector('app-participant-activities')).toBeNull();
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();

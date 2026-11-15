@@ -284,6 +284,13 @@ public class ActivitiesController : ControllerBase
             return Conflict(new { message = ScheduleHasRunsMessage });
         }
 
+        // Infosys's foreign key from deltagere_tilmeldinger refuses it too (agreed 2026-11-13). The reason tells the
+        // page which message to show.
+        if (await _db.ScheduleSignups.AnyAsync(s => s.ScheduleId == scheduleId))
+        {
+            return Conflict(new { message = "Schedule has signups and cannot be deleted", reason = "signups" });
+        }
+
         _db.Schedules.Remove(schedule);
         try
         {
@@ -291,7 +298,7 @@ public class ActivitiesController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            // A run was added to the schedule at the same time (runs.ScheduleId is RESTRICT)
+            // A run or a signup was added to the schedule at the same time (both are RESTRICT)
             return Conflict(new { message = ScheduleHasRunsMessage });
         }
 

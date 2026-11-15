@@ -141,7 +141,7 @@ public class Participant
     public string? JuniorComment { get; set; }
     public string? SleepingNote { get; set; }
 
-    public virtual ICollection<ParticipantSchedule> Schedules { get; set; } = new List<ParticipantSchedule>();
+    public virtual ICollection<ScheduleSignup> Signups { get; set; } = new List<ScheduleSignup>();
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<ParticipantFood> Foods { get; set; } = new List<ParticipantFood>();
     public virtual ICollection<ParticipantWear> Wears { get; set; } = new List<ParticipantWear>();

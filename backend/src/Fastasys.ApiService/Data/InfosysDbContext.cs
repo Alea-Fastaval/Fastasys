@@ -23,7 +23,7 @@ public class InfosysDbContext : DbContext
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
-    public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
+    public DbSet<ScheduleSignup> ScheduleSignups => Set<ScheduleSignup>();
     public DbSet<Run> Runs => Set<Run>();
     public DbSet<RunSeat> RunSeats => Set<RunSeat>();
 
@@ -67,9 +67,6 @@ public class InfosysDbContext : DbContext
 
         modelBuilder.Entity<RolePrivilege>()
             .HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
-
-        modelBuilder.Entity<ParticipantSchedule>()
-            .HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
 
         // Infosys deltagere: brugerkategori_id, country and game_id have foreign keys without ON DELETE CASCADE;
         // work_area has ON UPDATE CASCADE only
@@ -143,6 +140,23 @@ public class InfosysDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             seat.HasIndex(s => new { s.RunId, s.ParticipantId }).IsUnique();
             seat.Property(s => s.Role).HasConversion<string>();
+        });
+
+        // Infosys deltagere_tilmeldinger has the primary key (deltager_id, prioritet, afvikling_id) and foreign keys
+        // without ON DELETE CASCADE. Agreed on 2026-11-13: the key is participant + schedule + role instead; deleting a
+        // participant removes their wishes (Infosys's code does that), and a schedule with wishes can't be deleted.
+        modelBuilder.Entity<ScheduleSignup>(signup =>
+        {
+            signup.HasKey(s => new { s.ParticipantId, s.ScheduleId, s.Role });
+            signup.HasOne(s => s.Participant)
+                .WithMany(p => p.Signups)
+                .HasForeignKey(s => s.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            signup.HasOne(s => s.Schedule)
+                .WithMany(s => s.Signups)
+                .HasForeignKey(s => s.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            signup.Property(s => s.Role).HasConversion<string>();
         });
 
         modelBuilder.Entity<HeroForceShiftParticipant>()
