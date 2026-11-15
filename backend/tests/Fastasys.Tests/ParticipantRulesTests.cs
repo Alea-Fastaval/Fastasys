@@ -18,6 +18,19 @@ public class ParticipantRulesTests
         Assert.Equal(expected, ParticipantRules.LowestFreeId(used));
     }
 
+    [Theory]
+    // No ids yet, or only ids that aren't participant ids
+    [InlineData(new int[0], 1)]
+    [InlineData(new[] { 0, -5 }, 1)]
+    // A gap far below the highest id
+    [InlineData(new[] { 1, 1000 }, 2)]
+    // Every id up to the highest is taken: the next one
+    [InlineData(new[] { 3, 1, 2 }, 4)]
+    public void LowestFreeId_SearchesNoFurtherThanTheHighestUsedId(int[] used, int expected)
+    {
+        Assert.Equal(expected, ParticipantRules.LowestFreeId(used));
+    }
+
     [Fact]
     public void LowestFreeId_HasNoInfonautRangeAndNoUpperLimit()
     {

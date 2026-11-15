@@ -29,12 +29,17 @@ public static partial class ParticipantRules
 
     // Infosys Deltagere::setInsertId gives a new participant the lowest id that isn't used. The Infonaut range
     // (900-929), the id reserved for one e-mail address and the 1-5000 search window were dropped on 2026-11-11.
+    // The search is bounded: it checks 1 up to the highest used id, and if all of those are taken, the next one is free.
     public static int LowestFreeId(IEnumerable<int> usedIds)
     {
         var used = usedIds.Where(id => id > 0).ToHashSet();
-        var candidate = 1;
-        while (used.Contains(candidate)) candidate++;
-        return candidate;
+        var highest = used.Count == 0 ? 0 : used.Max();
+        for (var candidate = 1; candidate <= highest; candidate++)
+        {
+            if (!used.Contains(candidate)) return candidate;
+        }
+
+        return checked(highest + 1);
     }
 
     // Infosys Deltagere::normalizePhone, run on every save: trims the number and removes a Danish prefix in front
