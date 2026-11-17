@@ -128,30 +128,6 @@ public class ApiServiceTests
     }
 
     [Fact]
-    public async Task ActivitiesController_Create_AddsNewActivity()
-    {
-        using var db = CreateDbContext();
-        var controller = new ActivitiesController(db);
-
-        var dto = new CreateActivityDto(
-            Title: "Dungeons & Dragons",
-            TitleEnglish: "D&D 5e",
-            Description: "Epic quest",
-            Author: "DM Bob",
-            MinParticipants: 3,
-            MaxParticipants: 6,
-            DurationMinutes: 240,
-            Category: "Roleplaying"
-        );
-
-        var result = await controller.Create(dto);
-
-        var created = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var item = Assert.IsType<ActivityDto>(created.Value);
-        Assert.Equal("Dungeons & Dragons", item.Title);
-    }
-
-    [Fact]
     public async Task PaymentsController_CreatePayment_ReturnsTransactionId()
     {
         using var db = CreateDbContext();

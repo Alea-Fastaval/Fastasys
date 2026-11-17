@@ -1,0 +1,24 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.schedule-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+.form-actions {
+  flex-basis: 100%;
+  display: flex;
+  gap: 0.75rem;
+}

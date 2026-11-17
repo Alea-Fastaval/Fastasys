@@ -1,0 +1,45 @@
+<div class="page-container">
+  @if (notFound()) {
+  <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'activities.scheduleDeleteConfirmTitle' | translate">
+    <p>{{ 'activities.scheduleDeleteConfirm' | translate }}</p>
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
+        {{ 'activities.buttons.delete' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">{{ 'activities.buttons.cancel' | translate }}</button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card [title]="'activities.scheduleEditTitle' | translate: { title: activityTitle(), id: scheduleId }">
+    <form class="schedule-form" #editScheduleForm="ngForm" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.start' | translate }}</mat-label>
+        <input matInput type="datetime-local" name="start" required [(ngModel)]="f.start" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.end' | translate }}</mat-label>
+        <input matInput type="datetime-local" name="end" required [(ngModel)]="f.end" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'activities.scheduleFields.meetingRoom' | translate }}</mat-label>
+        <mat-select name="roomId" [(ngModel)]="f.roomId">
+          @for (room of rooms(); track room.id) {
+          <mat-option [value]="room.id">{{ room.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy() || editScheduleForm.invalid">
+          {{ 'activities.buttons.update' | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancel()">{{ 'activities.buttons.cancel' | translate }}</button>
+        <button mat-button color="warn" type="button" (click)="askDelete()">
+          {{ 'activities.buttons.delete' | translate }}
+        </button>
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

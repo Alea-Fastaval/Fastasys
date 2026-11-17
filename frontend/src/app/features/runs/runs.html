@@ -1,0 +1,64 @@
+<div class="page-container">
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'runs.messages.' + flash.key | translate }}</p>
+  } @if (unknownQueryValues(); as values) {
+  <p class="flash error unknown-query">{{ 'common.unknownQueryValues' | translate: { values } }}</p>
+  } @if (runs(); as list) { @if (list.length === 0) {
+  <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
+  } @else {
+  <h1>{{ 'runs.listTitle' | translate: { count: visibleRuns().length.toString() } }}</h1>
+  <mat-button-toggle-group
+    class="type-filter"
+    [attr.aria-label]="'activities.fields.type' | translate"
+    [value]="typeFilter()"
+    (change)="filterBy($event.value)"
+  >
+    <mat-button-toggle [value]="allTypes">{{ 'runs.allTypes' | translate }}</mat-button-toggle>
+    @for (type of activityTypes; track type) {
+    <mat-button-toggle [value]="type">{{ 'activities.types.' + type | translate }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+  @if (visibleRuns().length === 0) {
+  <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
+  } @else {
+  <table
+    class="runs-table"
+    matSort
+    matSortDisableClear
+    [matSortActive]="sort()?.column ?? ''"
+    [matSortDirection]="sort()?.direction ?? ''"
+    (matSortChange)="sortBy($event)"
+  >
+    <thead>
+      <tr>
+        @for (c of columns; track c.column) {
+        <th [mat-sort-header]="c.column" [sortActionDescription]="'runs.sortAction' | translate">
+          {{ c.label | translate }}
+        </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (run of visibleRuns(); track run.id) {
+      <tr>
+        <td>
+          <a [routerLink]="['/runs', run.id]">{{ run.id }}</a>
+        </td>
+        <td>
+          <a [routerLink]="['/activities', run.activityId]">{{ run.activityTitle }}</a>
+        </td>
+        <td>{{ run.startTime | timeSpan: run.endTime }}</td>
+        <td>{{ run.number }}</td>
+        <td>{{ run.roomName }}</td>
+        <td [class.missing]="run.needsPlayers">
+          {{ (run.needsPlayers ? 'activities.yes' : 'activities.no') | translate }}
+        </td>
+        <td [class.missing]="run.needsGameMasters">
+          {{ (run.needsGameMasters ? 'activities.yes' : 'activities.no') | translate }}
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } } }
+</div>

@@ -37,7 +37,17 @@
     "inactive": "Inactive",
     "yes": "Yes",
     "no": "No",
-    "description": "Description"
+    "description": "Description",
+    "unknownQueryValues": "The link contained an unknown value, which has been removed: {{values}}",
+    "weekdays": {
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday",
+      "Saturday": "Saturday",
+      "Sunday": "Sunday"
+    }
   },
   "users": {
     "title": "User Accounts",
@@ -89,14 +99,168 @@
     "checkedInAt": "Checked in at"
   },
   "activities": {
-    "title": "Activity & Event Management",
-    "subtitle": "Manage roleplaying scenarios, board game tournaments, and convention events.",
-    "searchPlaceholder": "Search activities by title, author, or category...",
-    "category": "Category",
-    "author": "Author / Creator",
-    "players": "Min/Max Players",
-    "duration": "Duration",
-    "allCategories": "All Categories"
+    "title": "Activities",
+    "create": "Create activity",
+    "createTitle": "Create Activity",
+    "editTitle": "Update Activity",
+    "detailTitle": "Activity",
+    "editDelete": "Edit/delete",
+    "hours": "hours",
+    "yes": "yes",
+    "no": "no",
+    "deleteConfirmTitle": "Delete activity?",
+    "deleteConfirm": "Are you sure you want to delete",
+    "createSchedule": "Create schedule",
+    "scheduleLegend": "Schedule: {{time}} (ID: {{id}})",
+    "scheduleEditTitle": "Edit/delete schedule for {{title}} (ID: {{id}})",
+    "scheduleDeleteConfirmTitle": "Delete schedule?",
+    "scheduleDeleteConfirm": "Are you sure you want to delete this schedule?",
+    "noMeetingRoom": "Ask at the information for room.",
+    "scheduleFields": {
+      "start": "Start",
+      "end": "End",
+      "meetingRoom": "Meeting room"
+    },
+    "fields": {
+      "id": "Id",
+      "title": "Title",
+      "titleEnglish": "English title",
+      "author": "Author(s)",
+      "wordPressId": "WP id",
+      "type": "Game type",
+      "duration": "Duration",
+      "minPlayers": "Min players",
+      "maxPlayers": "Max players",
+      "gameMasters": "Game masters",
+      "price": "Price",
+      "canSignUp": "Open for signup",
+      "roomExclusive": "Fills the room",
+      "timeExclusive": "Excludes simultaneous activities",
+      "playerLanguage": "Language",
+      "gameMasterLanguage": "Game master language",
+      "replayable": "Can be played more than once",
+      "hidden": "Hidden",
+      "karmaType": "Karma type",
+      "minAge": "Minimum age",
+      "ageLimit": "Age limit",
+      "ageMin": "Min",
+      "maxSignups": "Max signups",
+      "autoSignup": "Automatic signup",
+      "note": "Note",
+      "descriptionDanish": "Description",
+      "descriptionEnglish": "English description"
+    },
+    "types": {
+      "Scenario": "Scenario",
+      "Quest": "Quest",
+      "BoardGame": "Board game",
+      "Junior": "Junior",
+      "System": "System"
+    },
+    "languages": {
+      "Danish": "Danish",
+      "English": "English",
+      "DanishAndEnglish": "Danish and English"
+    },
+    "karmaTypes": {
+      "None": "None",
+      "Small": "Small",
+      "Medium": "Medium",
+      "Big": "Big"
+    },
+    "autoSignupCategories": {
+      "None": "None",
+      "All": "All",
+      "Organizer": "Organizers",
+      "Author": "Authors",
+      "Designer": "Designers"
+    },
+    "buttons": {
+      "create": "Create",
+      "update": "Update",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "messages": {
+      "created": "The activity was created.",
+      "createFailed": "Could not create the activity.",
+      "updated": "The activity was updated.",
+      "updateFailed": "Could not update the activity.",
+      "notUpdated": "The activity was not updated.",
+      "deleted": "The activity was deleted.",
+      "deleteFailed": "The activity could not be deleted.",
+      "notFound": "Could not find an activity with that id.",
+      "scheduleCreated": "The schedule was created.",
+      "scheduleCreateFailed": "Could not create the schedule.",
+      "scheduleUpdated": "The schedule was updated.",
+      "scheduleUpdateFailed": "Could not update the schedule.",
+      "scheduleNotUpdated": "The schedule was not updated.",
+      "scheduleDeleted": "The schedule was deleted.",
+      "scheduleDeleteFailed": "The schedule could not be deleted.",
+      "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first."
+    }
+  },
+  "runs": {
+    "listTitle": "Runs - ({{count}}):",
+    "detailTitle": "Run",
+    "participantsTitle": "Participants on the run",
+    "editTitle": "Edit run",
+    "editDelete": "Edit/delete",
+    "allRuns": "All runs",
+    "allTypes": "All",
+    "sortAction": "Sort",
+    "addRun": "Add run",
+    "deleteRun": "Delete run",
+    "runLink": "Run {{number}}",
+    "deleteConfirmTitle": "Delete run?",
+    "deleteConfirm": "Are you sure you want to delete run #{{number}} of",
+    "chooseRoom": "Choose room:",
+    "addParticipant": "Add participant",
+    "chooseRole": "Choose",
+    "fields": {
+      "id": "Id",
+      "number": "Run number",
+      "activity": "Activity",
+      "time": "Time",
+      "room": "Room",
+      "needsPlayers": "Missing players",
+      "needsGameMasters": "Missing game masters",
+      "name": "Name",
+      "karma": "Karma",
+      "role": "P / GM",
+      "participantId": "Participant id"
+    },
+    "roles": {
+      "Player": "player",
+      "GameMaster": "game master"
+    },
+    "roleOptions": {
+      "Player": "Player",
+      "GameMaster": "Game master"
+    },
+    "roleShort": {
+      "Player": "P",
+      "GameMaster": "GM"
+    },
+    "buttons": {
+      "update": "Update",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "messages": {
+      "updated": "The run was updated.",
+      "updateFailed": "The run could not be updated.",
+      "deleted": "The run was deleted.",
+      "deleteFailed": "The run could not be deleted.",
+      "notFound": "Could not find a run matching the criteria.",
+      "createFailed": "Could not create run",
+      "deleteFromActivityFailed": "Could not delete run",
+      "deleteWithParticipants": "There are participants on the run! Are you sure you want to delete it?",
+      "participantAddFailed": "The participant could not be put on the run.",
+      "participantRemoveFailed": "The participant could not be removed from the run."
+    }
   },
   "heroForce": {
     "title": "Hero Force Shift Management",

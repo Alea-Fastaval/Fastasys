@@ -17,7 +17,7 @@ namespace Fastasys.ApiService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,35 +32,100 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Property<string>("Author")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
-                    b.Property<string>("Category")
+                    b.Property<string>("AutoSignupCategory")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("CanSignUp")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("MaxParticipants")
+                    b.Property<string>("DescriptionDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DescriptionEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("DurationHours")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<string>("GameMasterLanguage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("GameMastersPerTeam")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MinParticipants")
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsReplayable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRoomExclusive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTimeExclusive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("KarmaType")
                         .HasColumnType("integer");
+
+                    b.Property<int>("MaxPlayersPerTeam")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxSignups")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MinAge")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinPlayersPerTeam")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PlayerLanguage")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TeaserDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TeaserEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("TitleEnglish")
                         .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WordPressId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -617,6 +682,58 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("Rooms");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("ScheduleId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("runs");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.RunSeat", b =>
+                {
+                    b.Property<int>("RunId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SeatNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("RunId", "SeatNumber");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("RunId", "ParticipantId")
+                        .IsUnique();
+
+                    b.ToTable("run_seats");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Sale", b =>
                 {
                     b.Property<int>("Id")
@@ -1115,6 +1232,44 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Schedule", "Schedule")
+                        .WithMany("Runs")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+
+                    b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.RunSeat", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Run", "Run")
+                        .WithMany("Seats")
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("Run");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Sale", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
@@ -1137,7 +1292,7 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasOne("Fastasys.ApiService.Data.Entities.Activity", "Activity")
                         .WithMany("Schedules")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fastasys.ApiService.Data.Entities.Room", "Room")
@@ -1276,9 +1431,16 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Schedules");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Run", b =>
+                {
+                    b.Navigation("Seats");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Schedule", b =>
                 {
                     b.Navigation("ParticipantSchedules");
+
+                    b.Navigation("Runs");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupPage", b =>
