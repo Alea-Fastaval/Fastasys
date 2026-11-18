@@ -39,7 +39,7 @@ public class ParticipantRulesTests
     [InlineData("", null)]
     public void ConventionOptions_ReadTheStartFromTheConfiguration(string configured, string? expected)
     {
-        // appsettings.json has "Start": "" until the date is set
+        // An empty "Start" means the date isn't set
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Convention:Start"] = configured })
             .Build();
