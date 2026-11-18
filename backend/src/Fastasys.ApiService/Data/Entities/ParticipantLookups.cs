@@ -24,6 +24,11 @@ public class ParticipantCategory
 
     [MaxLength(512)]
     public string? Description { get; set; }
+
+    // The category's ID card template (Infosys brugerkategorier_idtemplates); participants without their own template
+    // get it
+    public int? IdCardTemplateId { get; set; }
+    public virtual IdCardTemplate? IdCardTemplate { get; set; }
 }
 
 /// <summary>

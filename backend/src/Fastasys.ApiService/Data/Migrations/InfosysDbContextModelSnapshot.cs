@@ -1834,6 +1834,77 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("HeroForceShiftParticipants");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.IdCardTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("Background")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("BackgroundContentType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("id_card_templates");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.IdCardTemplateItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DataSource")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Rotation")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TemplateId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("X")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Y")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("id_card_template_items");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.LoanItem", b =>
                 {
                     b.Property<int>("Id")
@@ -2275,6 +2346,9 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<string>("HeroForceNote")
                         .HasColumnType("text");
 
+                    b.Property<int?>("IdCardTemplateId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActivityLocked")
                         .HasColumnType("boolean");
 
@@ -2389,6 +2463,8 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.HasIndex("GameActivityId");
 
+                    b.HasIndex("IdCardTemplateId");
+
                     b.HasIndex("OrganizerAreaId");
 
                     b.ToTable("participants");
@@ -2406,6 +2482,9 @@ namespace Fastasys.ApiService.Data.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<int?>("IdCardTemplateId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsOrganizer")
                         .HasColumnType("boolean");
 
@@ -2415,6 +2494,8 @@ namespace Fastasys.ApiService.Data.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdCardTemplateId");
 
                     b.ToTable("participant_categories");
 
@@ -2470,6 +2551,37 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasIndex("FoodTypeId");
 
                     b.ToTable("ParticipantFoods");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantPhoto", b =>
+                {
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Cropped")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("CroppedContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<byte[]>("Original")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("OriginalContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ParticipantId");
+
+                    b.ToTable("participant_photos");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
@@ -3138,6 +3250,17 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Shift");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.IdCardTemplateItem", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.IdCardTemplate", "Template")
+                        .WithMany("Items")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.ParticipantCategory", "Category")
@@ -3157,6 +3280,11 @@ namespace Fastasys.ApiService.Data.Migrations
                         .HasForeignKey("GameActivityId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Fastasys.ApiService.Data.Entities.IdCardTemplate", "IdCardTemplate")
+                        .WithMany()
+                        .HasForeignKey("IdCardTemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Fastasys.ApiService.Data.Entities.OrganizerArea", "OrganizerArea")
                         .WithMany()
                         .HasForeignKey("OrganizerAreaId")
@@ -3168,7 +3296,19 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Navigation("GameActivity");
 
+                    b.Navigation("IdCardTemplate");
+
                     b.Navigation("OrganizerArea");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantCategory", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.IdCardTemplate", "IdCardTemplate")
+                        .WithMany()
+                        .HasForeignKey("IdCardTemplateId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("IdCardTemplate");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>
@@ -3186,6 +3326,17 @@ namespace Fastasys.ApiService.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("FoodType");
+
+                    b.Navigation("Participant");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantPhoto", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithOne()
+                        .HasForeignKey("Fastasys.ApiService.Data.Entities.ParticipantPhoto", "ParticipantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Participant");
                 });
@@ -3422,6 +3573,11 @@ namespace Fastasys.ApiService.Data.Migrations
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.HeroForceShift", b =>
                 {
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.IdCardTemplate", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>

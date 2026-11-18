@@ -27,6 +27,10 @@ public class InfosysDbContext : DbContext
     public DbSet<Run> Runs => Set<Run>();
     public DbSet<RunSeat> RunSeats => Set<RunSeat>();
 
+    public DbSet<IdCardTemplate> IdCardTemplates => Set<IdCardTemplate>();
+    public DbSet<IdCardTemplateItem> IdCardTemplateItems => Set<IdCardTemplateItem>();
+    public DbSet<ParticipantPhoto> ParticipantPhotos => Set<ParticipantPhoto>();
+
     public DbSet<Payment> Payments => Set<Payment>();
 
     public DbSet<HeroForceCategory> HeroForceCategories => Set<HeroForceCategory>();
@@ -91,7 +95,37 @@ public class InfosysDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(p => p.GameActivityId)
                 .OnDelete(DeleteBehavior.Restrict);
+            // Infosys participantidtemplates cascades on template delete: the participant gets the category's template
+            participant.HasOne(p => p.IdCardTemplate)
+                .WithMany()
+                .HasForeignKey(p => p.IdCardTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // Infosys brugerkategorier_idtemplates cascades on template delete: the category has no template then
+        modelBuilder.Entity<ParticipantCategory>()
+            .HasOne(c => c.IdCardTemplate)
+            .WithMany()
+            .HasForeignKey(c => c.IdCardTemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Infosys idtemplates_items cascades with its template
+        modelBuilder.Entity<IdCardTemplateItem>(item =>
+        {
+            item.HasOne(i => i.Template)
+                .WithMany(t => t.Items)
+                .HasForeignKey(i => i.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+            item.Property(i => i.Type).HasConversion<string>();
+            item.Property(i => i.DataSource).HasConversion<string>();
+        });
+
+        // Infosys participantphotoidentifiers cascades with the participant
+        modelBuilder.Entity<ParticipantPhoto>()
+            .HasOne(p => p.Participant)
+            .WithOne()
+            .HasForeignKey<ParticipantPhoto>(p => p.ParticipantId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ParticipantCategory>().HasData(ParticipantLookupSeed.Categories);
         modelBuilder.Entity<OrganizerArea>().HasData(ParticipantLookupSeed.OrganizerAreas);

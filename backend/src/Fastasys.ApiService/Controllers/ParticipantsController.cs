@@ -186,25 +186,23 @@ public record ParticipantDetailsDto(
     IReadOnlyList<ParticipantMealDto>? Meals,
     // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
     IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces,
-    // The IDkort box. null until ID cards are ported (see ParticipantIdCardDto).
-    ParticipantIdCardDto? IdCard
+    // The IDkort box
+    ParticipantIdCardDto IdCard
 );
 
 // The IDkort box of the Infosys participant page (visdeltager.phtml, #id-card-content): the participant's cropped photo,
 // the buttons "Foto upload" and "Idkort", and "Skabelon:" with the ID card template, which can be changed by clicking it.
-// To fill it when ID cards are ported:
-// - PhotoUrl is the participant's cropped photo (ParticipantModel::fetchCroppedPhoto), or null when there is none.
-//   Infosys keeps the photos in its public uploads folder, under a random identifier per participant; keep them
-//   behind authorization in Fastasys.
-// - TemplateName is the participant's own template (participantidtemplates), or null for the default.
-// - DefaultTemplateName is the template of the participant's category (brugerkategorier_idtemplates), or null. A
-//   category can have several there and Infosys takes the first row without an order; decide that then.
+// - PhotoUrl is the API address of the participant's cropped photo (ParticipantModel::fetchCroppedPhoto), or null when
+//   there is none. It changes when a new photo is uploaded. Infosys keeps the photos in its public uploads folder;
+//   here they need login.
+// - TemplateId and TemplateName are the participant's own template (participantidtemplates), or null for the default.
+// - DefaultTemplateName is the template of the participant's category (brugerkategorier_idtemplates), or null.
 // - "Skabelon:" shows TemplateName, or "Default ({DefaultTemplateName})", or "Default (ingen)". Choosing "Default"
 //   removes the participant's own template (ParticipantModel::updateParticipantIdTemplate).
-// - "Foto upload" opens the participant's photo upload form (ParticipantModel::getPhotoUploadLink). Infosys creates the
-//   participant's random identifier the first time the participant page is shown; don't write on a read in Fastasys.
-// - "Idkort" opens the participant's ID card (id_card_render?ids={id}).
-public record ParticipantIdCardDto(string? PhotoUrl, string? TemplateName, string? DefaultTemplateName);
+public record ParticipantIdCardDto(string? PhotoUrl, int? TemplateId, string? TemplateName, string? DefaultTemplateName);
+
+// A template in the participant page's "Skabelon:" select
+public record IdCardTemplateOptionDto(int Id, string Name);
 
 // One row of the Aktivitetstilmeldinger box of the Infosys participant page (visdeltager.phtml, .activity-signup):
 // Aktivitet ("Title / TitleEnglish", linked to the activity), Tid ("Onsdag 10:00 -> Onsdag 14:00"), Prio and S / SL.
@@ -320,7 +318,9 @@ public record ParticipantOptionsDto(
     IReadOnlyList<ParticipantCategoryDto> Categories,
     IReadOnlyList<OrganizerAreaDto> OrganizerAreas,
     IReadOnlyList<CountryDto> Countries,
-    IReadOnlyList<GameOptionDto> Games
+    IReadOnlyList<GameOptionDto> Games,
+    // The ID card templates, in id order (Infosys ParticipantModel::fetchTemplateSelectData)
+    IReadOnlyList<IdCardTemplateOptionDto> IdCardTemplates
 );
 
 // The fields of the Infosys create form (deltager/opret)
@@ -522,8 +522,10 @@ public class ParticipantsController : ControllerBase
             .Where(a => a.Type == ActivityType.BoardGame || a.Type == ActivityType.Scenario)
             .OrderBy(a => a.Id)
             .Select(a => new GameOptionDto(a.Id, a.Title, a.TitleEnglish)).ToListAsync();
+        var idCardTemplates = await _db.IdCardTemplates.AsNoTracking().OrderBy(t => t.Id)
+            .Select(t => new IdCardTemplateOptionDto(t.Id, t.Name)).ToListAsync();
 
-        return Ok(new ParticipantOptionsDto(categories, areas, countries, games));
+        return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates));
     }
 
     // Infosys deltager/opret ("Opret deltager")
@@ -622,6 +624,7 @@ public class ParticipantsController : ControllerBase
 
         _db.RunSeats.RemoveRange(_db.RunSeats.Where(s => s.ParticipantId == id));
         _db.ScheduleSignups.RemoveRange(_db.ScheduleSignups.Where(s => s.ParticipantId == id));
+        _db.ParticipantPhotos.RemoveRange(_db.ParticipantPhotos.Where(s => s.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -861,6 +864,22 @@ public class ParticipantsController : ControllerBase
                 return (false, "Unknown organizer area");
 
             // Infosys "Intet scenarie/brætspil" clears it
+            // "Skabelon:" in the IDkort box (Infosys "participant-template", ParticipantModel::updateParticipantIdTemplate):
+            // null or 0 ("Default") removes the participant's own template
+            case "idCardTemplateId":
+                if (value.ValueKind == JsonValueKind.Null || (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var none) && none == 0))
+                {
+                    p.IdCardTemplateId = null;
+                    return (true, string.Empty);
+                }
+                if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var templateId)
+                    && await _db.IdCardTemplates.AnyAsync(t => t.Id == templateId))
+                {
+                    p.IdCardTemplateId = templateId;
+                    return (true, string.Empty);
+                }
+                return (false, "Unknown ID card template");
+
             case "gameActivityId":
                 if (value.ValueKind == JsonValueKind.Null) { p.GameActivityId = null; return (true, string.Empty); }
                 if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var gameId)
@@ -966,8 +985,7 @@ public class ParticipantsController : ControllerBase
                 Meals: null,
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)
                 SleepingPlaces: null,
-                // TODO when ID cards are ported: load the photo and templates here (see ParticipantIdCardDto)
-                IdCard: null)
+                IdCard: await LoadIdCardAsync(p))
             : null;
 
         // Infosys shows the boxes below the notes to everyone but its Read-only role, and to its "Read-only activity"
@@ -1012,6 +1030,32 @@ public class ParticipantsController : ControllerBase
             Price: null,
             programme,
             details);
+    }
+
+    // The IDkort box (Infosys ParticipantController::visDeltager: fetchCroppedPhoto, getParticipantIdTemplate and
+    // getCategoryIdTemplate). The photo's address carries its upload time, so the page shows a new photo at once.
+    private async Task<ParticipantIdCardDto> LoadIdCardAsync(Participant p)
+    {
+        var photoUpdatedAt = await _db.ParticipantPhotos
+            .AsNoTracking()
+            .Where(photo => photo.ParticipantId == p.Id)
+            .Select(photo => (DateTime?)photo.UpdatedAt)
+            .FirstOrDefaultAsync();
+        var categoryTemplateId = await _db.ParticipantCategories
+            .AsNoTracking()
+            .Where(c => c.Id == p.CategoryId)
+            .Select(c => c.IdCardTemplateId)
+            .FirstOrDefaultAsync();
+        var names = await _db.IdCardTemplates
+            .AsNoTracking()
+            .Where(t => t.Id == p.IdCardTemplateId || t.Id == categoryTemplateId)
+            .ToDictionaryAsync(t => t.Id, t => t.Name);
+
+        return new ParticipantIdCardDto(
+            photoUpdatedAt is DateTime updated ? $"/api/participants/{p.Id}/photo/cropped?v={updated.Ticks}" : null,
+            p.IdCardTemplateId,
+            p.IdCardTemplateId is int own ? names.GetValueOrDefault(own) : null,
+            categoryTemplateId is int category ? names.GetValueOrDefault(category) : null);
     }
 
     // The Aktiviteter box: Infosys Deltagere::getPladser (see ParticipantSpots.LoadAsync)

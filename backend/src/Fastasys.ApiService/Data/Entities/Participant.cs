@@ -90,6 +90,10 @@ public class Participant
     public int? GameActivityId { get; set; }
     public virtual Activity? GameActivity { get; set; }
 
+    // The participant's own ID card template (Infosys participantidtemplates); null means the category's template
+    public int? IdCardTemplateId { get; set; }
+    public virtual IdCardTemplate? IdCardTemplate { get; set; }
+
     public int ExtraVouchers { get; set; }
 
     public int DesiredActivities { get; set; }

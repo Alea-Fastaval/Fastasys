@@ -354,8 +354,9 @@ public class ParticipantsControllerTests
         Assert.Null(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
         Assert.Null(participant.Price);
-        // ID cards and the hero force are not ported yet either
-        Assert.Null(participant.Details.IdCard);
+        // No photo and no template yet
+        Assert.Equal(new ParticipantIdCardDto(null, null, null, null), participant.Details.IdCard);
+        // The hero force is not ported yet either
         Assert.NotNull(participant.Programme);
         Assert.Null(participant.Programme.HeroTasks);
         Assert.Null(participant.Programme.HeroSignups);
@@ -804,6 +805,78 @@ public class ParticipantsControllerTests
         await CreateController(db).Delete(1);
 
         Assert.Equal([2], db.ScheduleSignups.Select(s => s.ParticipantId));
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsPhoto()
+    {
+        // Infosys's participantphotoidentifiers cascades with the participant
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        db.ParticipantPhotos.AddRange(
+            new ParticipantPhoto { ParticipantId = 1, Original = [1], OriginalContentType = "image/png", Cropped = [1], CroppedContentType = "image/png" },
+            new ParticipantPhoto { ParticipantId = 2, Original = [1], OriginalContentType = "image/png", Cropped = [1], CroppedContentType = "image/png" });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        await CreateController(db).Delete(1);
+
+        Assert.Equal([2], db.ParticipantPhotos.Select(p => p.ParticipantId));
+    }
+
+    [Fact]
+    public async Task Get_FillsTheIdCardBoxWithThePhotoAndTheTemplates()
+    {
+        // Infosys visdeltager's IDkort box: the cropped photo, the participant's template and the category's
+        using var db = CreateDbContext();
+        var category = new IdCardTemplate { Name = "Arrangør27" };
+        var own = new IdCardTemplate { Name = "Infonaut27" };
+        db.IdCardTemplates.AddRange(category, own);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        (await db.ParticipantCategories.SingleAsync(c => c.Id == ParticipantCategory.OrganizerId, TestContext.Current.CancellationToken)).IdCardTemplateId = category.Id;
+        var uploaded = new DateTime(2027, 2, 1, 12, 0, 0, DateTimeKind.Utc);
+        db.ParticipantPhotos.Add(new ParticipantPhoto { ParticipantId = 1, Original = [1], OriginalContentType = "image/png", Cropped = [1], CroppedContentType = "image/png", UpdatedAt = uploaded });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        await AddAsync(db, 1, p => p.CategoryId = ParticipantCategory.OrganizerId);
+        await AddAsync(db, 2, p => { p.CategoryId = ParticipantCategory.OrganizerId; p.IdCardTemplateId = own.Id; });
+
+        var withPhoto = Ok(await CreateController(db).Get(1)).Details!.IdCard;
+        var withOwn = Ok(await CreateController(db).Get(2)).Details!.IdCard;
+
+        Assert.Equal(new ParticipantIdCardDto($"/api/participants/1/photo/cropped?v={uploaded.Ticks}", null, null, "Arrangør27"), withPhoto);
+        Assert.Equal(new ParticipantIdCardDto(null, own.Id, "Infonaut27", "Arrangør27"), withOwn);
+    }
+
+    [Fact]
+    public async Task UpdateField_SetsAndClearsTheParticipantsIdCardTemplate()
+    {
+        // Infosys "participant-template": 0 ("Default") removes the participant's own template
+        using var db = CreateDbContext();
+        var template = new IdCardTemplate { Name = "Infonaut27" };
+        db.IdCardTemplates.Add(template);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await AddAsync(db, 1);
+        var controller = CreateController(db);
+
+        Assert.Equal(template.Id, Ok(await controller.UpdateField(1, "idCardTemplateId", new UpdateParticipantFieldDto(Json(template.Id)))).Details!.IdCard.TemplateId);
+        Assert.Null(Ok(await controller.UpdateField(1, "idCardTemplateId", new UpdateParticipantFieldDto(Json(0)))).Details!.IdCard.TemplateId);
+        Ok(await controller.UpdateField(1, "idCardTemplateId", new UpdateParticipantFieldDto(Json(template.Id))));
+        Assert.Null(Ok(await controller.UpdateField(1, "idCardTemplateId", new UpdateParticipantFieldDto(Json(null)))).Details!.IdCard.TemplateId);
+        Assert.IsType<BadRequestObjectResult>((await controller.UpdateField(1, "idCardTemplateId", new UpdateParticipantFieldDto(Json(999)))).Result);
+    }
+
+    [Fact]
+    public async Task GetOptions_ListsTheIdCardTemplates()
+    {
+        using var db = CreateDbContext();
+        db.IdCardTemplates.AddRange(new IdCardTemplate { Name = "B" }, new IdCardTemplate { Name = "A" });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var options = Ok(await CreateController(db).GetOptions());
+
+        Assert.Equal(["B", "A"], options.IdCardTemplates.Select(t => t.Name));
     }
 
     [Fact]

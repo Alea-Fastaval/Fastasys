@@ -172,6 +172,37 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     }
 
     [Fact]
+    public async Task IdCards_NeedTheRightToEditParticipants()
+    {
+        // Infosys shows the IDkort box only to non-Read-only users and the template page to Infonaut and Admin; the
+        // photos are personal data
+        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participants_view", "activities_view");
+        var ct = TestContext.Current.CancellationToken;
+        var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
+        Assert.NotNull(created);
+        var urls = new[]
+        {
+            "/api/id-card-templates",
+            "/api/id-card-templates/categories",
+            $"/api/participants/{created.Id}/photo/cropped",
+            $"/api/participants/{created.Id}/photo/original",
+            $"/api/id-cards?ids={created.Id}",
+        };
+
+        foreach (var url in urls)
+        {
+            Assert.Equal(HttpStatusCode.Forbidden, (await viewer.GetAsync(url, ct)).StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await editor.GetAsync("/api/id-card-templates", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await editor.GetAsync($"/api/id-cards?ids={created.Id}", ct)).StatusCode);
+        // No photo yet
+        Assert.Equal(HttpStatusCode.NotFound, (await editor.GetAsync($"/api/participants/{created.Id}/photo/cropped", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await viewer.PostAsJsonAsync("/api/id-card-templates", new CreateIdCardTemplateDto("X"), ct)).StatusCode);
+    }
+
+    [Fact]
     public async Task EditPrivilege_CanCreateChangeAnnulAndDelete()
     {
         var client = await CreateClientWithPrivilegeAsync("participants_edit");
