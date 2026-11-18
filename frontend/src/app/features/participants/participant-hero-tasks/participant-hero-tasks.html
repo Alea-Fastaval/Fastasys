@@ -1,0 +1,19 @@
+<app-card [title]="'participants.heroTasks.title' | translate">
+  @if (tasks; as list) {
+  <!-- Infosys shows no rows when the participant has no shifts -->
+  <table class="hero-table">
+    <tbody>
+      @for (task of list; track $index) {
+      <tr>
+        <td class="task">
+          <strong>{{ taskText(task) }}</strong>
+        </td>
+        <td class="time">{{ task.start | timeSpan: task.end : true : ' -> ' }}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } @else {
+  <p class="not-ported">{{ 'participants.heroForceNotPorted' | translate }}</p>
+  }
+</app-card>

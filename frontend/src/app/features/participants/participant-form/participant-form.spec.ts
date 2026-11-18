@@ -41,6 +41,7 @@ const existing: Participant = {
   nextId: null,
   canEdit: true,
   price: null,
+  programme: { activities: [], activitySignups: [], heroTasks: null, heroSignups: null },
   details: {
     organizerAreaId: null,
     organizerAreaName: null,
@@ -80,8 +81,7 @@ const existing: Participant = {
     tickets: null,
     meals: null,
     sleepingPlaces: null,
-    activities: [],
-    activitySignups: [],
+    idCard: null,
   },
 };
 

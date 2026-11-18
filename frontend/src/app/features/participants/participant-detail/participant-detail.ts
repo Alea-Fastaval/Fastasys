@@ -18,6 +18,9 @@ import { ParticipantSleepingComponent } from '../participant-sleeping/participan
 import { ParticipantPriceComponent } from '../participant-price/participant-price';
 import { ParticipantActivitiesComponent } from '../participant-activities/participant-activities';
 import { ParticipantActivitySignupsComponent } from '../participant-activity-signups/participant-activity-signups';
+import { ParticipantIdCardComponent } from '../participant-id-card/participant-id-card';
+import { ParticipantHeroTasksComponent } from '../participant-hero-tasks/participant-hero-tasks';
+import { ParticipantHeroSignupsComponent } from '../participant-hero-signups/participant-hero-signups';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -109,6 +112,9 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantPriceComponent,
     ParticipantActivitiesComponent,
     ParticipantActivitySignupsComponent,
+    ParticipantIdCardComponent,
+    ParticipantHeroTasksComponent,
+    ParticipantHeroSignupsComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',
@@ -415,9 +421,16 @@ export class ParticipantDetailComponent {
     return this.noteFields.filter(note => !note.optional || note.value(p) !== null);
   }
 
-  // Infosys shows the Aktiviteter "Ret/slet" link unless the participant is activity-locked (Aktivitets-låst: ja)
-  public canEditSeats(details: ParticipantDetails): boolean {
-    return this.mayEditSeats && !details.isActivityLocked;
+  // Infosys shows the Aktiviteter "Ret/slet" link unless the participant is activity-locked (Aktivitets-låst: ja) or the
+  // user is read-only. Only participant editors get the details, which say whether the participant is locked.
+  public canEditSeats(p: Participant): boolean {
+    return this.mayEditSeats && this.canEditSignups(p);
+  }
+
+  // The Aktivitetstilmeldinger box's rows and "Ret/slet" link: for participant editors, unless the participant is
+  // activity-locked
+  public canEditSignups(p: Participant): boolean {
+    return p.details !== null && !p.details.isActivityLocked;
   }
 
   public selectedLabel(def: EditableField, p: Participant): string {

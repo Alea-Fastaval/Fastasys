@@ -15,8 +15,10 @@ namespace Fastasys.ApiService.Controllers;
 public record ParticipantSummaryDto(int Id, string Name);
 
 // Infosys deltager/visdeltager/:id:. Details is null for users who may only view participants: Infosys hides
-// everything below the personal info, the notes included, from its Read-only roles. The exception is the Pris
-// breakdown box (Price), which Infosys shows to everyone who can open the page.
+// everything below the personal info, the notes included, from its Read-only roles. There are two exceptions:
+// - The Pris breakdown box (Price) is shown to everyone who can open the page.
+// - The activity and hero force boxes below the notes (Programme) are shown to Infosys's "Read-only activity" role,
+//   read-only. In Fastasys, that is a user who may view participants and activities (agreed 2026-11-18).
 public record ParticipantDto(
     int Id,
     string FirstName,
@@ -43,8 +45,47 @@ public record ParticipantDto(
     bool CanEdit,
     // The Pris breakdown box. null until the ticket and payment system is ported (see ParticipantPriceDto).
     ParticipantPriceDto? Price,
+    // The boxes below the notes. null for users who may neither edit participants nor view activities.
+    ParticipantProgrammeDto? Programme,
     ParticipantDetailsDto? Details
 );
+
+// The two rows of boxes below the notes on the Infosys participant page (visdeltager.phtml, .middleboxes): Aktiviteter
+// next to Heltestyrke, Opgaver, and Aktivitetstilmeldinger next to Heltestyrken, Tilmeldinger. Infosys shows or hides
+// them together: to everyone but its Read-only role, and not in "Betalings mode".
+public record ParticipantProgrammeDto(
+    // The Aktiviteter box: the participant's seats on runs and, for board game designers, their designer rows
+    IReadOnlyList<ParticipantActivityDto> Activities,
+    // The Aktivitetstilmeldinger box: the participant's signup wishes, by the schedule's start
+    IReadOnlyList<ParticipantActivitySignupDto> ActivitySignups,
+    // The Heltestyrke, Opgaver box. null until the hero force is ported (see ParticipantHeroTaskDto).
+    IReadOnlyList<ParticipantHeroTaskDto>? HeroTasks,
+    // The Heltestyrken, Tilmeldinger box. null until the hero force is ported (see ParticipantHeroSignupDto).
+    IReadOnlyList<ParticipantHeroSignupDto>? HeroSignups
+);
+
+// One row of the Heltestyrke, Opgaver box (visdeltager.phtml, .gdsbox): the hero force shifts the participant was put
+// on, "{Name} ({ParticipantCount} / {Capacity})" in bold and "Onsdag 10:00 -> Onsdag 14:00".
+// To fill it when the hero force is ported (Deltagere::getGDSVagter):
+// - The rows are the participant's deltagere_gdsvagter rows, ordered by gdsvagter.start
+//   (DeltagereGDSVagter::getDeltagerVagter).
+// - Name is gds.navn of the shift's task (GDSVagter::getGDSName).
+// - ParticipantCount is the number of participants on the shift (GDSVagter::getParticipantCount), Capacity is
+//   gdsvagter.antal_personer.
+// - Start and End are gdsvagter.start and slut (UTC instants; the box shows them in Copenhagen time).
+// Infosys's "Ret/slet" link (deltager/updategds) is hidden from its Read-only roles.
+public record ParticipantHeroTaskDto(string Name, int ParticipantCount, int Capacity, DateTime Start, DateTime End);
+
+// One row of the Heltestyrken, Tilmeldinger box (visdeltager.phtml, .gdsbox): when the participant said they can help,
+// the category in bold (gdscategories.name_da) and the period, e.g. "Onsdag 7-12".
+// To fill it when the hero force is ported (Deltagere::getGDSTilmeldinger):
+// - The rows are the participant's deltagere_gdstilmeldinger rows. Infosys has no ORDER BY, so MySQL returns them in
+//   primary key order: by the period as text ("2027-03-24 12-17" before "2027-03-24 7-12"), then by category. Decide
+//   the order with the user then.
+// - The period is stored as "YYYY-MM-DD H-H" in Danish time. Infosys shows the day's Danish name and the hours
+//   (DeltagereGDSTilmeldinger::getMeaningfulPeriod with danishDayNames): Date is the date and Hours is "7-12".
+// Infosys's "Ret/slet" link (deltager/updategdstilmeldinger) is hidden from its Read-only roles.
+public record ParticipantHeroSignupDto(string Category, DateOnly Date, string Hours);
 
 // The Pris breakdown box of the Infosys participant page (visdeltager.phtml, #prisbreakdown), in whole DKK like
 // Infosys. Infosys shows it to its Read-only roles and in "Betalings mode" too, unlike the other boxes.
@@ -139,11 +180,25 @@ public record ParticipantDetailsDto(
     IReadOnlyList<ParticipantMealDto>? Meals,
     // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
     IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces,
-    // The Aktiviteter box: the participant's seats on runs and, for board game designers, their designer rows
-    IReadOnlyList<ParticipantActivityDto> Activities,
-    // The Aktivitetstilmeldinger box: the participant's signup wishes, by the schedule's start
-    IReadOnlyList<ParticipantActivitySignupDto> ActivitySignups
+    // The IDkort box. null until ID cards are ported (see ParticipantIdCardDto).
+    ParticipantIdCardDto? IdCard
 );
+
+// The IDkort box of the Infosys participant page (visdeltager.phtml, #id-card-content): the participant's cropped photo,
+// the buttons "Foto upload" and "Idkort", and "Skabelon:" with the ID card template, which can be changed by clicking it.
+// To fill it when ID cards are ported:
+// - PhotoUrl is the participant's cropped photo (ParticipantModel::fetchCroppedPhoto), or null when there is none.
+//   Infosys keeps the photos in its public uploads folder, under a random identifier per participant; keep them
+//   behind authorization in Fastasys.
+// - TemplateName is the participant's own template (participantidtemplates), or null for the default.
+// - DefaultTemplateName is the template of the participant's category (brugerkategorier_idtemplates), or null. A
+//   category can have several there and Infosys takes the first row without an order; decide that then.
+// - "Skabelon:" shows TemplateName, or "Default ({DefaultTemplateName})", or "Default (ingen)". Choosing "Default"
+//   removes the participant's own template (ParticipantModel::updateParticipantIdTemplate).
+// - "Foto upload" opens the participant's photo upload form (ParticipantModel::getPhotoUploadLink). Infosys creates the
+//   participant's random identifier the first time the participant page is shown; don't write on a read in Fastasys.
+// - "Idkort" opens the participant's ID card (id_card_render?ids={id}).
+public record ParticipantIdCardDto(string? PhotoUrl, string? TemplateName, string? DefaultTemplateName);
 
 // One row of the Aktivitetstilmeldinger box of the Infosys participant page (visdeltager.phtml, .activity-signup):
 // Aktivitet ("Title / TitleEnglish", linked to the activity), Tid ("Onsdag 10:00 -> Onsdag 14:00"), Prio and S / SL.
@@ -898,8 +953,21 @@ public class ParticipantsController : ControllerBase
                 Meals: null,
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)
                 SleepingPlaces: null,
-                Activities: await LoadActivitiesAsync(p),
-                ActivitySignups: (await ParticipantSignupRows.LoadAsync(_db, p.Id)).Select(s => s.ToDto()).ToList())
+                // TODO when ID cards are ported: load the photo and templates here (see ParticipantIdCardDto)
+                IdCard: null)
+            : null;
+
+        // Infosys shows the boxes below the notes to everyone but its Read-only role, and to its "Read-only activity"
+        // role: here, to participant editors and to users who may view activities
+        var mayViewProgramme = canEdit || (await _authorization.AuthorizeAsync(User, "ActivityView")).Succeeded;
+        var programme = mayViewProgramme
+            ? new ParticipantProgrammeDto(
+                await LoadActivitiesAsync(p),
+                (await ParticipantSignupRows.LoadAsync(_db, p.Id)).Select(s => s.ToDto()).ToList(),
+                // TODO when the hero force is ported: load the participant's shifts here (see ParticipantHeroTaskDto)
+                HeroTasks: null,
+                // TODO when the hero force is ported: load the participant's signups here (see ParticipantHeroSignupDto)
+                HeroSignups: null)
             : null;
 
         return new ParticipantDto(
@@ -928,6 +996,7 @@ public class ParticipantsController : ControllerBase
             // TODO when tickets, food, wear, activity signups and the signup's price are ported: calculate it here
             // (see ParticipantPriceDto)
             Price: null,
+            programme,
             details);
     }
 

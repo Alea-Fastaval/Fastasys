@@ -136,10 +136,22 @@ hr {
 }
 
 // Below the notes. Infosys puts Heltestyrke, Opgaver next to Aktiviteter; until it comes, Aktiviteter is full width.
+// Below the notes, two rows like Infosys: Aktiviteter | Heltestyrke, Opgaver and Aktivitetstilmeldinger | Heltestyrken,
+// Tilmeldinger. Infosys makes the activity boxes 700px and the hero force boxes 500px wide on a wider page; here the
+// activity tables get two thirds, so their five columns fit.
 .activity-boxes {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
   gap: 0 1.5rem;
+
+  > * {
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 // A note looks like a text field, so it is clear that it can be clicked and written in. Clicking turns it into a

@@ -1,0 +1,12 @@
+<app-card [title]="'participants.idCard.title' | translate">
+  @if (idCard; as card) { @if (card.photoUrl) {
+  <img class="photo" [src]="card.photoUrl" alt="" />
+  }
+  <p class="template">
+    <span class="template-label">{{ 'participants.idCard.template' | translate }}</span>
+    <span class="template-name">{{ templateText(card) }}</span>
+  </p>
+  } @else {
+  <p class="not-ported">{{ 'participants.idCard.notPorted' | translate }}</p>
+  }
+</app-card>

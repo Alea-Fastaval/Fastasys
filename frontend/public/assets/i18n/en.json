@@ -351,6 +351,20 @@
       "checkInDifference": "Difference at check-in ({{total}} - {{paid}}):",
       "notPorted": "Prices have not been moved to Fastasys yet."
     },
+    "idCard": {
+      "title": "ID card",
+      "template": "Template:",
+      "defaultTemplate": "Default ({{name}})",
+      "noTemplate": "none",
+      "notPorted": "ID cards have not been moved to Fastasys yet."
+    },
+    "heroTasks": {
+      "title": "Hero Force, tasks"
+    },
+    "heroSignups": {
+      "title": "Hero Force, signups"
+    },
+    "heroForceNotPorted": "The Hero Force has not been moved to Fastasys yet.",
     "activities": {
       "title": "Activities",
       "activity": "Activity",

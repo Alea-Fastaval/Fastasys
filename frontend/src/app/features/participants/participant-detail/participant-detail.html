@@ -156,11 +156,12 @@
   </app-card>
 
   <!-- Infosys shows these boxes next to the personal info: Indgang/Mad, IDkort, Soveplads, Wear and Pris breakdown.
-       They come with the features they show: their data comes when entrance, food, sleeping places, wear and prices
-       are ported. Infosys hides all but the Pris breakdown from its Read-only roles. -->
+       They come with the features they show: their data comes when entrance, food, ID cards, sleeping places, wear and
+       prices are ported. Infosys hides all but the Pris breakdown from its Read-only roles. -->
   <div class="info-boxes">
     @if (p.details; as d) {
     <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
+    <app-participant-id-card [idCard]="d.idCard" />
     <app-participant-sleeping [places]="d.sleepingPlaces" />
     <app-participant-wear [orders]="d.wearOrders" />
     }
@@ -211,19 +212,23 @@
     </app-card>
     }
   </div>
+  }
 
-  <!-- Infosys shows Aktiviteter after the notes, with Heltestyrke, Opgaver next to it; the activity signups and hero
-       force signups come in the row below. Those boxes come with their features. -->
+  <!-- Infosys shows two rows of boxes after the notes: Aktiviteter with Heltestyrke, Opgaver next to it, and
+       Aktivitetstilmeldinger with Heltestyrken, Tilmeldinger. They are also shown, read-only, to users who may view
+       participants and activities (Infosys's "Read-only activity" role). Changes need the right to edit participants
+       and are refused for an activity-locked participant. The hero force boxes get their data when it is ported. -->
+  @if (p.programme; as g) {
   <div class="activity-boxes">
-    <app-participant-activities [activities]="d.activities" [participantId]="p.id" [canEdit]="canEditSeats(d)" />
-    <!-- Infosys: below Aktiviteter, with Heltestyrken, Tilmeldinger next to it (not ported yet). Changes are refused
-         for an activity-locked participant. -->
+    <app-participant-activities [activities]="g.activities" [participantId]="p.id" [canEdit]="canEditSeats(p)" />
+    <app-participant-hero-tasks [tasks]="g.heroTasks" />
     <app-participant-activity-signups
-      [signups]="d.activitySignups"
+      [signups]="g.activitySignups"
       [participantId]="p.id"
-      [canEdit]="!d.isActivityLocked"
+      [canEdit]="canEditSignups(p)"
       (changed)="refresh()"
     />
+    <app-participant-hero-signups [signups]="g.heroSignups" />
   </div>
   } }
 </div>

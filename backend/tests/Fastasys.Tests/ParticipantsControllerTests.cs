@@ -26,18 +26,22 @@ public class ParticipantsControllerTests
         return context;
     }
 
-    // Answers "may edit participants" without running the real policies
-    private sealed class FakeAuthorization(bool canEdit) : IAuthorizationService
+    // Answers "may view activities" (ActivityView) and "may edit participants" (every other policy) without running the
+    // real policies
+    private sealed class FakeAuthorization(bool canEdit, bool mayViewActivities) : IAuthorizationService
     {
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, IEnumerable<IAuthorizationRequirement> requirements) =>
-            Task.FromResult(canEdit ? AuthorizationResult.Success() : AuthorizationResult.Failed());
+            Result(canEdit);
 
         public Task<AuthorizationResult> AuthorizeAsync(ClaimsPrincipal user, object? resource, string policyName) =>
-            Task.FromResult(canEdit ? AuthorizationResult.Success() : AuthorizationResult.Failed());
+            Result(policyName == "ActivityView" ? mayViewActivities : canEdit);
+
+        private static Task<AuthorizationResult> Result(bool succeeded) =>
+            Task.FromResult(succeeded ? AuthorizationResult.Success() : AuthorizationResult.Failed());
     }
 
-    private static ParticipantsController CreateController(InfosysDbContext db, bool canEdit = true) =>
-        new(db, new FakeAuthorization(canEdit), NullLogger<ParticipantsController>.Instance);
+    private static ParticipantsController CreateController(InfosysDbContext db, bool canEdit = true, bool mayViewActivities = false) =>
+        new(db, new FakeAuthorization(canEdit, mayViewActivities), NullLogger<ParticipantsController>.Instance);
 
     private static CreateParticipantDto ValidCreate() => new()
     {
@@ -340,6 +344,11 @@ public class ParticipantsControllerTests
         Assert.Null(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
         Assert.Null(participant.Price);
+        // ID cards and the hero force are not ported yet either
+        Assert.Null(participant.Details.IdCard);
+        Assert.NotNull(participant.Programme);
+        Assert.Null(participant.Programme.HeroTasks);
+        Assert.Null(participant.Programme.HeroSignups);
     }
 
     // Wednesday 24 March 2027 at the given UTC hour (Copenhagen is UTC+1 that week until Sunday)
@@ -373,7 +382,7 @@ public class ParticipantsControllerTests
             new RunSeat { RunId = 200, SeatNumber = 2, ParticipantId = 2, Role = RunSeatRole.Player });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+        var activities = Ok(await CreateController(db).Get(1)).Programme!.Activities;
 
         Assert.Equal(
             new ParticipantActivityDto[]
@@ -390,7 +399,7 @@ public class ParticipantsControllerTests
         using var db = CreateDbContext();
         await AddAsync(db, 1);
 
-        Assert.Empty(Ok(await CreateController(db).Get(1)).Details!.Activities);
+        Assert.Empty(Ok(await CreateController(db).Get(1)).Programme!.Activities);
     }
 
     [Fact]
@@ -407,7 +416,7 @@ public class ParticipantsControllerTests
             new ScheduleSignup { ParticipantId = 1, ScheduleId = 20, Role = RunSeatRole.GameMaster, Priority = 0 });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var signups = Ok(await CreateController(db).Get(1)).Details!.ActivitySignups;
+        var signups = Ok(await CreateController(db).Get(1)).Programme!.ActivitySignups;
 
         Assert.Equal(
             new[]
@@ -442,7 +451,7 @@ public class ParticipantsControllerTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         await AddAsync(db, 1, p => { p.OrganizerAreaId = OrganizerArea.BoardGameDesignerId; p.GameActivityId = 1; });
 
-        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+        var activities = Ok(await CreateController(db).Get(1)).Programme!.Activities;
 
         // At 9:00 the seat comes first, then the own game, then the automatic signup, as PHP's stable uasort keeps them.
         // The author meeting is not for designers.
@@ -467,7 +476,7 @@ public class ParticipantsControllerTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         await AddAsync(db, 1, p => p.OrganizerAreaId = OrganizerArea.BoardGameDesignerId);
 
-        var activities = Ok(await CreateController(db).Get(1)).Details!.Activities;
+        var activities = Ok(await CreateController(db).Get(1)).Programme!.Activities;
 
         Assert.Equal(ParticipantActivityRole.Player, Assert.Single(activities).Role);
     }
@@ -489,7 +498,7 @@ public class ParticipantsControllerTests
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         await AddAsync(db, 1, p => { p.OrganizerAreaId = organizerAreaId; p.GameActivityId = 1; });
 
-        Assert.Empty(Ok(await CreateController(db).Get(1)).Details!.Activities);
+        Assert.Empty(Ok(await CreateController(db).Get(1)).Programme!.Activities);
     }
 
     [Fact]
@@ -504,8 +513,33 @@ public class ParticipantsControllerTests
 
         Assert.False(participant.CanEdit);
         Assert.Null(participant.Details);
+        Assert.Null(participant.Programme);
         Assert.Null(participant.Price);
         Assert.Equal("x@example.invalid", participant.Email);
+    }
+
+    [Fact]
+    public async Task Get_ShowsTheActivitiesToViewersWhoMayViewActivities()
+    {
+        // Infosys's "Read-only activity" role sees the boxes below the notes (Aktiviteter, Aktivitetstilmeldinger and the
+        // hero force boxes) but nothing else of the Read-only part. Agreed 2026-11-18: in Fastasys, a user who may view
+        // participants and activities.
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.AdminNote = "Intern note");
+        var game = Game(1, "Spil");
+        db.AddRange(game, ScheduleOf(10, game, Wednesday(8)));
+        db.ScheduleSignups.Add(new ScheduleSignup { ParticipantId = 1, ScheduleId = 10, Role = RunSeatRole.Player, Priority = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var participant = Ok(await CreateController(db, canEdit: false, mayViewActivities: true).Get(1));
+
+        Assert.False(participant.CanEdit);
+        Assert.Null(participant.Details);
+        Assert.NotNull(participant.Programme);
+        Assert.Empty(participant.Programme.Activities);
+        Assert.Equal(10, Assert.Single(participant.Programme.ActivitySignups).ScheduleId);
+        Assert.Null(participant.Programme.HeroTasks);
+        Assert.Null(participant.Programme.HeroSignups);
     }
 
     [Fact]

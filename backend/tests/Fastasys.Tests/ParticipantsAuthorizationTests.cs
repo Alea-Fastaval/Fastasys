@@ -137,12 +137,38 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         {
             Assert.False(json.RootElement.GetProperty("canEdit").GetBoolean());
             Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("details").ValueKind);
+            Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("programme").ValueKind);
             Assert.Equal("Adgang", json.RootElement.GetProperty("firstName").GetString());
         }
         Assert.Equal(HttpStatusCode.Forbidden, create.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, update.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, field.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, delete.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("activities_view")]
+    [InlineData("activities_edit")]
+    public async Task ViewPrivilege_WithActivities_SeesTheActivityBoxes_ButNotTheDetails(string activityPrivilege)
+    {
+        // Infosys's "Read-only activity" role: the boxes below the notes, read-only (agreed 2026-11-18)
+        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participants_view", activityPrivilege);
+        var ct = TestContext.Current.CancellationToken;
+        var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
+        Assert.NotNull(created);
+
+        var get = await viewer.GetAsync($"/api/participants/{created.Id}", ct);
+
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        using var json = JsonDocument.Parse(await get.Content.ReadAsStringAsync(ct));
+        Assert.False(json.RootElement.GetProperty("canEdit").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("details").ValueKind);
+        var programme = json.RootElement.GetProperty("programme");
+        Assert.Equal(JsonValueKind.Array, programme.GetProperty("activities").ValueKind);
+        Assert.Equal(JsonValueKind.Array, programme.GetProperty("activitySignups").ValueKind);
+        Assert.Equal(JsonValueKind.Null, programme.GetProperty("heroTasks").ValueKind);
+        Assert.Equal(JsonValueKind.Null, programme.GetProperty("heroSignups").ValueKind);
     }
 
     [Fact]

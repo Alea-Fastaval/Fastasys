@@ -5,7 +5,13 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { describe, afterEach, it, expect, vi } from 'vitest';
-import { Participant, ParticipantDetails, ParticipantOptions, ParticipantPrice } from '@shared/types';
+import {
+  Participant,
+  ParticipantDetails,
+  ParticipantOptions,
+  ParticipantPrice,
+  ParticipantProgramme,
+} from '@shared/types';
 import { AuthService } from '@shared/services';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantDetailComponent, editorValue } from './participant-detail';
@@ -50,6 +56,10 @@ const details: ParticipantDetails = {
   tickets: null,
   meals: null,
   sleepingPlaces: null,
+  idCard: null,
+};
+
+const programme: ParticipantProgramme = {
   activities: [
     {
       activityId: 4,
@@ -75,6 +85,8 @@ const details: ParticipantDetails = {
       role: 'Player',
     },
   ],
+  heroTasks: null,
+  heroSignups: null,
 };
 
 const participant: Participant = {
@@ -101,6 +113,7 @@ const participant: Participant = {
   nextId: 9,
   canEdit: true,
   price: null,
+  programme,
   details,
 };
 
@@ -228,12 +241,14 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
     expect(boxes).toEqual([
       'app-participant-entrance-food',
+      'app-participant-id-card',
       'app-participant-sleeping',
       'app-participant-wear',
       'app-participant-price',
     ]);
     expect(element.querySelector('.info-boxes app-participant-entrance-food .tickets-not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-entrance-food .meals-not-ported')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-id-card .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
@@ -242,6 +257,9 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('app-participant-activities .activity-table tbody')?.textContent).toContain(
       'Andet spil',
     );
+    // The hero force boxes say that the hero force is not ported
+    expect(element.querySelector('.activity-boxes app-participant-hero-tasks .not-ported')).not.toBeNull();
+    expect(element.querySelector('.activity-boxes app-participant-hero-signups .not-ported')).not.toBeNull();
   });
 
   it('passes the price and the amount paid to the Pris breakdown box', async () => {
@@ -300,8 +318,14 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
   it('shows the Aktivitetstilmeldinger box after Aktiviteter and reloads the participant when a wish changes', async () => {
     const { fixture, element } = await setup();
 
+    // Infosys's two rows: Aktiviteter | Heltestyrke, Opgaver and Aktivitetstilmeldinger | Heltestyrken, Tilmeldinger
     const boxes = [...element.querySelectorAll('.activity-boxes > *')].map(box => box.tagName.toLowerCase());
-    expect(boxes).toEqual(['app-participant-activities', 'app-participant-activity-signups']);
+    expect(boxes).toEqual([
+      'app-participant-activities',
+      'app-participant-hero-tasks',
+      'app-participant-activity-signups',
+      'app-participant-hero-signups',
+    ]);
     expect(element.querySelector('app-participant-activity-signups tbody')?.textContent).toContain(
       'Andet spil / Other game',
     );
@@ -310,7 +334,9 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     const box = fixture.debugElement.query(By.directive(ParticipantActivitySignupsComponent))
       .componentInstance as ParticipantActivitySignupsComponent;
     box.changed.emit();
-    httpMock.expectOne('/api/participants/7').flush({ ...participant, details: { ...details, activitySignups: [] } });
+    httpMock
+      .expectOne('/api/participants/7')
+      .flush({ ...participant, programme: { ...programme, activitySignups: [] } });
     fixture.detectChanges();
 
     expect(element.querySelector('app-participant-activity-signups tbody tr.signup')).toBeNull();
@@ -341,21 +367,41 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
   });
 
   it('shows only the personal info to users who may only view participants', async () => {
-    const { component, element } = await setup({ ...participant, canEdit: false, details: null });
+    const { component, element } = await setup({ ...participant, canEdit: false, programme: null, details: null });
 
     expect(component.options()).toBeNull();
     expect(element.textContent).toContain('Testa');
     expect(element.querySelector('.notes')).toBeNull();
     expect(element.querySelector('.editable')).toBeNull();
-    // Infosys hides the Indgang/Mad, Soveplads and Wear boxes from its Read-only roles too, but shows them the Pris
-    // breakdown
+    // Infosys hides the Indgang/Mad, IDkort, Soveplads and Wear boxes from its Read-only roles too, but shows them the
+    // Pris breakdown
     const boxes = [...element.querySelectorAll('.info-boxes > *')].map(box => box.tagName.toLowerCase());
     expect(boxes).toEqual(['app-participant-price']);
-    // and the Aktiviteter box from its Read-only role
-    expect(element.querySelector('app-participant-activities')).toBeNull();
+    // and the boxes below the notes from its Read-only role
+    expect(element.querySelector('.activity-boxes')).toBeNull();
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();
+  });
+
+  it('shows the boxes below the notes, read-only, to viewers who may view activities', async () => {
+    // Infosys's "Read-only activity" role (agreed 2026-11-18): the API sends the programme but not the details
+    const { element } = await setup({ ...participant, canEdit: false, details: null }, true);
+
+    expect(element.querySelector('.notes')).toBeNull();
+    const boxes = [...element.querySelectorAll('.activity-boxes > *')].map(box => box.tagName.toLowerCase());
+    expect(boxes).toEqual([
+      'app-participant-activities',
+      'app-participant-hero-tasks',
+      'app-participant-activity-signups',
+      'app-participant-hero-signups',
+    ]);
+    expect(element.querySelector('app-participant-activities .activity-table tbody')?.textContent).toContain(
+      'Andet spil',
+    );
+    // Without the details nothing can be changed, even with the right to edit activities
+    expect(element.querySelector('a.edit-seats')).toBeNull();
+    expect(element.querySelector('a.edit-signups')).toBeNull();
   });
 
   it('saves a clicked field and shows the result', async () => {

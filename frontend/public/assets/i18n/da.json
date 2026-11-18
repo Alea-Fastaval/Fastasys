@@ -351,6 +351,20 @@
       "checkInDifference": "Difference ved check-ind ({{total}} - {{paid}}):",
       "notPorted": "Priser er ikke flyttet til Fastasys endnu."
     },
+    "idCard": {
+      "title": "IDkort",
+      "template": "Skabelon:",
+      "defaultTemplate": "Default ({{name}})",
+      "noTemplate": "ingen",
+      "notPorted": "ID-kort er ikke flyttet til Fastasys endnu."
+    },
+    "heroTasks": {
+      "title": "Heltestyrke, Opgaver"
+    },
+    "heroSignups": {
+      "title": "Heltestyrken, Tilmeldinger"
+    },
+    "heroForceNotPorted": "Heltestyrken er ikke flyttet til Fastasys endnu.",
     "activities": {
       "title": "Aktiviteter",
       "activity": "Aktivitet",

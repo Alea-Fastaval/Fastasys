@@ -87,7 +87,8 @@ export interface ParticipantSearchResult {
   rows: ParticipantRow[];
 }
 
-// Infosys deltager/visdeltager. details is null when the user may only view participants.
+// Infosys deltager/visdeltager. details is null when the user may only view participants; programme is null when they
+// may not view activities either.
 export interface Participant {
   id: number;
   firstName: string;
@@ -114,6 +115,8 @@ export interface Participant {
   canEdit: boolean;
   // The Pris breakdown box, shown to everyone who can open the page: null until prices are ported
   price: ParticipantPrice | null;
+  // The activity and hero force boxes below the notes; also shown, read-only, to viewers who may view activities
+  programme: ParticipantProgramme | null;
   details: ParticipantDetails | null;
 }
 
@@ -182,10 +185,52 @@ export interface ParticipantDetails {
   meals: ParticipantMeal[] | null;
   // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
   sleepingPlaces: ParticipantSleepingPlace[] | null;
+  // The IDkort box: null until ID cards are ported
+  idCard: ParticipantIdCard | null;
+}
+
+// The IDkort box (see ParticipantIdCardDto in the API)
+export interface ParticipantIdCard {
+  // The participant's cropped photo, or null when there is none
+  photoUrl: string | null;
+  // The participant's own ID card template, or null for the default
+  templateName: string | null;
+  // The template of the participant's category, or null when it has none
+  defaultTemplateName: string | null;
+}
+
+// The boxes below the notes (see ParticipantProgrammeDto in the API). null when the user may neither edit participants
+// nor view activities.
+export interface ParticipantProgramme {
   // The Aktiviteter box, in start time order
   activities: ParticipantActivity[];
   // The Aktivitetstilmeldinger box: the signup wishes, by the schedule's start
   activitySignups: ParticipantActivitySignup[];
+  // The Heltestyrke, Opgaver box: null until the hero force is ported
+  heroTasks: ParticipantHeroTask[] | null;
+  // The Heltestyrken, Tilmeldinger box: null until the hero force is ported
+  heroSignups: ParticipantHeroSignup[] | null;
+}
+
+// A hero force shift the participant was put on (see ParticipantHeroTaskDto in the API)
+export interface ParticipantHeroTask {
+  name: string;
+  // How many are on the shift, and how many it needs
+  participantCount: number;
+  capacity: number;
+  // UTC instants; the box shows them in Copenhagen time
+  start: string;
+  end: string;
+}
+
+// When the participant said they can help the hero force (see ParticipantHeroSignupDto in the API)
+export interface ParticipantHeroSignup {
+  // The category's Danish name, e.g. "Forplejning"
+  category: string;
+  // yyyy-MM-dd, a day in Denmark
+  date: string;
+  // e.g. "7-12"
+  hours: string;
 }
 
 // One row of the Aktivitetstilmeldinger box (see ParticipantActivitySignupDto in the API). Priority is 1-4 for players;
