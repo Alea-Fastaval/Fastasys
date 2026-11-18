@@ -65,7 +65,8 @@
                   </div>
                 </div>
               </td>
-              <td class="text-center" [hidden]="!existsPrivilege(domain.key + '_view')">
+              @if(existsPrivilege(domain.key + '_view')){
+              <td class="text-center">
                 <mat-checkbox
                   [checked]="hasPrivilege(role, domain.key + '_view')"
                   [disabled]="role.name === 'Admin'"
@@ -74,7 +75,10 @@
                   View {{ domain.name }}
                 </mat-checkbox>
               </td>
-              <td class="text-center" [hidden]="!existsPrivilege(domain.key + '_edit')">
+              }@else{
+              <td class="text-center">N/A</td>
+              } @if (existsPrivilege(domain.key + '_edit')) {
+              <td class="text-center">
                 <mat-checkbox
                   [checked]="hasPrivilege(role, domain.key + '_edit')"
                   [disabled]="role.name === 'Admin'"
@@ -83,11 +87,13 @@
                   Edit/Create {{ domain.name }}
                 </mat-checkbox>
               </td>
+              }@else {
+              <td class="text-center">N/A</td>
+              }
             </tr>
             }
           </tbody>
         </table>
-
         @if (role.name !== 'Admin') {
         <div class="matrix-footer">
           <button mat-raised-button color="primary" (click)="saveRolePermissions(role)">

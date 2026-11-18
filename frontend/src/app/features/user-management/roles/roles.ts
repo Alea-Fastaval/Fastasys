@@ -37,56 +37,52 @@ export class RolesComponent implements OnInit {
   public readonly selectedRole = signal<Role | null>(null);
   public readonly showRoleModal = signal<boolean>(false);
 
-  // todo: Better and more systematic names
-  // todo: make the the table still work, when there are hidden elements
-  // todo: more domain icons
-
   public systemDomains: SystemDomain[] = [
     { key: 'accounting', name: 'Accounting' },
-    { key: 'activity', name: 'Activity' },
+    { key: 'activity', name: 'Manage Activity' },
     { key: 'activity_leader_list', name: 'Activity Leader List' },
-    { key: 'boardgame', name: 'Boardgame' },
+    { key: 'boardgame', name: 'Manage Boardgames' },
     { key: 'boardgame_distribute', name: 'Distribute Boardgame' },
     { key: 'checkin_stats', name: 'Check-in Statistics' },
-    { key: 'entrance', name: 'Entrance' },
+    { key: 'entrance', name: 'Entrance lists' },
     { key: 'entrance_assignment_reset', name: 'Reset Entrance Assignments' },
     { key: 'entrance_participant', name: 'Assign entrance to participant' },
-    { key: 'food', name: 'Food' },
+    { key: 'food', name: 'Manage Food options' },
     { key: 'food_distribute', name: 'Distribute Food' },
     { key: 'food_distribute_reset', name: 'Reset Food Distributions' },
     { key: 'food_marketplace', name: 'Food Marketplace' },
     { key: 'food_participant', name: 'Assign food to participant' },
     { key: 'food_stats', name: 'Food statistics' },
-    { key: 'hero_force', name: 'Hero Force' },
-    { key: 'hero_force_participant', name: 'Hero Force Shifts' },
-    { key: 'hero_force_participant_list', name: 'Hero Force Assignments' },
+    { key: 'hero_force', name: 'Manage Hero Force' },
+    { key: 'hero_force_participant', name: 'Manage Hero Force Shifts' },
+    { key: 'hero_force_participant_list', name: 'List Hero Force Assignments' },
     { key: 'karma_list', name: 'Karma list' },
     { key: 'nametag_participant', name: 'Name Tag for Participant' },
-    { key: 'participant', name: 'Participant' },
+    { key: 'participant', name: 'Manage Participants' },
     { key: 'participant_list', name: 'Participant list' },
     { key: 'participant_schedule', name: 'Participant schedule' },
     { key: 'payment_participant', name: 'Participant payments' },
-    { key: 'role', name: 'Role' },
+    { key: 'role', name: 'Manage Roles' },
     { key: 'role_user', name: 'Assign Role' },
-    { key: 'room', name: 'Room' },
-    { key: 'room_assignment', name: 'Assign Room' },
-    { key: 'run', name: 'Run' },
-    { key: 'run_participant', name: 'Assign Run' },
+    { key: 'room', name: 'Manage Rooms' },
+    { key: 'room_assignment', name: 'List Room assignments' },
+    { key: 'run', name: 'Manage Runs' },
+    { key: 'run_participant', name: 'Assign to Run' },
     { key: 'run_start', name: 'Start Run' },
     { key: 'send_participant_email', name: 'Email to Participant' },
     { key: 'send_participant_notification', name: 'Notification to Participant' },
-    { key: 'signup_form', name: 'Signup form' },
+    { key: 'signup_form', name: 'Manage Signup form' },
     { key: 'signup_stats', name: 'Signup Statistics' },
     { key: 'sleeping_assignment', name: 'Sleeping Assignments' },
-    { key: 'sleeping_participant', name: 'Participant sleeping arrangement' },
-    { key: 'syslog', name: 'System log' },
+    { key: 'sleeping_participant', name: 'Assign Sleeping arrangement to participant' },
+    { key: 'syslog', name: 'System log access' },
     { key: 'tag_template', name: 'Name tag Template' },
-    { key: 'user', name: 'User' },
+    { key: 'user', name: 'Manage System Users' },
     { key: 'vote_list', name: 'Game Votes' },
-    { key: 'wear', name: 'Wear' },
+    { key: 'wear', name: 'Manage Wear' },
     { key: 'wear_distribute', name: 'Distribute wear' },
-    { key: 'wear_list', name: 'Full Wear List' },
-    { key: 'wear_participant', name: 'Wear for Participant' },
+    { key: 'wear_list', name: 'Wear List' },
+    { key: 'wear_participant', name: 'Distribute Wear' },
   ];
 
   public formRole: CreateRoleDto = {
@@ -98,6 +94,7 @@ export class RolesComponent implements OnInit {
   ngOnInit(): void {
     this.loadRoles();
     this.loadPrivileges();
+    this.systemDomains.sort();
   }
 
   public loadRoles(): void {
@@ -128,6 +125,8 @@ export class RolesComponent implements OnInit {
       case 'users':
         return 'manage_accounts';
       case 'boardgames':
+      case 'boardgame_distribute':
+      case 'boardgame':
         return 'sports_esports';
       case 'participants':
         return 'people';
@@ -137,10 +136,17 @@ export class RolesComponent implements OnInit {
         return 'calendar_today';
       case 'food':
       case 'food_distribute':
+      case 'food_distribute_reset':
+      case 'food_participant':
+      case 'food_stats':
         return 'restaurant';
       case 'wear':
+      case 'wear_distribute':
+      case 'wear_list':
+      case 'wear_participant':
         return 'checkroom';
-      case 'rooms':
+      case 'room':
+      case 'room_assignment':
         return 'meeting_room';
       default:
         return 'security';

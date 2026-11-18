@@ -101,8 +101,8 @@ public static class DbSeeder
 
         // Default Roles with default privileges
 
-        seedRole(db, "Infonaut", "", []);
-        seedRole(db, "Infoboss", "", []);
+        seedRole(db, "Infonaut", "Member of the Info", []);
+        seedRole(db, "Infoboss", "Manager of the Info", []);
         seedRole(db, "Food distribution", "Food distribution role", []);
         seedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
         seedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
@@ -111,7 +111,7 @@ public static class DbSeeder
         seedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
         seedRole(db, "Boardgame jury", "Jury member for boardgames", []);
         seedRole(db, "Scenario jury", "Jury member for scenarios", []);
-        seedRole(db, "Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
+        seedRole(db, "Full Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
         seedRole(db, "Accounting", "Accounting and budget", []);
 
         // Default Admin User with the special admin role

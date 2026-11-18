@@ -41,6 +41,8 @@ export class LoginComponent {
     this.loading.set(true);
     this.errorMessage.set('');
 
+    console.warn(this.username);
+
     this.authService.login({ username: this.username, password: this.password }).subscribe({
       next: () => {
         this.loading.set(false);
