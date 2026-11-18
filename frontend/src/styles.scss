@@ -24,3 +24,20 @@ h5,
 h6 {
   margin: 0;
 }
+
+// Printing (the ID cards): only the page itself, on white A4
+@page {
+  size: A4;
+  margin: 10mm 7mm;
+}
+
+@media print {
+  app-toolbar {
+    display: none !important;
+  }
+
+  .content {
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+}

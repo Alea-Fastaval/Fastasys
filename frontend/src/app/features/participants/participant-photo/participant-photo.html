@@ -1,0 +1,111 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button [routerLink]="['/participants', participantId]"
+      ><mat-icon>arrow_back</mat-icon> {{ 'participantPhoto.back' | translate }}</a
+    >
+  </header>
+
+  <div class="content">
+    <h1>{{ 'participantPhoto.title' | translate }}</h1>
+    <p>{{ 'participantPhoto.intro' | translate }}</p>
+    <h3>{{ 'participantPhoto.requirementsTitle' | translate }}</h3>
+    <ul>
+      @for (key of ['portrait', 'likeness', 'resolution', 'lookAhead', 'background']; track key) {
+      <li [innerHTML]="'participantPhoto.requirements.' + key | translate"></li>
+      }
+    </ul>
+
+    <h3>{{ 'participantPhoto.howTitle' | translate }}</h3>
+    <ol>
+      @for (key of ['choose', 'crop', 'upload']; track key) {
+      <li [innerHTML]="'participantPhoto.steps.' + key | translate"></li>
+      }
+    </ol>
+    <p>{{ 'participantPhoto.privilege' | translate }}</p>
+
+    @if (status() !== 'success') {
+    <div class="cropper">
+      <div class="image-and-tools">
+        <!-- The frame is the cut-out; drag the image to move it -->
+        <canvas
+          #preview
+          class="preview"
+          [width]="width"
+          [height]="height"
+          [class.empty]="!image()"
+          (mousedown)="startDrag($event)"
+        ></canvas>
+        <div class="tools">
+          <button
+            mat-icon-button
+            type="button"
+            class="rotate-ccw"
+            [disabled]="!image()"
+            [title]="'participantPhoto.rotateLeft' | translate"
+            (click)="rotate(false)"
+          >
+            <mat-icon>rotate_left</mat-icon>
+          </button>
+          <button
+            mat-icon-button
+            type="button"
+            class="rotate-cw"
+            [disabled]="!image()"
+            [title]="'participantPhoto.rotateRight' | translate"
+            (click)="rotate(true)"
+          >
+            <mat-icon>rotate_right</mat-icon>
+          </button>
+          <span class="zoom">
+            <mat-icon class="smaller">image</mat-icon>
+            @if (zoomRange(); as range) {
+            <input
+              type="range"
+              class="zoom-input"
+              [attr.aria-label]="'participantPhoto.zoom' | translate"
+              [min]="range.min"
+              [max]="range.max"
+              [step]="(range.max - range.min) / 100 || 0.01"
+              [value]="crop()?.scale"
+              (input)="zoom($any($event.target).value)"
+            />
+            } @else {
+            <input type="range" class="zoom-input" disabled [attr.aria-label]="'participantPhoto.zoom' | translate" />
+            }
+            <mat-icon class="larger">image</mat-icon>
+          </span>
+        </div>
+      </div>
+      <div class="action-buttons">
+        <button mat-stroked-button type="button" class="select-image" (click)="chooseImage()">
+          {{ 'participantPhoto.chooseImage' | translate }}
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="upload"
+          [disabled]="!image() || busy()"
+          (click)="upload()"
+        >
+          {{ 'participantPhoto.upload' | translate }}
+        </button>
+        <p>
+          <strong>{{ 'participantPhoto.remember' | translate }}</strong>
+        </p>
+      </div>
+      <input
+        #fileInput
+        type="file"
+        class="file-input"
+        accept="image/png,image/jpeg,image/gif"
+        (change)="imageChosen($event)"
+      />
+    </div>
+    } @if (status() === 'success') {
+    <p class="upload-success">{{ 'participantPhoto.success' | translate }}</p>
+    } @if (status() === 'failure') {
+    <p class="upload-failure" [innerHTML]="'participantPhoto.failure' | translate"></p>
+    }
+  </div>
+</div>

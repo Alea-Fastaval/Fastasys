@@ -371,7 +371,9 @@
       "template": "Skabelon:",
       "defaultTemplate": "Default ({{name}})",
       "noTemplate": "ingen",
-      "notPorted": "ID-kort er ikke flyttet til Fastasys endnu."
+      "photoUpload": "Foto upload",
+      "idCard": "Idkort",
+      "saveFailed": "Skabelonen kunne ikke gemmes."
     },
     "heroTasks": {
       "title": "Heltestyrke, Opgaver"
@@ -575,6 +577,82 @@
       "language": "Sprog",
       "busy": "Deltageren er optaget på dette tidspunkt"
     }
+  },
+  "idCards": {
+    "title": "ID-kort",
+    "print": "Print",
+    "loading": "Henter ID-kortene ...",
+    "none": "Ingen ID-kort at vise.",
+    "failed": "ID-kortene kunne ikke hentes."
+  },
+  "idCardTemplates": {
+    "title": "ID skabeloner",
+    "templates": "Skabeloner",
+    "categoryTemplates": "Kategori-skabeloner",
+    "name": "Skabelonens navn",
+    "newTemplate": "Ny skabelon",
+    "removeTemplate": "Slet skabelon",
+    "copyTemplate": "Kopiér skabelon",
+    "confirmDelete": "Er du sikker på at slette denne skabelon?",
+    "renderSize": "Render size (at 300 DPI): width {{widthCm}} cm / {{widthMm}} mm, height {{heightCm}} cm / {{heightMm}} mm",
+    "noBackground": "Vælg en baggrund for at placere elementer.",
+    "background": "Baggrund",
+    "addPhoto": "Foto",
+    "addBarcode": "Stregkode",
+    "addText": "Tekst",
+    "type": "Type",
+    "rotation": "Rotation",
+    "dataSource": "Tekst",
+    "removeItem": "Slet element",
+    "itemTypes": {
+      "Photo": "Photo",
+      "Text": "Text",
+      "Barcode": "Barcode"
+    },
+    "dataSources": {
+      "Id": "ID",
+      "Name": "Navn",
+      "DoctorName": "Dr. + Navn",
+      "OrganizerArea": "Arbejdsområde",
+      "Game": "Scenarie",
+      "YouthClub": "Ungdomsskole"
+    },
+    "messages": {
+      "saveFailed": "Failed to save template",
+      "createFailed": "Failed to create new template",
+      "copyFailed": "Failed to copy template",
+      "removeFailed": "Failed to remove template",
+      "categoryFailed": "Kategorien kunne ikke opdateres.",
+      "backgroundFailed": "Baggrunden kunne ikke gemmes. Den skal være et PNG-, JPEG- eller GIF-billede på højst 10 MB."
+    }
+  },
+  "participantPhoto": {
+    "back": "Tilbage til deltageren",
+    "title": "Upload dit billede til arrangørkort",
+    "intro": "Her uploader du et vellignende portræt til arrangørkort.",
+    "requirementsTitle": "Krav til billede:",
+    "requirements": {
+      "portrait": "<strong>Portrætfoto</strong>: Det skal være et billede af dig alene - ikke et gruppebillede eller et billede af andre folk.",
+      "likeness": "<strong>Vellignende</strong>: Billedet skal være skarpt og uden filtre, ansigtsmaling eller masker, der gør det svært at genkende dig.",
+      "resolution": "<strong>Ordentlig opløsning</strong>: Undgå meget pixelerede eller utydelige billeder.",
+      "lookAhead": "<strong>Kig ligefrem</strong>: Dit ansigt skal være tydeligt synligt, vendt mod kameraet og godt oplyst (ikke delvist skjult eller i dyb skygge).",
+      "background": "<strong>Lys baggrund</strong>: Tag gerne billedet mod en lys og ensfarvet væg uden for meget rod/støj i baggrunden."
+    },
+    "howTitle": "Sådan gør du",
+    "steps": {
+      "choose": "Tryk på <b>Vælg Billede</b> og find det billede du vil bruge.",
+      "crop": "Beskær billedet via slideren, så dit ansigt fylder det meste af rammen - <b>Sigt efter at dit ansigt dækker ca. 80% af højden i feltet.</b>",
+      "upload": "Tryk på <b>Upload</b> for at uploade billedet."
+    },
+    "privilege": "Dit arrangørkort er et ID-kort på Fastaval - det er et privilegie, ikke en rettighed. Hvis du vil være sikker på at få et, så sørg for at billedet lever op til kravene.",
+    "rotateLeft": "Drej mod uret",
+    "rotateRight": "Drej med uret",
+    "zoom": "Zoom",
+    "chooseImage": "Vælg billede",
+    "upload": "Upload",
+    "remember": "Husk du ikke er færdig før du har fået en succes-besked på siden!",
+    "success": "Takker! Dit billede er nu blevet uploadet!",
+    "failure": "Noget gik galt undervejs! Kontakt <a href=\"mailto:info@fastaval.dk\">info@fastaval.dk</a> med dit billede til arrangørkort og fortæl hvor i processen det gik galt."
   },
   "runs": {
     "listTitle": "Hold - ({{count}}):",

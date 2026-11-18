@@ -198,7 +198,12 @@
   <div class="info-boxes">
     @if (p.details; as d) {
     <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
-    <app-participant-id-card [idCard]="d.idCard" />
+    <app-participant-id-card
+      [idCard]="d.idCard"
+      [participantId]="p.id"
+      [templates]="options()?.idCardTemplates ?? []"
+      (changed)="refresh()"
+    />
     <app-participant-sleeping [places]="d.sleepingPlaces" />
     <app-participant-wear [orders]="d.wearOrders" />
     }

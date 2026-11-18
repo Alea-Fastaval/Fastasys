@@ -371,7 +371,9 @@
       "template": "Template:",
       "defaultTemplate": "Default ({{name}})",
       "noTemplate": "none",
-      "notPorted": "ID cards have not been moved to Fastasys yet."
+      "photoUpload": "Photo upload",
+      "idCard": "ID card",
+      "saveFailed": "The template could not be saved."
     },
     "heroTasks": {
       "title": "Hero Force, tasks"
@@ -575,6 +577,82 @@
       "language": "Language",
       "busy": "The participant is busy at this time"
     }
+  },
+  "idCards": {
+    "title": "ID cards",
+    "print": "Print",
+    "loading": "Loading the ID cards ...",
+    "none": "No ID cards to show.",
+    "failed": "The ID cards could not be loaded."
+  },
+  "idCardTemplates": {
+    "title": "ID templates",
+    "templates": "Templates",
+    "categoryTemplates": "Category templates",
+    "name": "The template's name",
+    "newTemplate": "New template",
+    "removeTemplate": "Delete template",
+    "copyTemplate": "Copy template",
+    "confirmDelete": "Are you sure you want to delete this template?",
+    "renderSize": "Render size (at 300 DPI): width {{widthCm}} cm / {{widthMm}} mm, height {{heightCm}} cm / {{heightMm}} mm",
+    "noBackground": "Choose a background to place items.",
+    "background": "Background",
+    "addPhoto": "Photo",
+    "addBarcode": "Barcode",
+    "addText": "Text",
+    "type": "Type",
+    "rotation": "Rotation",
+    "dataSource": "Text",
+    "removeItem": "Delete item",
+    "itemTypes": {
+      "Photo": "Photo",
+      "Text": "Text",
+      "Barcode": "Barcode"
+    },
+    "dataSources": {
+      "Id": "ID",
+      "Name": "Name",
+      "DoctorName": "Dr. + Name",
+      "OrganizerArea": "Organizer area",
+      "Game": "Scenario",
+      "YouthClub": "Youth school/club"
+    },
+    "messages": {
+      "saveFailed": "Failed to save template",
+      "createFailed": "Failed to create new template",
+      "copyFailed": "Failed to copy template",
+      "removeFailed": "Failed to remove template",
+      "categoryFailed": "The category could not be updated.",
+      "backgroundFailed": "The background could not be saved. It must be a PNG, JPEG or GIF image of at most 10 MB."
+    }
+  },
+  "participantPhoto": {
+    "back": "Back to the participant",
+    "title": "Upload your photo for the organizer card",
+    "intro": "Here you upload a portrait that looks like you for the organizer card.",
+    "requirementsTitle": "Requirements for the photo:",
+    "requirements": {
+      "portrait": "<strong>Portrait</strong>: It must be a photo of you alone - not a group photo or a photo of other people.",
+      "likeness": "<strong>Looks like you</strong>: The photo must be sharp and without filters, face paint or masks that make it hard to recognise you.",
+      "resolution": "<strong>Decent resolution</strong>: Avoid very pixelated or blurry photos.",
+      "lookAhead": "<strong>Look straight ahead</strong>: Your face must be clearly visible, facing the camera and well lit (not partly hidden or in deep shadow).",
+      "background": "<strong>Light background</strong>: Preferably take the photo against a light, plain wall without too much clutter in the background."
+    },
+    "howTitle": "How to do it",
+    "steps": {
+      "choose": "Press <b>Choose photo</b> and find the photo you want to use.",
+      "crop": "Crop the photo with the slider so your face fills most of the frame - <b>Aim for your face covering about 80% of the frame's height.</b>",
+      "upload": "Press <b>Upload</b> to upload the photo."
+    },
+    "privilege": "Your organizer card is an ID card at Fastaval - it is a privilege, not a right. If you want to be sure to get one, make sure the photo meets the requirements.",
+    "rotateLeft": "Rotate counterclockwise",
+    "rotateRight": "Rotate clockwise",
+    "zoom": "Zoom",
+    "chooseImage": "Choose photo",
+    "upload": "Upload",
+    "remember": "Remember you are not done until you have seen a success message on the page!",
+    "success": "Thank you! Your photo has been uploaded!",
+    "failure": "Something went wrong! Contact <a href=\"mailto:info@fastaval.dk\">info@fastaval.dk</a> with your photo for the organizer card and tell us where in the process it went wrong."
   },
   "runs": {
     "listTitle": "Runs - ({{count}}):",

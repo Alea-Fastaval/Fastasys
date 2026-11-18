@@ -1,12 +1,47 @@
 <app-card [title]="'participants.idCard.title' | translate">
-  @if (idCard; as card) { @if (card.photoUrl) {
-  <img class="photo" [src]="card.photoUrl" alt="" />
+  @if (photo(); as src) {
+  <img class="photo" [src]="src" alt="" />
   }
-  <p class="template">
+  <div class="actions">
+    <a mat-flat-button color="primary" class="photo-upload" [routerLink]="['/participants', participantId, 'photo']"
+      >{{ 'participants.idCard.photoUpload' | translate }}</a
+    >
+    <!-- Infosys opens the card in a new tab -->
+    <a mat-stroked-button class="show-id-card" [href]="'/id-cards?ids=' + participantId" target="_blank"
+      >{{ 'participants.idCard.idCard' | translate }}</a
+    >
+  </div>
+  <div class="template">
     <span class="template-label">{{ 'participants.idCard.template' | translate }}</span>
-    <span class="template-name">{{ templateText(card) }}</span>
-  </p>
-  } @else {
-  <p class="not-ported">{{ 'participants.idCard.notPorted' | translate }}</p>
+    @if (editing()) {
+    <span class="template-editor">
+      <select
+        class="template-select"
+        [attr.aria-label]="'participants.idCard.template' | translate"
+        [ngModel]="idCard.templateId"
+        (ngModelChange)="chooseTemplate($event)"
+        (keydown.escape)="cancelEdit()"
+      >
+        <option [ngValue]="null">{{ defaultText(idCard) }}</option>
+        @for (template of templates; track template.id) {
+        <option [ngValue]="template.id">{{ template.name }}</option>
+        }
+      </select>
+      <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
+    </span>
+    } @else {
+    <span
+      class="template-name editable"
+      role="button"
+      tabindex="0"
+      [title]="'participants.clickToEdit' | translate"
+      (click)="startEdit()"
+      (keydown.enter)="startEdit()"
+      >{{ templateText(idCard) }}</span
+    >
+    }
+  </div>
+  @if (failed()) {
+  <p class="error">{{ 'participants.idCard.saveFailed' | translate }}</p>
   }
 </app-card>

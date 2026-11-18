@@ -67,6 +67,8 @@ export class ParticipantsComponent {
   private readonly query = inject(QueryParamsService);
   private readonly translation = inject(TranslationService);
   private readonly canEdit = inject(AuthService).hasPrivilege('participants_edit');
+  // Infosys's "ID skabeloner" (Deltagere menu, Infonaut and Admin); the API asks for the right to edit participants
+  public readonly mayEditIdCards = this.canEdit;
 
   public readonly steps = this.query.parsed('search', parseSearch);
   private readonly chosenColumns = this.query.listOf('columns', LIST_COLUMNS);

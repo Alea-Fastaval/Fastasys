@@ -189,15 +189,16 @@ export interface ParticipantDetails {
   meals: ParticipantMeal[] | null;
   // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
   sleepingPlaces: ParticipantSleepingPlace[] | null;
-  // The IDkort box: null until ID cards are ported
-  idCard: ParticipantIdCard | null;
+  // The IDkort box
+  idCard: ParticipantIdCard;
 }
 
 // The IDkort box (see ParticipantIdCardDto in the API)
 export interface ParticipantIdCard {
-  // The participant's cropped photo, or null when there is none
+  // The API address of the participant's cropped photo (it needs login), or null when there is none
   photoUrl: string | null;
   // The participant's own ID card template, or null for the default
+  templateId: number | null;
   templateName: string | null;
   // The template of the participant's category, or null when it has none
   defaultTemplateName: string | null;
@@ -343,6 +344,13 @@ export interface ParticipantOptions {
   organizerAreas: OrganizerArea[];
   countries: Country[];
   games: GameOption[];
+  // The ID card templates for "Skabelon:", in id order
+  idCardTemplates: IdCardTemplateOption[];
+}
+
+export interface IdCardTemplateOption {
+  id: number;
+  name: string;
 }
 
 // The fields of the Infosys create form

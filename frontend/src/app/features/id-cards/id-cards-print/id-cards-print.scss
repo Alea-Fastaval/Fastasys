@@ -1,0 +1,53 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+.flash.error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.none,
+.loading {
+  color: #6b7280;
+  font-style: italic;
+}
+
+// Infosys lays the cards out left to right with 30 pixels (about 2.5 mm) around each and lines between them to cut along
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2.5mm;
+}
+
+.card {
+  display: block;
+  box-sizing: content-box;
+  outline: 0.2mm solid #000;
+  outline-offset: 1.2mm;
+  margin: 1.5mm;
+  break-inside: avoid;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .page-container {
+    padding: 0;
+    max-width: none;
+  }
+}

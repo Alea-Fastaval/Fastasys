@@ -149,6 +149,21 @@ describe('ParticipantsComponent (Infosys deltager/visalle and search_result)', (
     expect(component.availableColumns().some(c => c.column === 'adminNote')).toBe(false);
   });
 
+  it('links participant editors to the ID card templates', async () => {
+    const { harness, element } = await open('/participants');
+    await answer(harness, search());
+
+    expect(element.querySelector('a.id-card-templates')?.getAttribute('href')).toBe('/id-card-templates');
+  });
+
+  it('does not link users who may only view participants to the ID card templates', async () => {
+    canEdit = false;
+    const { harness, element } = await open('/participants');
+    await answer(harness, search());
+
+    expect(element.querySelector('a.id-card-templates')).toBeNull();
+  });
+
   it('removes a search it does not understand from the URL and says so', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { harness, component } = await open('/participants?search=nonsense');

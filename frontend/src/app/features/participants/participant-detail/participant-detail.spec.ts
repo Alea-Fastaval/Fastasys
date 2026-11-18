@@ -57,7 +57,7 @@ const details: ParticipantDetails = {
   tickets: null,
   meals: null,
   sleepingPlaces: null,
-  idCard: null,
+  idCard: { photoUrl: null, templateId: null, templateName: null, defaultTemplateName: null },
 };
 
 const programme: ParticipantProgramme = {
@@ -133,6 +133,7 @@ const options: ParticipantOptions = {
     { code: 'AX', nameDanish: 'Åland', nameEnglish: 'Åland Islands' },
   ],
   games: [],
+  idCardTemplates: [],
 };
 
 describe('editorValue', () => {
@@ -250,7 +251,10 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     ]);
     expect(element.querySelector('.info-boxes app-participant-entrance-food .tickets-not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-entrance-food .meals-not-ported')).not.toBeNull();
-    expect(element.querySelector('.info-boxes app-participant-id-card .not-ported')).not.toBeNull();
+    // The IDkort box works: photo upload, the card, and the template
+    expect(element.querySelector('.info-boxes app-participant-id-card a.photo-upload')?.getAttribute('href')).toBe(
+      '/participants/7/photo',
+    );
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
