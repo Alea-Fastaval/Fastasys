@@ -8,6 +8,7 @@ using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -33,6 +34,8 @@ public record ParticipantDto(
     string CountryCode,
     string CountryName,
     DateOnly? BirthDate,
+    // Under 18 on the convention's first day (see ParticipantRules.IsUnder18); false while Convention:Start isn't set
+    bool IsUnder18,
     string Pronouns,
     PreferredLanguage PreferredLanguage,
     int CategoryId,
@@ -406,12 +409,18 @@ public class ParticipantsController : ControllerBase
     private readonly InfosysDbContext _db;
     private readonly IAuthorizationService _authorization;
     private readonly ILogger<ParticipantsController> _logger;
+    private readonly ConventionOptions _convention;
 
-    public ParticipantsController(InfosysDbContext db, IAuthorizationService authorization, ILogger<ParticipantsController> logger)
+    public ParticipantsController(
+        InfosysDbContext db,
+        IAuthorizationService authorization,
+        ILogger<ParticipantsController> logger,
+        IOptions<ConventionOptions> convention)
     {
         _db = db;
         _authorization = authorization;
         _logger = logger;
+        _convention = convention.Value;
     }
 
     // Infosys deltager/visalle without a search: every participant in id order
@@ -984,6 +993,7 @@ public class ParticipantsController : ControllerBase
             p.CountryCode,
             p.Country?.NameDanish ?? string.Empty,
             p.BirthDate,
+            ParticipantRules.IsUnder18(p.BirthDate, _convention.Start),
             p.Pronouns,
             p.PreferredLanguage,
             p.CategoryId,

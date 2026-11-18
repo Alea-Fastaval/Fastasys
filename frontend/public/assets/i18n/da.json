@@ -309,6 +309,8 @@
       "youthClub": "Ungdomsskole",
       "photoConsent": "Foto tiladelse"
     },
+    "under18": "Deltageren er under 18 år.",
+    "under18Tag": "under 18",
     "notPortedShort": "Ikke flyttet til Fastasys endnu",
     "notPortedTitle": "Ikke flyttet til Fastasys endnu.",
     "actions": {

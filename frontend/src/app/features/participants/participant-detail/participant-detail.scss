@@ -35,6 +35,27 @@
   margin-bottom: 1rem;
 }
 
+// Under 18 on the convention's first day: coral with black text, like Infosys's check-in message
+.under-18-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: coral;
+  color: #000;
+  font-weight: 600;
+}
+
+.under-18-tag {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background-color: coral;
+  color: #000;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 // A button for something not ported yet: the span carries the tooltip, since the disabled button ignores the pointer
 .not-ported-action {
   display: inline-block;

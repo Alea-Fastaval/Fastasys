@@ -34,6 +34,9 @@ builder.Services.AddDbContext<InfosysDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 
+// The convention's dates (Infosys con.*)
+builder.Services.Configure<ConventionOptions>(builder.Configuration.GetSection(ConventionOptions.Section));
+
 // Register custom services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<IMockPaymentService, MockPaymentService>();

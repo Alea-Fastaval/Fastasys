@@ -104,6 +104,8 @@ export interface Participant {
   countryName: string;
   // yyyy-MM-dd, or null when unknown
   birthDate: string | null;
+  // Under 18 on the convention's first day; false while the API's Convention:Start isn't set
+  isUnder18: boolean;
   pronouns: string;
   preferredLanguage: PreferredLanguage;
   categoryId: number;

@@ -31,6 +31,7 @@ const existing: Participant = {
   countryCode: 'DK',
   countryName: 'Danmark',
   birthDate: null,
+  isUnder18: false,
   pronouns: 'none',
   preferredLanguage: 'English',
   categoryId: 2,

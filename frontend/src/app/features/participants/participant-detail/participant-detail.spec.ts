@@ -103,6 +103,7 @@ const participant: Participant = {
   countryCode: 'DK',
   countryName: 'Danmark',
   birthDate: '2001-02-03',
+  isUnder18: false,
   pronouns: 'fsfo',
   preferredLanguage: 'Danish',
   categoryId: 1,
@@ -305,6 +306,32 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     TestBed.resetTestingModule();
     const without = await setup({ ...participant, programme: { ...programme, heroSignups: [] } });
     expect(without.element.querySelector('.in-hero-force dd')?.textContent?.trim()).toBe('common.no');
+  });
+
+  it('marks a participant who is under 18 with a banner and a tag next to Fødselsdato', async () => {
+    const { element } = await setup({ ...participant, birthDate: '2011-02-03', isUnder18: true });
+
+    // Above Personlig info
+    const banner = element.querySelector('.under-18-banner');
+    expect(banner?.textContent?.trim()).toBe('participants.under18');
+    expect(banner?.nextElementSibling?.tagName.toLowerCase()).toBe('app-card');
+    const birthDate = [...element.querySelectorAll('.field')].find(f =>
+      f.querySelector('dt')?.textContent?.includes('participants.fields.birthDate'),
+    );
+    expect(birthDate?.querySelector('dd')?.textContent).toContain('03-02-2011');
+    expect(birthDate?.querySelector('.under-18-tag')?.textContent?.trim()).toBe('participants.under18Tag');
+  });
+
+  it('shows no under-18 marking for anyone else, viewers included', async () => {
+    const editor = await setup();
+    expect(editor.element.querySelector('.under-18-banner')).toBeNull();
+    expect(editor.element.querySelector('.under-18-tag')).toBeNull();
+
+    TestBed.resetTestingModule();
+    const viewer = await setup({ ...participant, canEdit: false, programme: null, details: null, isUnder18: true });
+    // The marking is about the personal info, which viewers see too
+    expect(viewer.element.querySelector('.under-18-banner')).not.toBeNull();
+    expect(viewer.element.querySelector('.under-18-tag')).not.toBeNull();
   });
 
   it('repeats "Vis forrige" and "Vis næste" at the bottom of the page, like Infosys', async () => {

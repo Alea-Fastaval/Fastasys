@@ -84,14 +84,20 @@
         <!-- Infosys writes Annulleret with a capital and marks it red when it is ja -->
         <span [class.annulled]="def.value(p)">{{ (def.value(p) ? 'common.yes' : 'common.no') | translate }}</span>
         } @else { {{ (def.value(p) ? 'participants.yes' : 'participants.no') | translate }} } } @case ('date') { {{
-        formatBirthDate(p.birthDate) }} } @case ('select') { {{ selectedLabel(def, p) }} } @case ('pronouns') { {{
-        def.text(p) }} } @default { {{ def.value(p) }} } }
+        formatBirthDate(p.birthDate) }} @if (p.isUnder18) {
+        <span class="under-18-tag">{{ 'participants.under18Tag' | translate }}</span>
+        } } @case ('select') { {{ selectedLabel(def, p) }} } @case ('pronouns') { {{ def.text(p) }} } @default { {{
+        def.value(p) }} } }
       </dd>
       }
     </div>
   </ng-template>
 
-  @if (participant(); as p) {
+  @if (participant(); as p) { @if (p.isUnder18) {
+  <!-- Under 18 on the convention's first day. Infosys meant to mark it (youngster.css, which is missing) and says it at
+       check-in in coral: "Deltageren er under 18 år." -->
+  <p class="under-18-banner">{{ 'participants.under18' | translate }}</p>
+  }
   <app-card [title]="'participants.personalInfo' | translate">
     <div class="card-actions">
       @if (p.canEdit) {

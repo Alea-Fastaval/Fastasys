@@ -309,6 +309,8 @@
       "youthClub": "Youth school/club",
       "photoConsent": "Photo consent"
     },
+    "under18": "The participant is under 18.",
+    "under18Tag": "under 18",
     "notPortedShort": "Not moved to Fastasys yet",
     "notPortedTitle": "Not moved to Fastasys yet.",
     "actions": {

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.Tests;
 
@@ -40,8 +41,13 @@ public class ParticipantsControllerTests
             Task.FromResult(succeeded ? AuthorizationResult.Success() : AuthorizationResult.Failed());
     }
 
-    private static ParticipantsController CreateController(InfosysDbContext db, bool canEdit = true, bool mayViewActivities = false) =>
-        new(db, new FakeAuthorization(canEdit, mayViewActivities), NullLogger<ParticipantsController>.Instance);
+    private static ParticipantsController CreateController(
+        InfosysDbContext db, bool canEdit = true, bool mayViewActivities = false, DateOnly? conventionStart = null) =>
+        new(
+            db,
+            new FakeAuthorization(canEdit, mayViewActivities),
+            NullLogger<ParticipantsController>.Instance,
+            Options.Create(new ConventionOptions { Start = conventionStart }));
 
     private static CreateParticipantDto ValidCreate() => new()
     {
@@ -499,6 +505,33 @@ public class ParticipantsControllerTests
         await AddAsync(db, 1, p => { p.OrganizerAreaId = organizerAreaId; p.GameActivityId = 1; });
 
         Assert.Empty(Ok(await CreateController(db).Get(1)).Programme!.Activities);
+    }
+
+    [Fact]
+    public async Task Get_MarksParticipantsUnder18OnTheConventionsFirstDay()
+    {
+        // Infosys: Deltagere::getAge(con.start) < 18. Everyone who can open the page sees it.
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.BirthDate = new DateOnly(2009, 3, 25));
+        await AddAsync(db, 2, p => p.BirthDate = new DateOnly(2009, 3, 24));
+        await AddAsync(db, 3, p => p.BirthDate = null);
+        var start = new DateOnly(2027, 3, 24);
+        var viewer = CreateController(db, canEdit: false, conventionStart: start);
+
+        Assert.True(Ok(await viewer.Get(1)).IsUnder18);
+        // 18 on the first day
+        Assert.False(Ok(await viewer.Get(2)).IsUnder18);
+        // An unknown birth date has no age
+        Assert.False(Ok(await viewer.Get(3)).IsUnder18);
+    }
+
+    [Fact]
+    public async Task Get_MarksNobodyUnder18WhileTheConventionStartIsNotSet()
+    {
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.BirthDate = new DateOnly(2015, 1, 1));
+
+        Assert.False(Ok(await CreateController(db, conventionStart: null).Get(1)).IsUnder18);
     }
 
     [Fact]

@@ -21,6 +21,14 @@ public static partial class ParticipantRules
         return (today.Month, today.Day).CompareTo((born.Month, born.Day)) < 0 ? age - 1 : age;
     }
 
+    // Infosys visdeltager (youngster.css) and the check-in message "Deltageren er under 18 år.": the participant is
+    // under 18 on the convention's first day (Deltagere::getAge(con.start) < 18). The marking is new in Fastasys:
+    // Infosys's youngster.css doesn't exist, so its participant page showed nothing (agreed 2026-11-18).
+    // Not marked when the convention start isn't set. Not marked either when the birth date is unknown: here an
+    // unknown birth date has no age; in Infosys an empty one gave -1 (under 18) and 0000-00-00 a very high age.
+    public static bool IsUnder18(DateOnly? birthDate, DateOnly? conventionStart) =>
+        conventionStart is DateOnly start && AgeOn(birthDate, start) is int age && age < 18;
+
     // Infosys Deltagere::isBusyBetween: whether the period overlaps one of the participant's busy periods. Infosys's
     // busy periods are the schedules of their seats (designer rows included) on time-exclusive activities, those
     // schedules' multiblocks, and their hero force shifts; multiblocks and hero force are not ported yet.

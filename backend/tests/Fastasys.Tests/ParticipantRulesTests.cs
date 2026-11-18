@@ -1,4 +1,5 @@
 using Fastasys.ApiService.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace Fastasys.Tests;
 
@@ -6,6 +7,48 @@ namespace Fastasys.Tests;
 // agreed on 2026-11-11.
 public class ParticipantRulesTests
 {
+    [Theory]
+    // Infosys Deltagere::getAge(con.start) < 18, in full years on the convention's first day (24 March 2027 here)
+    [InlineData("2009-03-25", true)]
+    [InlineData("2009-03-24", false)]
+    [InlineData("2009-03-23", false)]
+    [InlineData("2015-06-01", true)]
+    [InlineData("1990-01-01", false)]
+    public void IsUnder18_MeasuresTheAgeOnTheConventionsFirstDay(string birthDate, bool expected)
+    {
+        Assert.Equal(expected, ParticipantRules.IsUnder18(DateOnly.Parse(birthDate), new DateOnly(2027, 3, 24)));
+    }
+
+    [Fact]
+    public void IsUnder18_CountsALeapDayBirthdayFromTheFirstOfMarch()
+    {
+        // Born 29 February 2008: still 17 on 28 February 2026, 18 on 1 March 2026, like PHP's DateTime::diff
+        Assert.True(ParticipantRules.IsUnder18(new DateOnly(2008, 2, 29), new DateOnly(2026, 2, 28)));
+        Assert.False(ParticipantRules.IsUnder18(new DateOnly(2008, 2, 29), new DateOnly(2026, 3, 1)));
+    }
+
+    [Fact]
+    public void IsUnder18_MarksNobodyWithoutABirthDateOrAConventionStart()
+    {
+        Assert.False(ParticipantRules.IsUnder18(null, new DateOnly(2027, 3, 24)));
+        Assert.False(ParticipantRules.IsUnder18(new DateOnly(2015, 6, 1), null));
+    }
+
+    [Theory]
+    [InlineData("2027-03-24", "2027-03-24")]
+    [InlineData("", null)]
+    public void ConventionOptions_ReadTheStartFromTheConfiguration(string configured, string? expected)
+    {
+        // appsettings.json has "Start": "" until the date is set
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Convention:Start"] = configured })
+            .Build();
+
+        var options = configuration.GetSection(ConventionOptions.Section).Get<ConventionOptions>();
+
+        Assert.Equal(expected == null ? null : DateOnly.Parse(expected), options?.Start);
+    }
+
     [Theory]
     [InlineData(new int[0], 1)]
     [InlineData(new[] { 1, 2, 3 }, 4)]
