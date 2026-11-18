@@ -140,8 +140,9 @@ hr {
   }
 }
 
-// Infosys shows Annulleret: Ja in white on red
-.annulled {
+// Infosys shows Annulleret: Ja and a late signup's Tilmeldt in white on red
+.annulled,
+.late-signup {
   background: #ff0000;
   color: #ffffff;
   padding: 0 0.3rem;

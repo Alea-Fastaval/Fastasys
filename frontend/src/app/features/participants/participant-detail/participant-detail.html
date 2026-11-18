@@ -164,7 +164,10 @@
       }
       <div class="field">
         <dt>{{ 'participants.fields.signedUpAt' | translate }}:</dt>
-        <dd>{{ formatConventionDate(d.signedUpAt) }}</dd>
+        <!-- Infosys marks a late signup in white on red -->
+        <dd>
+          <span class="signed-up" [class.late-signup]="d.isLateSignup">{{ formatConventionDate(d.signedUpAt) }}</span>
+        </dd>
       </div>
       <div class="field">
         <dt>{{ 'participants.fields.checkedInAt' | translate }}:</dt>

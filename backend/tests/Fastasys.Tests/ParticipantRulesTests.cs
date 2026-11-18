@@ -37,16 +37,52 @@ public class ParticipantRulesTests
     [Theory]
     [InlineData("2027-03-24", "2027-03-24")]
     [InlineData("", null)]
-    public void ConventionOptions_ReadTheStartFromTheConfiguration(string configured, string? expected)
+    public void ConventionOptions_ReadTheDatesFromTheConfiguration(string configured, string? expected)
     {
-        // An empty "Start" means the date isn't set
+        // An empty date means it isn't set
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["Convention:Start"] = configured })
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Convention:Start"] = configured,
+                ["Convention:SignupEnd"] = configured,
+            })
             .Build();
 
         var options = configuration.GetSection(ConventionOptions.Section).Get<ConventionOptions>();
 
-        Assert.Equal(expected == null ? null : DateOnly.Parse(expected), options?.Start);
+        var date = expected == null ? (DateOnly?)null : DateOnly.Parse(expected);
+        Assert.Equal(date, options?.Start);
+        Assert.Equal(date, options?.SignupEnd);
+    }
+
+    [Theory]
+    // Signup end 1 February 2027; Denmark is UTC+1 then
+    [InlineData("2027-01-31T23:30:00Z", false)] // 00:30 on the end date: on time (Infosys said late; fixed 2026-11-18)
+    [InlineData("2027-02-01T22:59:00Z", false)] // 23:59 on the end date
+    [InlineData("2027-02-01T23:00:00Z", true)] // 00:00 the day after
+    [InlineData("2027-03-01T10:00:00Z", true)]
+    [InlineData("2026-12-01T10:00:00Z", false)]
+    public void IsLateSignup_IsLateFromTheDayAfterTheSignupEnd(string signedUpAt, bool expected)
+    {
+        var instant = DateTime.Parse(signedUpAt, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+
+        Assert.Equal(expected, ParticipantRules.IsLateSignup(instant, new DateOnly(2027, 2, 1)));
+    }
+
+    [Fact]
+    public void IsLateSignup_UsesDanishSummerTime()
+    {
+        // Denmark is UTC+2 in summer: midnight after 30 June is 22:00 UTC
+        var end = new DateOnly(2027, 6, 30);
+
+        Assert.False(ParticipantRules.IsLateSignup(new DateTime(2027, 6, 30, 21, 59, 0, DateTimeKind.Utc), end));
+        Assert.True(ParticipantRules.IsLateSignup(new DateTime(2027, 6, 30, 22, 0, 0, DateTimeKind.Utc), end));
+    }
+
+    [Fact]
+    public void IsLateSignup_IsNeverLateWithoutASignupEnd()
+    {
+        Assert.False(ParticipantRules.IsLateSignup(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc), null));
     }
 
     [Theory]

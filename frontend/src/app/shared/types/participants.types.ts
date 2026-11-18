@@ -168,6 +168,8 @@ export interface ParticipantDetails {
   isActivityLocked: boolean;
   // UTC instants
   signedUpAt: string;
+  // "Tilmeldt" in red: the latest signup came after the signup end (false while the API's Convention:SignupEnd isn't set)
+  isLateSignup: boolean;
   checkedInAt: string | null;
   youthClub: string;
   photoConsent: boolean;

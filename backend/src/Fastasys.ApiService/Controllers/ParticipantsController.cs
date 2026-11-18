@@ -164,6 +164,9 @@ public record ParticipantDetailsDto(
     bool IsAnnulled,
     bool IsActivityLocked,
     DateTime SignedUpAt,
+    // "Tilmeldt" in red: the latest signup came after the signup end (see ParticipantRules.IsLateSignup); false while
+    // Convention:SignupEnd isn't set
+    bool IsLateSignup,
     DateTime? CheckedInAt,
     string YouthClub,
     bool PhotoConsent,
@@ -943,6 +946,7 @@ public class ParticipantsController : ControllerBase
                 p.IsAnnulled,
                 p.IsActivityLocked,
                 p.SignedUpAt,
+                ParticipantRules.IsLateSignup(p.SignedUpAt, _convention.SignupEnd),
                 p.CheckedInAt,
                 p.YouthClub,
                 p.PhotoConsent,

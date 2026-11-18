@@ -67,6 +67,7 @@ const existing: Participant = {
     isAnnulled: false,
     isActivityLocked: false,
     signedUpAt: '2026-11-01T10:00:00Z',
+    isLateSignup: false,
     checkedInAt: null,
     youthClub: 'Klubben',
     photoConsent: false,

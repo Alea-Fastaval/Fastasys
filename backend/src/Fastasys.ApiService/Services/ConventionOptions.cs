@@ -11,4 +11,8 @@ public class ConventionOptions
 
     // Infosys con.start: the convention's first day. Ages are measured on this day, as in Infosys.
     public DateOnly? Start { get; set; }
+
+    // Infosys con.signupend: the last day of the ordinary signup. A signup later than this day (Danish time) is a late
+    // signup. Infosys already counted the day itself as late; agreed on 2026-11-18 that it is still on time.
+    public DateOnly? SignupEnd { get; set; }
 }

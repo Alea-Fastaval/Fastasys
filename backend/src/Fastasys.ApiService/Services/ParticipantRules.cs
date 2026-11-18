@@ -29,6 +29,20 @@ public static partial class ParticipantRules
     public static bool IsUnder18(DateOnly? birthDate, DateOnly? conventionStart) =>
         conventionStart is DateOnly start && AgeOn(birthDate, start) is int age && age < 18;
 
+    // Infosys visdeltager marks "Tilmeldt" in red for a late signup. Agreed on 2026-11-18, two fixes:
+    // - Infosys compared the participant's creation time but showed the latest signup (signed_up, which the signup sets
+    //   on every resubmit). Now the date shown decides: the latest signup.
+    // - Infosys read con.signupend as 00:00 at the start of that day, so a signup on the end date was already late. Now
+    //   the end date itself is on time, as the signup e-mail tells participants: late is from 00:00 the day after,
+    //   Danish time.
+    // Nobody is late while the signup end isn't set.
+    public static bool IsLateSignup(DateTime signedUpAt, DateOnly? signupEnd) =>
+        signupEnd is DateOnly end && DanishDate(signedUpAt) > end;
+
+    // The date in Denmark at a UTC instant
+    private static DateOnly DanishDate(DateTime utc) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.SpecifyKind(utc, DateTimeKind.Utc), "Europe/Copenhagen"));
+
     // Infosys Deltagere::isBusyBetween: whether the period overlaps one of the participant's busy periods. Infosys's
     // busy periods are the schedules of their seats (designer rows included) on time-exclusive activities, those
     // schedules' multiblocks, and their hero force shifts; multiblocks and hero force are not ported yet.

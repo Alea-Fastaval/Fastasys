@@ -41,6 +41,7 @@ const details: ParticipantDetails = {
   isAnnulled: true,
   isActivityLocked: false,
   signedUpAt: '2026-11-01T10:00:00Z',
+  isLateSignup: false,
   checkedInAt: null,
   youthClub: '',
   photoConsent: false,
@@ -306,6 +307,17 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     TestBed.resetTestingModule();
     const without = await setup({ ...participant, programme: { ...programme, heroSignups: [] } });
     expect(without.element.querySelector('.in-hero-force dd')?.textContent?.trim()).toBe('common.no');
+  });
+
+  it('shows Tilmeldt in white on red for a late signup, like Infosys', async () => {
+    const late = await setup({ ...participant, details: { ...details, isLateSignup: true } });
+    const signedUp = late.element.querySelector('.signed-up');
+    expect(signedUp?.textContent?.trim()).toBe('2026-11-01');
+    expect(signedUp?.classList.contains('late-signup')).toBe(true);
+
+    TestBed.resetTestingModule();
+    const onTime = await setup();
+    expect(onTime.element.querySelector('.signed-up')?.classList.contains('late-signup')).toBe(false);
   });
 
   it('marks a participant who is under 18 with a banner and a tag next to Fødselsdato', async () => {

@@ -42,12 +42,16 @@ public class ParticipantsControllerTests
     }
 
     private static ParticipantsController CreateController(
-        InfosysDbContext db, bool canEdit = true, bool mayViewActivities = false, DateOnly? conventionStart = null) =>
+        InfosysDbContext db,
+        bool canEdit = true,
+        bool mayViewActivities = false,
+        DateOnly? conventionStart = null,
+        DateOnly? signupEnd = null) =>
         new(
             db,
             new FakeAuthorization(canEdit, mayViewActivities),
             NullLogger<ParticipantsController>.Instance,
-            Options.Create(new ConventionOptions { Start = conventionStart }));
+            Options.Create(new ConventionOptions { Start = conventionStart, SignupEnd = signupEnd }));
 
     private static CreateParticipantDto ValidCreate() => new()
     {
@@ -523,6 +527,21 @@ public class ParticipantsControllerTests
         Assert.False(Ok(await viewer.Get(2)).IsUnder18);
         // An unknown birth date has no age
         Assert.False(Ok(await viewer.Get(3)).IsUnder18);
+    }
+
+    [Fact]
+    public async Task Get_MarksALateSignupFromTheLatestSignup()
+    {
+        // Agreed 2026-11-18: the latest signup (Tilmeldt) decides, not the creation time, and the end date is on time
+        using var db = CreateDbContext();
+        var created = new DateTime(2026, 12, 1, 10, 0, 0, DateTimeKind.Utc);
+        await AddAsync(db, 1, p => { p.CreatedAt = created; p.SignedUpAt = new DateTime(2027, 2, 10, 10, 0, 0, DateTimeKind.Utc); });
+        await AddAsync(db, 2, p => { p.CreatedAt = created; p.SignedUpAt = new DateTime(2027, 2, 1, 20, 0, 0, DateTimeKind.Utc); });
+        var controller = CreateController(db, signupEnd: new DateOnly(2027, 2, 1));
+
+        Assert.True(Ok(await controller.Get(1)).Details!.IsLateSignup);
+        Assert.False(Ok(await controller.Get(2)).Details!.IsLateSignup);
+        Assert.False(Ok(await CreateController(db, signupEnd: null).Get(1)).Details!.IsLateSignup);
     }
 
     [Fact]
