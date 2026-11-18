@@ -12,7 +12,11 @@
     } }
   </header>
 
-  @if (flash(); as f) {
+  <!-- Infosys's buttons above the page: Print spillerseddel, Check in, Send tilmeldings email and the payment mode. Not
+       ported yet; see ParticipantActionsComponent for how. -->
+  @if (participant(); as p) {
+  <app-participant-actions [participant]="p" />
+  } @if (flash(); as f) {
   <p class="flash" [class.error]="f.type === 'error'">{{ 'participants.messages.' + f.key | translate }}</p>
   } @if (errorKey(); as key) {
   <p class="flash error">{{ 'participants.messages.' + key | translate }}</p>
@@ -89,14 +93,21 @@
 
   @if (participant(); as p) {
   <app-card [title]="'participants.personalInfo' | translate">
-    @if (p.canEdit) {
     <div class="card-actions">
+      @if (p.canEdit) {
       <a mat-stroked-button [routerLink]="['/participants', p.id, 'edit']">
         <mat-icon>edit</mat-icon> {{ (p.details?.isAnnulled ? 'participants.editDelete' : 'participants.edit') |
         translate }}
       </a>
+      }
+      <!-- Infosys's "Spillerseddel" link opens the same printable sheet as "Print spillerseddel" (see
+           ParticipantActionsComponent). Not ported yet. -->
+      <span class="not-ported-action" [title]="'participants.notPortedTitle' | translate">
+        <button mat-stroked-button type="button" class="character-sheet" disabled>
+          <mat-icon>print</mat-icon> {{ 'participants.actions.characterSheet' | translate }}
+        </button>
+      </span>
     </div>
-    }
 
     <dl class="field-list">
       <div class="field">
@@ -126,6 +137,16 @@
     </dl>
     <hr />
     <dl class="field-list">
+      <!-- Infosys: Ja when the participant has hero force signups (Heltestyrken, Tilmeldinger), otherwise Nej. Not the
+           Super Heltetjanser setting. It comes with the hero force. -->
+      <div class="field in-hero-force">
+        <dt>{{ 'participants.fields.inHeroForce' | translate }}:</dt>
+        @if (p.programme?.heroSignups; as signups) {
+        <dd>{{ (signups.length ? 'common.yes' : 'common.no') | translate }}</dd>
+        } @else {
+        <dd class="not-ported">{{ 'participants.notPortedShort' | translate }}</dd>
+        }
+      </div>
       @for (def of preferenceFields; track def.field) {
       <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
       }
@@ -144,6 +165,13 @@
         <dd>
           {{ d.checkedInAt ? formatConventionDateTime(d.checkedInAt) : ('participants.notCheckedIn' | translate) }}
         </dd>
+      </div>
+      <!-- Infosys checkin_balance: what the participant paid (or got back) at check-in, CheckInTotal - AmountPaid at
+           that time, 0 when nothing was owed, and "Ikke tjekket ind" before check-in. It needs a new column, which
+           comes with check-in (a schema change to approve then). -->
+      <div class="field checkin-balance">
+        <dt>{{ 'participants.fields.checkInBalance' | translate }}:</dt>
+        <dd class="not-ported">{{ 'participants.notPortedShort' | translate }}</dd>
       </div>
     </dl>
     <hr />
@@ -230,5 +258,17 @@
     />
     <app-participant-hero-signups [signups]="g.heroSignups" />
   </div>
-  } }
+  }
+
+  <!-- Infosys repeats "Vis forrige" and "Vis næste" at the bottom of the page -->
+  <footer class="page-footer">
+    @if (p.previousId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.previousId]"
+      >{{ 'participants.showPrevious' | translate }}</a
+    >
+    } @if (p.nextId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.nextId]">{{ 'participants.showNext' | translate }}</a>
+    }
+  </footer>
+  }
 </div>

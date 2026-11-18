@@ -262,6 +262,58 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('.activity-boxes app-participant-hero-signups .not-ported')).not.toBeNull();
   });
 
+  it("shows Infosys's buttons above the page, disabled until they are ported", async () => {
+    // The fixture's participant is annulled, so there is no check-in
+    const { element } = await setup();
+
+    const actions = [...element.querySelectorAll<HTMLElement>('app-participant-actions .action')];
+    expect(actions.map(a => a.dataset['action'])).toEqual([
+      'printCharacterSheet',
+      'sendSignupEmail',
+      'registerBankTransfer',
+      'paymentMode',
+    ]);
+    expect(actions.every(a => a.querySelector('button')?.disabled)).toBe(true);
+    // The Spillerseddel link of Personlig info too
+    expect(element.querySelector<HTMLButtonElement>('.card-actions button.character-sheet')?.disabled).toBe(true);
+  });
+
+  it('shows the check-in buttons for a participant who is neither checked in nor annulled', async () => {
+    const { element } = await setup({ ...participant, details: { ...details, isAnnulled: false } });
+
+    const actions = [...element.querySelectorAll<HTMLElement>('app-participant-actions .action')].map(
+      a => a.dataset['action'],
+    );
+    expect(actions).toContain('checkIn');
+    expect(actions).toContain('checkInAndPrint');
+  });
+
+  it('shows "Med i Heltestyrken" and "Afregnet ved check-in" as not ported yet', async () => {
+    const { element } = await setup();
+
+    expect(element.querySelector('.in-hero-force dd.not-ported')?.textContent).toContain('participants.notPortedShort');
+    expect(element.querySelector('.checkin-balance dd.not-ported')?.textContent).toContain(
+      'participants.notPortedShort',
+    );
+  });
+
+  it('shows "Med i Heltestyrken" from the hero force signups once they are ported', async () => {
+    const signup = { category: 'Forplejning', date: '2027-03-24', hours: '7-12' };
+    const withSignups = await setup({ ...participant, programme: { ...programme, heroSignups: [signup] } });
+    expect(withSignups.element.querySelector('.in-hero-force dd')?.textContent?.trim()).toBe('common.yes');
+
+    TestBed.resetTestingModule();
+    const without = await setup({ ...participant, programme: { ...programme, heroSignups: [] } });
+    expect(without.element.querySelector('.in-hero-force dd')?.textContent?.trim()).toBe('common.no');
+  });
+
+  it('repeats "Vis forrige" and "Vis næste" at the bottom of the page, like Infosys', async () => {
+    const { element } = await setup();
+
+    const links = [...element.querySelectorAll('.page-footer a')].map(a => a.getAttribute('href'));
+    expect(links).toEqual(['/participants/3', '/participants/9']);
+  });
+
   it('passes the price and the amount paid to the Pris breakdown box', async () => {
     const price: ParticipantPrice = {
       originalPrice: 900,
@@ -382,6 +434,13 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     // Clicking does nothing
     component.startEdit(field(component, 'firstName'), shown(component));
     expect(component.editor()).toBeNull();
+    // Of the buttons, Infosys's Read-only role can use the character sheet and the payment mode
+    const actions = [...element.querySelectorAll<HTMLElement>('app-participant-actions .action')].map(
+      a => a.dataset['action'],
+    );
+    expect(actions).toEqual(['printCharacterSheet', 'paymentMode']);
+    expect(element.querySelector('.card-actions button.character-sheet')).not.toBeNull();
+    expect(element.querySelector('.card-actions a')).toBeNull();
   });
 
   it('shows the boxes below the notes, read-only, to viewers who may view activities', async () => {

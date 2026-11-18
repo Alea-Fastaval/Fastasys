@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.participant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+// The span carries the tooltip; the disabled button inside ignores the pointer
+.action {
+  display: inline-block;
+  cursor: not-allowed;
+}

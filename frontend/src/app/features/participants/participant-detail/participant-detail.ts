@@ -21,6 +21,7 @@ import { ParticipantActivitySignupsComponent } from '../participant-activity-sig
 import { ParticipantIdCardComponent } from '../participant-id-card/participant-id-card';
 import { ParticipantHeroTasksComponent } from '../participant-hero-tasks/participant-hero-tasks';
 import { ParticipantHeroSignupsComponent } from '../participant-hero-signups/participant-hero-signups';
+import { ParticipantActionsComponent } from '../participant-actions/participant-actions';
 import {
   PRONOUN_CODES,
   PRONOUN_FIRST_CHOICES,
@@ -115,6 +116,7 @@ export function editorValue(kind: FieldKind, editor: FieldEditor): string | numb
     ParticipantIdCardComponent,
     ParticipantHeroTasksComponent,
     ParticipantHeroSignupsComponent,
+    ParticipantActionsComponent,
   ],
   templateUrl: './participant-detail.html',
   styleUrl: './participant-detail.scss',

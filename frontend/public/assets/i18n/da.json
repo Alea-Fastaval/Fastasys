@@ -304,8 +304,21 @@
       "isActivityLocked": "Aktivitets-låst",
       "signedUpAt": "Tilmeldt",
       "checkedInAt": "Checked in",
+      "checkInBalance": "Afregnet ved check-in",
+      "inHeroForce": "Med i Heltestyrken",
       "youthClub": "Ungdomsskole",
       "photoConsent": "Foto tiladelse"
+    },
+    "notPortedShort": "Ikke flyttet til Fastasys endnu",
+    "notPortedTitle": "Ikke flyttet til Fastasys endnu.",
+    "actions": {
+      "printCharacterSheet": "Print spillerseddel",
+      "checkIn": "Check in",
+      "checkInAndPrint": "Check in & print",
+      "sendSignupEmail": "Send tilmeldings email",
+      "registerBankTransfer": "Registrer bankoverførsel",
+      "paymentMode": "Betalings mode",
+      "characterSheet": "Spillerseddel"
     },
     "wear": {
       "title": "Wear",

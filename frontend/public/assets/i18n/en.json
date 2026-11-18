@@ -304,8 +304,21 @@
       "isActivityLocked": "Activities locked",
       "signedUpAt": "Signed up",
       "checkedInAt": "Checked in",
+      "checkInBalance": "Settled at check-in",
+      "inHeroForce": "In the Hero Force",
       "youthClub": "Youth school/club",
       "photoConsent": "Photo consent"
+    },
+    "notPortedShort": "Not moved to Fastasys yet",
+    "notPortedTitle": "Not moved to Fastasys yet.",
+    "actions": {
+      "printCharacterSheet": "Print character sheet",
+      "checkIn": "Check in",
+      "checkInAndPrint": "Check in & print",
+      "sendSignupEmail": "Send signup email",
+      "registerBankTransfer": "Register bank transfer",
+      "paymentMode": "Payment mode",
+      "characterSheet": "Character sheet"
     },
     "wear": {
       "title": "Wear",

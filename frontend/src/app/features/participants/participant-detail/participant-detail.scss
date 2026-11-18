@@ -35,6 +35,27 @@
   margin-bottom: 1rem;
 }
 
+// A button for something not ported yet: the span carries the tooltip, since the disabled button ignores the pointer
+.not-ported-action {
+  display: inline-block;
+  cursor: not-allowed;
+}
+
+// A field whose feature is not ported yet
+dd.not-ported {
+  color: #6b7280;
+  font-style: italic;
+}
+
+// Infosys repeats "Vis forrige" and "Vis næste" at the bottom of the page
+.page-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
 app-card {
   display: block;
   margin-bottom: 1.5rem;
