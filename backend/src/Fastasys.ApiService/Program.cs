@@ -64,10 +64,11 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Authorization Policies
-
+// There should be a binding between every Privilege in the DBseeder, and a policy name this builder
 builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("ActivityView", "activities_view")
+    .AddPolicy("ActivityManagement", "activities_edit")
     .AddPolicy("ParticipantManagement", "participant_management")
-    .AddPolicy("ActivityManagement", "activity_management")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

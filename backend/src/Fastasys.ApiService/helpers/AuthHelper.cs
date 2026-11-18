@@ -12,6 +12,7 @@ public static class AuthHelper
     {
         public AuthorizationBuilder AddPolicy(string name, string value)
         {
+
             return authBuild
                 .AddPolicy(name, policy =>
                     policy.RequireAssertion(context =>

@@ -130,11 +130,13 @@ public class UsersControllerTests
 
         var actionResult = await controller.GetPrivileges();
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var privileges = Assert.IsAssignableFrom<IEnumerable<PrivilegeDto>>(okResult.Value);
+        var privileges = Assert.IsType<IEnumerable<PrivilegeDto>>(okResult.Value, exactMatch: false);
+
+        Console.WriteLine(privileges);
 
         Assert.NotEmpty(privileges);
         Assert.Contains(privileges, p => p.Key == "users_view");
-        Assert.Contains(privileges, p => p.Key == "boardgames_edit");
+        Assert.Contains(privileges, p => p.Key == "boardgame_view");
     }
 
     [Fact]
