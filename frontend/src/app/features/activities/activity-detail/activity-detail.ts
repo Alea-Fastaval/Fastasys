@@ -174,6 +174,7 @@ export class ActivityDetailComponent implements OnInit {
   }
 
   private loadSchedules(): void {
+    this.busy.set(true);
     this.http.get<ActivitySchedule[]>(`/api/activities/${this.activityId}/schedules`).subscribe({
       next: schedules => {
         this.schedules.set(schedules);

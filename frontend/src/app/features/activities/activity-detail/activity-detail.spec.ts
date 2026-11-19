@@ -337,6 +337,30 @@ describe('ActivityDetailComponent', () => {
     expect(component.message()).toEqual({ type: 'success', key: 'activities.messages.scheduleCreated' });
   });
 
+  it('waits for current schedules before allowing cancellation after creating an occurrence', () => {
+    const fixture = renderLoaded();
+    const component = fixture.componentInstance;
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.scheduleForm.set({ start: '2027-03-25T10:00', end: '2027-03-25T14:00', roomId: null });
+    component.createSchedule();
+    httpMock
+      .expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'POST')
+      .flush({ ...schedule, id: 10 });
+    const reload = httpMock.expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'GET');
+
+    expect(component.busy()).toBe(true);
+    component.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+
+    reload.flush([schedule]);
+    expect(component.busy()).toBe(false);
+    component.setCancellation(schedule);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush({ ...schedule, isCancelled: true });
+    httpMock.expectOne('/api/activities/5/schedules').flush([{ ...schedule, isCancelled: true }]);
+    expect(component.schedules()[0].isCancelled).toBe(true);
+  });
+
   it('shows the Infosys error when the schedule cannot be created', () => {
     const fixture = renderLoaded([]);
     const component = fixture.componentInstance;
