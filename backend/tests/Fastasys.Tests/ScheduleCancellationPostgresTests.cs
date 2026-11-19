@@ -115,12 +115,21 @@ public class ScheduleCancellationPostgresTests
         var scheduleId = await db.Database.SqlQuery<int>($"""
             SELECT "Id" AS "Value" FROM schedule WHERE "ActivityId" = {activity.Id}
             """).SingleAsync(Ct);
-        var signup = new ParticipantSchedule { ParticipantId = participant.Id, ScheduleId = scheduleId, Priority = 1 };
+        var signup = new ParticipantSchedule
+        {
+            ParticipantId = participant.Id,
+            ScheduleId = scheduleId,
+            Priority = 1,
+            // Exercise precision beyond PostgreSQL's microseconds on every platform.
+            SignedUpAt = new DateTime(2026, 11, 1, 12, 0, 0, DateTimeKind.Utc).AddTicks(1_234_567)
+        };
         var run = new Run { ScheduleId = scheduleId, RoomId = room.Id, Number = 1 };
         run.Seats.Add(new RunSeat { ParticipantId = participant.Id, SeatNumber = 1 });
         db.AddRange(signup, run);
         await db.SaveChangesAsync(Ct);
-        var timestamp = signup.SignedUpAt;
+        // Compare the stored timestamp across migration, not DateTime's finer in-memory precision.
+        var timestamp = await db.ParticipantSchedules.AsNoTracking().Where(s => s.Id == signup.Id)
+            .Select(s => s.SignedUpAt).SingleAsync(Ct);
 
         await migrator.MigrateAsync(cancellationToken: Ct);
         var schedule = await db.Schedules.AsNoTracking().SingleAsync(Ct);
