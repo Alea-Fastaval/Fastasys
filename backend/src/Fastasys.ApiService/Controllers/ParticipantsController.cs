@@ -185,7 +185,8 @@ public class ParticipantsController : ControllerBase
                 title = ps.Schedule.Activity.Title,
                 startTime = ps.Schedule.StartTime,
                 endTime = ps.Schedule.EndTime,
-                role = ps.Role
+                role = ps.Role,
+                isCancelled = ps.Schedule.IsCancelled
             })
             .ToListAsync();
 
@@ -198,7 +199,8 @@ public class ParticipantsController : ControllerBase
                 title = gsp.Shift.Title,
                 startTime = gsp.Shift.StartTime,
                 endTime = gsp.Shift.EndTime,
-                role = "Worker"
+                role = "Worker",
+                isCancelled = false
             })
             .ToListAsync();
 

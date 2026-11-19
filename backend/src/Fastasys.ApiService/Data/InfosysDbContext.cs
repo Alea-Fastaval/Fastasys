@@ -64,8 +64,19 @@ public class InfosysDbContext : DbContext
         modelBuilder.Entity<RolePrivilege>()
             .HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
 
-        modelBuilder.Entity<ParticipantSchedule>()
-            .HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
+        modelBuilder.Entity<ParticipantSchedule>(signup =>
+        {
+            signup.HasKey(s => s.Id);
+            // Infosys allows a GM (priority 0) and player preference (priority 1) for the same schedule.
+            // Null priorities represent existing unranked rows and must also be unique.
+            signup.HasIndex(s => new { s.ParticipantId, s.ScheduleId, s.Priority })
+                .IsUnique()
+                .AreNullsDistinct(false);
+            signup.HasOne(s => s.Schedule)
+                .WithMany(s => s.ParticipantSchedules)
+                .HasForeignKey(s => s.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<Activity>(activity =>
         {

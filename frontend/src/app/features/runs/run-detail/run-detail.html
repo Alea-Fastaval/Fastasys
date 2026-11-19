@@ -7,7 +7,9 @@
   <p class="flash" [class.error]="f.type === 'error'">{{ 'runs.messages.' + f.key | translate }}</p>
   } @if (notFound()) {
   <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
-  } @if (run(); as r) {
+  } @if (run(); as r) { @if (r.isCancelled) {
+  <p class="flash">{{ 'karma.cancelledHelp' | translate }}</p>
+  }
   <app-card [title]="'runs.detailTitle' | translate">
     <a mat-stroked-button class="edit-link" [routerLink]="['/runs', r.id, 'edit']">
       <mat-icon>edit</mat-icon> {{ 'runs.editDelete' | translate }}
@@ -66,7 +68,7 @@
         @for (seat of r.seats; track seat.seatNumber) {
         <tr>
           <td>{{ seat.participantId }}</td>
-          <td>{{ seat.participantName }}</td>
+          <td><a [routerLink]="['/participants', seat.participantId, 'karma']">{{ seat.participantName }}</a></td>
           <td class="karma">{{ seat.karma }}</td>
           <td>{{ 'runs.roles.' + seat.role | translate }}</td>
           <td>
@@ -79,6 +81,7 @@
       </tbody>
     </table>
 
+    @if (!r.isCancelled) {
     <form class="add-participant" #seatForm="ngForm" (ngSubmit)="create()">
       <h4>{{ 'runs.addParticipant' | translate }}</h4>
       <mat-form-field appearance="outline">
@@ -99,6 +102,7 @@
         {{ 'runs.buttons.add' | translate }}
       </button>
     </form>
+    }
   </app-card>
   }
 </div>

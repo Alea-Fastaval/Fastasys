@@ -1,3 +1,4 @@
+using Fastasys.ApiService.Services;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
@@ -28,7 +29,7 @@ public class ActivitySchedulesTests
     }
 
     private static ActivitiesController CreateController(InfosysDbContext db) =>
-        new(db, NullLogger<ActivitiesController>.Instance);
+        new(db, NullLogger<ActivitiesController>.Instance, new KarmaService(db));
 
     private static async Task<Activity> AddActivityAsync(InfosysDbContext db, string title = "Testscenarie")
     {

@@ -12,8 +12,7 @@ public record RunSeatDto(
     int SeatNumber,
     int ParticipantId,
     string ParticipantName,
-    // Karma is not ported yet. Infosys shows the participant's karma here; until then it is always null.
-    int? Karma,
+    int Karma,
     RunSeatRole Role
 );
 
@@ -30,7 +29,8 @@ public record RunDto(
     bool NeedsPlayers,
     bool NeedsGameMasters,
     bool CanUsePlayers,
-    IReadOnlyList<RunSeatDto> Seats
+    IReadOnlyList<RunSeatDto> Seats,
+    bool IsCancelled
 );
 
 public record RunSummaryDto(
@@ -45,7 +45,8 @@ public record RunSummaryDto(
     int RoomId,
     string RoomName,
     bool NeedsPlayers,
-    bool NeedsGameMasters
+    bool NeedsGameMasters,
+    bool IsCancelled
 );
 
 public record RunRoomDto(int Id, string Name, string Location);
@@ -64,11 +65,13 @@ public class RunsController : ControllerBase
 {
     private readonly InfosysDbContext _db;
     private readonly ILogger<RunsController> _logger;
+    private readonly KarmaService _karma;
 
-    public RunsController(InfosysDbContext db, ILogger<RunsController> logger)
+    public RunsController(InfosysDbContext db, ILogger<RunsController> logger, KarmaService karma)
     {
         _db = db;
         _logger = logger;
+        _karma = karma;
     }
 
     // Infosys hold/visalle: every run, in id order
@@ -87,6 +90,7 @@ public class RunsController : ControllerBase
                 ActivityType = r.Schedule.Activity.Type,
                 r.Schedule.StartTime,
                 r.Schedule.EndTime,
+                r.Schedule.IsCancelled,
                 r.RoomId,
                 RoomName = r.Room.Name,
                 r.Schedule.Activity.MinPlayersPerTeam,
@@ -106,8 +110,9 @@ public class RunsController : ControllerBase
             r.EndTime,
             r.RoomId,
             r.RoomName,
-            RunRules.NeedsPlayers(r.Players, r.MinPlayersPerTeam),
-            RunRules.NeedsGameMasters(r.GameMasters, r.GameMastersPerTeam)
+            !r.IsCancelled && RunRules.NeedsPlayers(r.Players, r.MinPlayersPerTeam),
+            !r.IsCancelled && RunRules.NeedsGameMasters(r.GameMasters, r.GameMastersPerTeam),
+            r.IsCancelled
         ));
 
         return Ok(runs);
@@ -119,7 +124,7 @@ public class RunsController : ControllerBase
     {
         var run = await LoadRunAsync(id);
         if (run == null) return NotFound(new { message = "Run not found" });
-        return Ok(ToDto(run, run.Schedule));
+        return Ok(await ToDtoAsync(run));
     }
 
     // Infosys hold/ajaxcreategroup/:afvikling_id: ("Tilføj hold" on the activity page): the next number in the
@@ -128,11 +133,14 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> Create([FromBody] CreateRunDto dto)
     {
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, dto.ScheduleId);
         var schedule = await _db.Schedules
             .Include(s => s.Activity)
             .FirstOrDefaultAsync(s => s.Id == dto.ScheduleId);
         if (schedule == null) return NotFound(new { message = "Could not find schedule" });
+        if (schedule.IsCancelled) return Conflict(new { message = "Schedule is cancelled" });
 
+        await ScheduleWriteLock.AcquireRoomsAsync(_db);
         var bookings = await LoadRoomBookingsAsync();
         var roomIds = await _db.Rooms.OrderBy(r => r.Id).Select(r => r.Id).ToListAsync();
         var freeRoomId = roomIds
@@ -161,9 +169,10 @@ public class RunsController : ControllerBase
         }
 
         _logger.LogInformation("Run {RunId} created by user {UserId}", run.Id, CurrentUserId());
+        if (transaction != null) await transaction.CommitAsync();
 
         var created = await LoadRunAsync(run.Id);
-        return CreatedAtAction(nameof(Get), new { id = run.Id }, ToDto(created!, created!.Schedule));
+        return CreatedAtAction(nameof(Get), new { id = run.Id }, await ToDtoAsync(created!));
     }
 
     // Infosys hold/edit/:id: offers the run's current room first, then every room free during the schedule
@@ -195,6 +204,11 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> Update(int id, [FromBody] UpdateRunDto dto)
     {
+        var scheduleId = await _db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
+        if (scheduleId == null) return NotFound(new { message = "Run not found" });
+
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleId.Value);
+        await ScheduleWriteLock.AcquireRoomsAsync(_db);
         var run = await _db.Runs
             .Include(r => r.Schedule).ThenInclude(s => s.Activity)
             .FirstOrDefaultAsync(r => r.Id == id);
@@ -207,9 +221,10 @@ public class RunsController : ControllerBase
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Run {RunId} updated by user {UserId}", run.Id, CurrentUserId());
+        if (transaction != null) await transaction.CommitAsync();
 
         var updated = await LoadRunAsync(id);
-        return Ok(ToDto(updated!, updated!.Schedule));
+        return Ok(await ToDtoAsync(updated!));
     }
 
     // Infosys hold/slet/:id: and hold/ajaxdeletegroup/:id:. A run with participants can only be deleted when
@@ -242,6 +257,10 @@ public class RunsController : ControllerBase
     {
         if (!Enum.IsDefined(dto.Role)) return BadRequest(new { message = "Unknown role" });
 
+        var scheduleId = await _db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
+        if (scheduleId == null) return NotFound(new { message = "Run not found" });
+
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleId.Value);
         var run = await _db.Runs
             .Include(r => r.Schedule).ThenInclude(s => s.Activity)
             .Include(r => r.Seats)
@@ -252,6 +271,9 @@ public class RunsController : ControllerBase
         {
             return NotFound(new { message = "Participant not found" });
         }
+
+        if (run.Schedule.IsCancelled)
+            return Conflict(new { message = "Schedule is cancelled" });
 
         var (isValid, error) = ValidateSeat(run, dto);
         if (!isValid) return Conflict(new { message = error });
@@ -275,9 +297,10 @@ public class RunsController : ControllerBase
         }
 
         _logger.LogInformation("Participant {ParticipantId} added to run {RunId} by user {UserId}", dto.ParticipantId, run.Id, CurrentUserId());
+        if (transaction != null) await transaction.CommitAsync();
 
         var updated = await LoadRunAsync(id);
-        return Ok(ToDto(updated!, updated!.Schedule));
+        return Ok(await ToDtoAsync(updated!));
     }
 
     // Infosys groups/scheduleparticipant with from_group. Like Infosys, removing a participant who is not on
@@ -302,12 +325,12 @@ public class RunsController : ControllerBase
         }
 
         var updated = await LoadRunAsync(id);
-        return Ok(ToDto(updated!, updated!.Schedule));
+        return Ok(await ToDtoAsync(updated!));
     }
 
     // Maps a run with its room and seats (with participants) loaded. The schedule is passed separately and must
     // have its activity loaded.
-    internal static RunDto ToDto(Run run, Schedule schedule)
+    internal static RunDto ToDto(Run run, Schedule schedule, IReadOnlyDictionary<int, KarmaCalculation> karma)
     {
         var activity = schedule.Activity;
         var players = run.Seats.Count(s => s.Role == RunSeatRole.Player);
@@ -316,7 +339,7 @@ public class RunsController : ControllerBase
         // Infosys Hold::getPladser orders by pladsnummer and shows "fornavn efternavn"
         var seats = run.Seats
             .OrderBy(s => s.SeatNumber)
-            .Select(s => new RunSeatDto(s.SeatNumber, s.ParticipantId, s.Participant.LegalName(), null, s.Role))
+            .Select(s => new RunSeatDto(s.SeatNumber, s.ParticipantId, s.Participant.LegalName(), karma[s.ParticipantId].Karma.Total, s.Role))
             .ToList();
 
         return new RunDto(
@@ -329,10 +352,11 @@ public class RunsController : ControllerBase
             schedule.EndTime,
             run.RoomId,
             run.Room.Name,
-            RunRules.NeedsPlayers(players, activity.MinPlayersPerTeam),
-            RunRules.NeedsGameMasters(gameMasters, activity.GameMastersPerTeam),
-            RunRules.CanUsePlayers(players, activity.MaxPlayersPerTeam),
-            seats
+            !schedule.IsCancelled && RunRules.NeedsPlayers(players, activity.MinPlayersPerTeam),
+            !schedule.IsCancelled && RunRules.NeedsGameMasters(gameMasters, activity.GameMastersPerTeam),
+            !schedule.IsCancelled && RunRules.CanUsePlayers(players, activity.MaxPlayersPerTeam),
+            seats,
+            schedule.IsCancelled
         );
     }
 
@@ -374,8 +398,12 @@ public class RunsController : ControllerBase
     private async Task<List<RoomBooking>> LoadRoomBookingsAsync() =>
         await _db.Runs
             .AsNoTracking()
+            .Where(r => !r.Schedule.IsCancelled)
             .Select(r => new RoomBooking(r.RoomId, r.Schedule.StartTime, r.Schedule.EndTime, r.Schedule.Activity.IsRoomExclusive))
             .ToListAsync();
+
+    private async Task<RunDto> ToDtoAsync(Run run) =>
+        ToDto(run, run.Schedule, await _karma.CalculateAsync(run.Seats.Select(s => s.ParticipantId)));
 
     private async Task<Run?> LoadRunAsync(int id) =>
         await _db.Runs

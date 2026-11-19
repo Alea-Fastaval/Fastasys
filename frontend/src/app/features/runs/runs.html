@@ -46,6 +46,7 @@
         </td>
         <td>
           <a [routerLink]="['/activities', run.activityId]">{{ run.activityTitle }}</a>
+          @if (run.isCancelled) { <span class="cancelled-label">{{ 'karma.cancelled' | translate }}</span> }
         </td>
         <td>{{ run.startTime | timeSpan: run.endTime }}</td>
         <td>{{ run.number }}</td>

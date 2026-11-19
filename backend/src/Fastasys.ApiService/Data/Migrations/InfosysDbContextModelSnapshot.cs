@@ -17,7 +17,7 @@ namespace Fastasys.ApiService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -480,22 +480,36 @@ namespace Fastasys.ApiService.Data.Migrations
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantSchedule", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int>("ParticipantId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ScheduleId")
+                    b.Property<int?>("Priority")
                         .HasColumnType("integer");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("SignedUpAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("ParticipantId", "ScheduleId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ScheduleId");
+
+                    b.HasIndex("ParticipantId", "ScheduleId", "Priority")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ParticipantId", "ScheduleId", "Priority"), false);
 
                     b.ToTable("participant_schedules");
                 });
@@ -777,8 +791,14 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("RoomId")
                         .HasColumnType("integer");
@@ -1175,7 +1195,7 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasOne("Fastasys.ApiService.Data.Entities.Schedule", "Schedule")
                         .WithMany("ParticipantSchedules")
                         .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Participant");

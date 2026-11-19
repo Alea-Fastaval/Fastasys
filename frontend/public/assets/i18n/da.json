@@ -197,8 +197,17 @@
       "scheduleNotUpdated": "Afviklingen blev ikke opdateret.",
       "scheduleDeleted": "Afviklingen blev slettet.",
       "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
-      "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først."
-    }
+      "scheduleDeleteHasRuns": "Afviklingen har hold eller ønsker. Fjern dem udtrykkeligt, før den slettes.",
+      "scheduleLoadFailed": "Afviklinger og aktuel karma kunne ikke hentes. Genindlæs siden for at prøve igen.",
+      "scheduleCancelled": "Afviklingen er aflyst. Karma er opdateret.",
+      "scheduleRestored": "Afviklingen er genaktiveret. Karma er opdateret.",
+      "scheduleCancelFailed": "Kunne ikke aflyse afviklingen. Genindlæs og prøv igen.",
+      "scheduleRestoreFailed": "Kunne ikke genaktivere afviklingen. Et bevaret hold kan have et optaget lokale; gennemgå lokale og tidspunkt, og prøv igen."
+    },
+    "cancelSchedule": "Aflys afvikling",
+    "restoreSchedule": "Genaktivér afvikling",
+    "cancelScheduleConfirm": "Aflys afviklingen? Ønsker, hold og pladser bevares og medregnes ikke i karma. Lokalerne bliver ledige.",
+    "restoreScheduleConfirm": "Genaktivér afviklingen? Bevarede ønsker og pladser tæller med igen, hvis lokalerne stadig er ledige."
   },
   "runs": {
     "listTitle": "Hold - ({{count}}):",
@@ -326,5 +335,64 @@
     "signupTitle": "Fastaval Tilmelding",
     "signupSubtitle": "Tilmeld dig Fastaval 2026",
     "submitSignup": "Indsend tilmelding"
+  },
+  "karma": {
+    "title": "Karma og aktivitetsønsker",
+    "back": "Alle deltagere",
+    "loading": "Henter ønsker og karma…",
+    "retry": "Prøv igen",
+    "total": "Aktuel karma",
+    "explanation": "Karma beregnes ud fra prioriterede ønsker og tildelte spillerpladser. Komme og gå-aktiviteter påvirker ikke karma. Karma er ét hensyn ved holdlægning og garanterer ikke en plads.",
+    "grouped": "Pointene gælder hver gruppe inklusive dens loft. Tildelte pladser erstatter ikke point fra ønsker.",
+    "breakdown": "Bidrag",
+    "rule": "Regel",
+    "count": "Antal",
+    "points": "Point",
+    "gmRule": "Spillederønsker / ældre ønsker med prioritet 0",
+    "priorityRule": "Spillerønsker med {{priority}}. prioritet",
+    "assignmentRule": "Tildelte spillerpladser",
+    "noContributions": "Ingen medregnede ønsker eller spillerpladser.",
+    "preferences": "Aktivitetsønsker",
+    "add": "Tilføj ønske",
+    "edit": "Redigér ønske",
+    "activity": "Aktivitet",
+    "time": "Afvikling",
+    "role": "Rolle",
+    "priority": "Prioritet",
+    "unranked": "Ikke prioriteret — vælg en prioritet",
+    "noPreferences": "Ingen aktivitetsønsker.",
+    "gmPriority": "0 — spilleder",
+    "preferenceHelp": "Spillerønsker prioriteres fra 1 til 4. Spillederønsker bruger normalt 0. Ønsker og tildelte pladser håndteres hver for sig. Vælg en aktiv afvikling for at gemme et ønske; aflyste afviklinger bevarer de eksisterende registreringer.",
+    "removeConfirm": "Fjern dette ønske? Tildelte pladser bliver bevaret.",
+    "excluded": "Medregnes ikke i karma",
+    "noneExcluded": "Ingen udeladte bidrag.",
+    "sources": {
+      "Signup": "Ønske til afvikling",
+      "Assignment": "Plads på hold"
+    },
+    "reasons": {
+      "NonTimeExclusive": "Komme og gå-aktivitet; den er ikke tidseksklusiv.",
+      "UnrankedPlayerSignup": "Spillerønsket har ingen registreret prioritet.",
+      "GameMasterAssignment": "Spillederpladser giver ikke point for tildelte pladser.",
+      "UnknownSignupRole": "Ukendt rolle fra ældre data; gennemgå ønsket.",
+      "CancelledSchedule": "Afviklingen er aflyst."
+    },
+    "messages": {
+      "forbidden": "Du skal have adgang til aktivitetsplanlægning for at se karma.",
+      "notFound": "Deltageren blev ikke fundet.",
+      "loadFailed": "Kunne ikke hente aktuelle ønsker og karma.",
+      "optionsFailed": "Kunne ikke hente aktiviteter eller afviklinger. Luk formularen og prøv igen.",
+      "saveFailed": "Kunne ikke gemme. Kontrollér afvikling, rolle og prioritet, og prøv igen.",
+      "conflict": "Ønsket er i konflikt med de aktuelle data. Tjek for samme afvikling og prioritet, eller genindlæs, hvis en anden holdlægger har ændret deltageren eller afviklingen.",
+      "removeFailed": "Kunne ikke fjerne ønsket. Prøv igen.",
+      "saved": "Ønsket er gemt.",
+      "removed": "Ønsket er fjernet.",
+      "refreshed": "Karma er genberegnet ud fra aktuelle ønsker og pladser."
+    },
+    "noSchedules": "Aktiviteten har ingen afviklinger. Opret en afvikling på aktivitetssiden, før du tilføjer et ønske.",
+    "openActivity": "Åbn aktivitet",
+    "cancelled": "Aflyst",
+    "cancelledHelp": "Afviklingen er aflyst. Ønsker og pladser er bevaret og medregnes ikke i karma.",
+    "refresh": "Genberegn karma"
   }
 }

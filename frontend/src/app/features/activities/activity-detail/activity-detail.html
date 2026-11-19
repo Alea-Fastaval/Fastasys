@@ -169,7 +169,15 @@
     "
   >
     <p class="meeting-room">{{ schedule.roomName ?? ('activities.noMeetingRoom' | translate) }}</p>
+    @if (schedule.isCancelled) {
+    <p class="cancelled-label">{{ 'karma.cancelledHelp' | translate }}</p>
+    }
     <div class="card-actions">
+      @if (canManage()) {
+      <button mat-stroked-button type="button" [disabled]="busy()" (click)="setCancellation(schedule)">
+        {{ (schedule.isCancelled ? 'activities.restoreSchedule' : 'activities.cancelSchedule') | translate }}
+      </button>
+      }
       <a
         mat-stroked-button
         class="edit-schedule"
@@ -177,7 +185,12 @@
       >
         <mat-icon>edit</mat-icon> {{ 'activities.editDelete' | translate }}
       </a>
-      <button mat-stroked-button type="button" [disabled]="busy()" (click)="createRun(schedule)">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="busy() || schedule.isCancelled"
+        (click)="createRun(schedule)"
+      >
         <mat-icon>group_add</mat-icon> {{ 'runs.addRun' | translate }}
       </button>
     </div>
@@ -205,7 +218,7 @@
             @for (seat of run.seats; track seat.seatNumber) {
             <tr>
               <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>
-              <td>{{ seat.participantName }}</td>
+              <td><a [routerLink]="['/participants', seat.participantId, 'karma']">{{ seat.participantName }}</a></td>
               <td class="karma">{{ seat.karma }}</td>
             </tr>
             }

@@ -11,6 +11,8 @@ Fastasys is a Docker-first monorepo containing an ASP.NET Core API on .NET 10 an
 - `docker-compose.yml` — local PostgreSQL, migration job, API, and frontend stack
 - `.devcontainer/` — the reproducible VS Code development environment
 
+See [Karma and activity planning](docs/karma.md) for the planner guide, rules, APIs, migrations, and PostgreSQL tests, and the [remaining implementation plan](docs/karma-port-plan.md) for follow-up work.
+
 ## Start locally
 
 Install Docker Desktop (or a compatible Docker runtime), then run from the repository root:

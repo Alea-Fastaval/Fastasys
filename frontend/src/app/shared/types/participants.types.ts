@@ -32,6 +32,7 @@ export interface CreateParticipantDto {
 }
 
 export interface ParticipantScheduleItem {
+  isCancelled: boolean;
   type: string;
   title: string;
   startTime: string;
