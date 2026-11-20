@@ -1,5 +1,7 @@
 <div class="page-container">
-  @if (notFound()) {
+  @if (isCancelled()) {
+  <p class="flash">{{ 'activities.messages.cancelledHelp' | translate }}</p>
+  } @if (notFound()) {
   <p class="flash error">{{ 'activities.messages.notFound' | translate }}</p>
   } @if (confirmingDelete()) {
   <app-card [title]="'activities.scheduleDeleteConfirmTitle' | translate">

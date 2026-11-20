@@ -39,6 +39,6 @@ describe('Toolbar Component', () => {
   it('should check active route states', () => {
     handleInit();
     expect(component.isResourcesActive()).toBe(false);
-    expect(component.isUserMgmtActive()).toBe(false);
+    expect(component.isManagementActive()).toBe(false);
   });
 });

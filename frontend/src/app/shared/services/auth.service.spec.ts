@@ -24,6 +24,19 @@ describe('AuthService', () => {
     expect(service).toBeTruthy();
   });
 
+  it.each([
+    { roles: [], privileges: [], expected: false },
+    { roles: [], privileges: ['participants_edit'], expected: false },
+    { roles: [], privileges: ['activities_view'], expected: true },
+    { roles: [], privileges: ['activities_edit'], expected: true },
+    { roles: ['Admin'], privileges: [], expected: true },
+  ])('checks planning access for $roles / $privileges', ({ roles, privileges, expected }) => {
+    service.currentUser.set({ id: 1, username: 'planner', email: '', firstName: '', lastName: '', roles, privileges });
+    expect(service.hasAnyPrivilege('activities_view', 'activities_edit')).toBe(expected);
+    service.currentUser.set(null);
+    expect(service.hasAnyPrivilege('activities_view', 'activities_edit')).toBe(false);
+  });
+
   it('should store token and user on successful login', () => {
     const mockResponse = {
       token: 'fake-jwt-token',

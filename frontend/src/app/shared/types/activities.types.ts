@@ -93,6 +93,8 @@ export interface ActivitySchedule {
   roomId: number | null;
   roomName: string | null;
   runs: Run[];
+  isCancelled: boolean;
+  cancelledAt: string | null;
 }
 
 // Times are ISO instants; null room means no meeting room

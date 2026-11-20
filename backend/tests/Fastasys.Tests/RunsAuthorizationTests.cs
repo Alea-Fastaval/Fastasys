@@ -70,6 +70,16 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
         var response = await client.GetAsync("/api/runs", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (
+                await client.PutAsJsonAsync(
+                    "/api/activities/1/schedules/1/cancellation",
+                    new UpdateScheduleCancellationDto(true),
+                    TestContext.Current.CancellationToken
+                )
+            ).StatusCode
+        );
     }
 
     [Fact]
@@ -117,6 +127,16 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
         // Allowed to read; the schedule doesn't exist
         Assert.Equal(HttpStatusCode.NotFound, getSchedule.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Forbidden,
+            (
+                await client.PutAsJsonAsync(
+                    "/api/activities/1/schedules/1/cancellation",
+                    new UpdateScheduleCancellationDto(true),
+                    ct
+                )
+            ).StatusCode
+        );
         Assert.Equal(HttpStatusCode.Forbidden, createSchedule.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, updateSchedule.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, deleteSchedule.StatusCode);
@@ -173,13 +193,13 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
         );
         Assert.Equal(HttpStatusCode.OK, addSeat.StatusCode);
 
-        // The role is serialized by name and karma is blank until karma is ported
+        // The role is serialized by name and a GM without preferences has zero karma
         var get = await client.GetAsync($"/api/runs/{run.Id}", ct);
         using (var json = JsonDocument.Parse(await get.Content.ReadAsStringAsync(ct)))
         {
             var seat = json.RootElement.GetProperty("seats")[0];
             Assert.Equal("GameMaster", seat.GetProperty("role").GetString());
-            Assert.Equal(JsonValueKind.Null, seat.GetProperty("karma").ValueKind);
+            Assert.Equal(0, seat.GetProperty("karma").GetInt32());
             Assert.False(json.RootElement.GetProperty("needsGameMasters").GetBoolean());
             Assert.True(json.RootElement.GetProperty("needsPlayers").GetBoolean());
             // Times go out as UTC with a "Z", so the browser converts them to Copenhagen time with the right

@@ -14,6 +14,7 @@ import {
   AUTO_SIGNUP_CATEGORIES,
   KARMA_TYPES,
   Activity,
+  ActivitySettings,
   ActivityFieldsDto,
   ActivityLanguage,
   ActivityType,
@@ -155,6 +156,7 @@ export class ActivityFormComponent implements OnInit {
   public readonly types = ACTIVITY_TYPES;
   public readonly languages = ACTIVITY_LANGUAGES;
   public readonly karmaTypes = KARMA_TYPES;
+  public readonly karmaPoints = signal<Record<KarmaType, number> | null>(null);
   public readonly autoSignupCategories = AUTO_SIGNUP_CATEGORIES;
   public readonly highestAllowedAge = 200;
   public readonly maxSignupsLimit = 1000;
@@ -168,6 +170,17 @@ export class ActivityFormComponent implements OnInit {
   public readonly confirmingDelete = signal(false);
 
   public ngOnInit(): void {
+    this.http.get<ActivitySettings>('/api/management/activity-settings').subscribe({
+      next: settings =>
+        this.karmaPoints.set({
+          None: 0,
+          Small: settings.smallKarma,
+          Medium: settings.mediumKarma,
+          Big: settings.bigKarma,
+        }),
+      error: () => this.karmaPoints.set(null),
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.form.set(newActivityForm());

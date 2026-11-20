@@ -11,7 +11,6 @@
     "rooms": "Rooms & Locations",
     "boardgames": "Boardgames",
     "communications": "Comms",
-    "userManagement": "User Management",
     "users": "Users",
     "roles": "Roles & Access",
     "login": "Login",
@@ -19,7 +18,8 @@
     "logout": "Logout",
     "language": "Language",
     "english": "English",
-    "danish": "Dansk"
+    "danish": "Dansk",
+    "management": "Management"
   },
   "common": {
     "id": "ID",
@@ -197,8 +197,19 @@
       "scheduleNotUpdated": "The schedule was not updated.",
       "scheduleDeleted": "The schedule was deleted.",
       "scheduleDeleteFailed": "The schedule could not be deleted.",
-      "scheduleDeleteHasRuns": "The schedule could not be deleted because it has runs. Delete the runs first."
-    }
+      "scheduleDeleteHasRuns": "This occurrence has runs or preferences. Remove them explicitly before deleting it.",
+      "scheduleLoadFailed": "Could not load occurrences and current karma. Reload the page to try again.",
+      "scheduleCancelled": "Occurrence cancelled. Karma has been updated.",
+      "scheduleRestored": "Occurrence restored. Karma has been updated.",
+      "scheduleCancelFailed": "Could not cancel the occurrence. Reload and try again.",
+      "scheduleRestoreFailed": "Could not restore the occurrence. A retained run may have an occupied room; review its room and schedule, then try again.",
+      "cancelledHelp": "This occurrence is cancelled. Preferences and seats are retained and excluded from karma."
+    },
+    "cancelSchedule": "Cancel occurrence",
+    "restoreSchedule": "Restore occurrence",
+    "cancelScheduleConfirm": "Cancel this occurrence? Its preferences, runs and seats will be retained and excluded from karma. Room bookings will be released.",
+    "restoreScheduleConfirm": "Restore this occurrence? Retained preferences and seats will count again, provided the rooms are still available.",
+    "cancelled": "Cancelled"
   },
   "runs": {
     "listTitle": "Runs - ({{count}}):",
@@ -326,5 +337,16 @@
     "signupTitle": "Fastaval Signup Wizard",
     "signupSubtitle": "Register for Fastaval 2026",
     "submitSignup": "Submit Signup"
+  },
+  "activitySettings": {
+    "title": "Activity settings",
+    "karma": "Karma",
+    "description": "Points per assigned player seat, counting up to ten seats per activity size. Changes apply to current allocations.",
+    "loading": "Loading settings…",
+    "retry": "Try again",
+    "loadFailed": "Could not load activity settings.",
+    "saveFailed": "Could not save activity settings. Please try again.",
+    "saved": "Activity settings saved.",
+    "forbidden": "You do not have permission to manage activity settings."
   }
 }

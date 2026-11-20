@@ -127,6 +127,8 @@ public class Schedule
     // Stored in UTC
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public bool IsCancelled { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
 
     // Meeting room; null means none (Infosys shows "Mødested: spørg venligst i informationen.")
     public int? RoomId { get; set; }
@@ -140,10 +142,14 @@ public class Schedule
 [Table("participant_schedules")]
 public class ParticipantSchedule
 {
+    public int Id { get; set; }
     public int ParticipantId { get; set; }
     public virtual Participant Participant { get; set; } = null!;
     public int ScheduleId { get; set; }
     public virtual Schedule Schedule { get; set; } = null!;
+    // Kept as text so existing role values survive migration. Admin writes validate Player/GameMaster.
     public string Role { get; set; } = "Player";
+    // null means unranked existing data. Infosys uses 0 for GM and 1–4 for ranked player preferences.
+    public int? Priority { get; set; }
     public DateTime SignedUpAt { get; set; } = DateTime.UtcNow;
 }

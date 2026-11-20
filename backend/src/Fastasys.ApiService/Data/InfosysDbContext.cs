@@ -13,6 +13,7 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
 
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<ActivitySettings> ActivitySettings => Set<ActivitySettings>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
     public DbSet<Run> Runs => Set<Run>();
@@ -52,12 +53,31 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<ActivitySettings>().Property(settings => settings.Id).ValueGeneratedNever();
+
         // Composite Keys & Junction Tables (Provider agnostic)
         modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
 
         modelBuilder.Entity<RolePrivilege>().HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
 
-        modelBuilder.Entity<ParticipantSchedule>().HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
+        modelBuilder.Entity<ParticipantSchedule>(signup =>
+        {
+            signup.HasKey(s => s.Id);
+            signup
+                .HasIndex(s => new
+                {
+                    s.ParticipantId,
+                    s.ScheduleId,
+                    s.Priority,
+                })
+                .IsUnique()
+                .AreNullsDistinct(false);
+            signup
+                .HasOne(s => s.Schedule)
+                .WithMany(s => s.ParticipantSchedules)
+                .HasForeignKey(s => s.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<Activity>(activity =>
         {

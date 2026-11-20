@@ -36,6 +36,7 @@ builder.Services.AddDbContext<InfosysDbContext>(options =>
 
 // Register custom services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<KarmaService>();
 builder.Services.AddSingleton<IMockPaymentService, MockPaymentService>();
 builder.Services.AddSingleton<IMockNotificationService, MockNotificationService>();
 

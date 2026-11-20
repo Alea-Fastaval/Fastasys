@@ -181,6 +181,7 @@ public class ParticipantsController(InfosysDbContext db) : ControllerBase
                 startTime = ps.Schedule.StartTime,
                 endTime = ps.Schedule.EndTime,
                 role = ps.Role,
+                isCancelled = ps.Schedule.IsCancelled,
             })
             .ToListAsync();
 
@@ -194,6 +195,7 @@ public class ParticipantsController(InfosysDbContext db) : ControllerBase
                 startTime = gsp.Shift.StartTime,
                 endTime = gsp.Shift.EndTime,
                 role = "Worker",
+                isCancelled = false,
             })
             .ToListAsync();
 

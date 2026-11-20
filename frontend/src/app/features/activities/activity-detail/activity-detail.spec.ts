@@ -5,6 +5,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import { Activity, ActivitySchedule, Run } from '@shared/types';
 import { ActivityDetailComponent } from './activity-detail';
+import { AuthService } from '@shared/services';
 
 const activity: Activity = {
   id: 5,
@@ -49,6 +50,7 @@ const emptyRun: Run = {
   roomName: 'Lokale 1',
   needsPlayers: true,
   needsGameMasters: true,
+  isCancelled: false,
   canUsePlayers: true,
   seats: [],
 };
@@ -58,7 +60,8 @@ const fullRun: Run = {
   id: 21,
   number: 2,
   needsGameMasters: false,
-  seats: [{ seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: null, role: 'GameMaster' }],
+  isCancelled: false,
+  seats: [{ seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: 0, role: 'GameMaster' }],
 };
 
 const schedule: ActivitySchedule = {
@@ -69,6 +72,8 @@ const schedule: ActivitySchedule = {
   roomId: null,
   roomName: null,
   runs: [emptyRun, fullRun],
+  isCancelled: false,
+  cancelledAt: null,
 };
 
 describe('ActivityDetailComponent', () => {
@@ -90,7 +95,19 @@ describe('ActivityDetailComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+    vi.restoreAllMocks();
   });
+
+  const grantEdit = () =>
+    TestBed.inject(AuthService).currentUser.set({
+      id: 1,
+      username: 'planner',
+      email: '',
+      firstName: '',
+      lastName: '',
+      roles: [],
+      privileges: ['activities_edit'],
+    });
 
   const render = () => {
     const fixture = TestBed.createComponent(ActivityDetailComponent);
@@ -106,6 +123,78 @@ describe('ActivityDetailComponent', () => {
     fixture.detectChanges();
     return fixture;
   };
+
+  it('cancels an occurrence and reloads every visible run with updated karma', () => {
+    const fixture = renderLoaded();
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(schedule);
+    const request = httpMock.expectOne('/api/activities/5/schedules/9/cancellation');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ isCancelled: true });
+    const updatedRun = { ...fullRun, isCancelled: true, seats: [{ ...fullRun.seats[0], karma: -12 }] };
+    const cancelled = { ...schedule, isCancelled: true, cancelledAt: '2026-11-19T12:00:00Z', runs: [updatedRun] };
+    request.flush(cancelled);
+    httpMock
+      .expectOne('/api/activities/5/schedules')
+      .flush([cancelled, { ...schedule, id: 10, runs: [{ ...updatedRun, id: 22, isCancelled: false }] }]);
+    expect(fixture.componentInstance.schedules()).toHaveLength(2);
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(true);
+    expect(
+      fixture.componentInstance
+        .schedules()
+        .flatMap(s => s.runs)
+        .flatMap(r => r.seats)
+        .map(s => s.karma),
+    ).toEqual([-12, -12]);
+    expect(fixture.componentInstance.busy()).toBe(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('activities.messages.cancelledHelp');
+    fixture.componentInstance.createRun(cancelled);
+    httpMock.expectNone('/api/runs');
+  });
+
+  it('hides stale schedules and karma if reloading after cancellation fails', () => {
+    const fixture = renderLoaded();
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush({ ...schedule, isCancelled: true });
+    httpMock.expectOne('/api/activities/5/schedules').flush({}, { status: 500, statusText: 'Server error' });
+    expect(fixture.componentInstance.schedules()).toEqual([]);
+    expect(fixture.componentInstance.message()).toEqual({
+      type: 'error',
+      key: 'activities.messages.scheduleLoadFailed',
+    });
+    expect(fixture.componentInstance.busy()).toBe(false);
+  });
+
+  it('restores an occurrence and keeps its cancelled state visible when a room conflict is rejected', () => {
+    const cancelled = { ...schedule, isCancelled: true };
+    const fixture = renderLoaded([cancelled]);
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(cancelled);
+    const request = httpMock.expectOne('/api/activities/5/schedules/9/cancellation');
+    expect(request.request.body).toEqual({ isCancelled: false });
+    request.flush({}, { status: 409, statusText: 'Conflict' });
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(true);
+    expect(fixture.componentInstance.message()?.key).toBe('activities.messages.scheduleRestoreFailed');
+    fixture.componentInstance.setCancellation(cancelled);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush(schedule);
+    httpMock.expectOne('/api/activities/5/schedules').flush([schedule]);
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(false);
+  });
+
+  it('does not send a cancellation when confirmation is declined or edit access is missing', () => {
+    const fixture = renderLoaded();
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+  });
 
   it('loads and shows the activity', () => {
     const fixture = render();
@@ -246,6 +335,30 @@ describe('ActivityDetailComponent', () => {
 
     expect(component.scheduleForm()).toBeNull();
     expect(component.message()).toEqual({ type: 'success', key: 'activities.messages.scheduleCreated' });
+  });
+
+  it('waits for current schedules before allowing cancellation after creating an occurrence', () => {
+    const fixture = renderLoaded();
+    const component = fixture.componentInstance;
+    grantEdit();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.scheduleForm.set({ start: '2027-03-25T10:00', end: '2027-03-25T14:00', roomId: null });
+    component.createSchedule();
+    httpMock
+      .expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'POST')
+      .flush({ ...schedule, id: 10 });
+    const reload = httpMock.expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'GET');
+
+    expect(component.busy()).toBe(true);
+    component.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+
+    reload.flush([schedule]);
+    expect(component.busy()).toBe(false);
+    component.setCancellation(schedule);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush({ ...schedule, isCancelled: true });
+    httpMock.expectOne('/api/activities/5/schedules').flush([{ ...schedule, isCancelled: true }]);
+    expect(component.schedules()[0].isCancelled).toBe(true);
   });
 
   it('shows the Infosys error when the schedule cannot be created', () => {
