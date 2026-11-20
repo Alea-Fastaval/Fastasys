@@ -1,17 +1,8 @@
 namespace Fastasys.ApiService.Services;
 
-public record EmailMessage(
-    string RecipientEmail,
-    string Subject,
-    string Body,
-    DateTime SentAt
-);
+public record EmailMessage(string RecipientEmail, string Subject, string Body, DateTime SentAt);
 
-public record SmsMessage(
-    string PhoneNumber,
-    string Text,
-    DateTime SentAt
-);
+public record SmsMessage(string PhoneNumber, string Text, DateTime SentAt);
 
 public interface IMockNotificationService
 {
@@ -21,16 +12,10 @@ public interface IMockNotificationService
     IReadOnlyList<SmsMessage> GetSentSms();
 }
 
-public class MockNotificationService : IMockNotificationService
+public class MockNotificationService(ILogger<MockNotificationService> logger) : IMockNotificationService
 {
     private readonly List<EmailMessage> _sentEmails = new();
     private readonly List<SmsMessage> _sentSms = new();
-    private readonly ILogger<MockNotificationService> _logger;
-
-    public MockNotificationService(ILogger<MockNotificationService> logger)
-    {
-        _logger = logger;
-    }
 
     public Task SendEmailAsync(string recipientEmail, string subject, string body)
     {
@@ -39,7 +24,7 @@ public class MockNotificationService : IMockNotificationService
         {
             _sentEmails.Add(msg);
         }
-        _logger.LogInformation("MOCK EMAIL sent to {Recipient}: {Subject}", recipientEmail, subject);
+        logger.LogInformation("MOCK EMAIL sent to {Recipient}: {Subject}", recipientEmail, subject);
         return Task.CompletedTask;
     }
 
@@ -50,7 +35,7 @@ public class MockNotificationService : IMockNotificationService
         {
             _sentSms.Add(msg);
         }
-        _logger.LogInformation("MOCK SMS sent to {Phone}: {Text}", phoneNumber, messageText);
+        logger.LogInformation("MOCK SMS sent to {Phone}: {Text}", phoneNumber, messageText);
         return Task.CompletedTask;
     }
 

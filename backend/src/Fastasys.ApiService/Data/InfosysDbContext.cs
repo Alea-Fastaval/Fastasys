@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Data;
 
-public class InfosysDbContext : DbContext
+public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbContext(options)
 {
-    public InfosysDbContext(DbContextOptions<InfosysDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Privilege> Privileges => Set<Privilege>();
@@ -58,14 +53,11 @@ public class InfosysDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // Composite Keys & Junction Tables (Provider agnostic)
-        modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
+        modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
 
-        modelBuilder.Entity<RolePrivilege>()
-            .HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
+        modelBuilder.Entity<RolePrivilege>().HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
 
-        modelBuilder.Entity<ParticipantSchedule>()
-            .HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
+        modelBuilder.Entity<ParticipantSchedule>().HasKey(ps => new { ps.ParticipantId, ps.ScheduleId });
 
         modelBuilder.Entity<Activity>(activity =>
         {
@@ -76,7 +68,8 @@ public class InfosysDbContext : DbContext
         });
 
         // Infosys refuses to delete an activity that still has runs (afviklinger FK without cascade)
-        modelBuilder.Entity<Schedule>()
+        modelBuilder
+            .Entity<Schedule>()
             .HasOne(s => s.Activity)
             .WithMany(a => a.Schedules)
             .HasForeignKey(s => s.ActivityId)
@@ -89,10 +82,7 @@ public class InfosysDbContext : DbContext
                 .WithMany(s => s.Runs)
                 .HasForeignKey(r => r.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
-            run.HasOne(r => r.Room)
-                .WithMany()
-                .HasForeignKey(r => r.RoomId)
-                .OnDelete(DeleteBehavior.Restrict);
+            run.HasOne(r => r.Room).WithMany().HasForeignKey(r => r.RoomId).OnDelete(DeleteBehavior.Restrict);
             run.HasIndex(r => new { r.ScheduleId, r.Number }).IsUnique();
         });
 
@@ -112,13 +102,17 @@ public class InfosysDbContext : DbContext
             seat.Property(s => s.Role).HasConversion<string>();
         });
 
-        modelBuilder.Entity<HeroForceShiftParticipant>()
-            .HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
+        modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
 
-        modelBuilder.Entity<ParticipantFood>()
-            .HasKey(pf => new { pf.ParticipantId, pf.FoodTypeId, pf.Date });
+        modelBuilder
+            .Entity<ParticipantFood>()
+            .HasKey(pf => new
+            {
+                pf.ParticipantId,
+                pf.FoodTypeId,
+                pf.Date,
+            });
 
-        modelBuilder.Entity<ParticipantWear>()
-            .HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
+        modelBuilder.Entity<ParticipantWear>().HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
     }
 }

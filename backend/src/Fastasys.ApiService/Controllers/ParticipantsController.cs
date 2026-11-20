@@ -55,35 +55,25 @@ public record UpdateParticipantDto(
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class ParticipantsController : ControllerBase
+public class ParticipantsController(InfosysDbContext db) : ControllerBase
 {
-    private readonly InfosysDbContext _db;
-
-    public ParticipantsController(InfosysDbContext db)
-    {
-        _db = db;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ParticipantDto>>> GetAll([FromQuery] string? search)
     {
-        var query = _db.Participants.AsNoTracking();
+        var query = db.Participants.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(p =>
-                p.FirstName.Contains(search) ||
-                p.LastName.Contains(search) ||
-                p.Nickname.Contains(search) ||
-                p.Email.Contains(search) ||
-                p.Barcode.Contains(search));
+                p.FirstName.Contains(search)
+                || p.LastName.Contains(search)
+                || p.Nickname.Contains(search)
+                || p.Email.Contains(search)
+                || p.Barcode.Contains(search)
+            );
         }
 
-        var list = await query
-            .OrderByDescending(p => p.Id)
-            .Take(100)
-            .Select(p => ToDto(p))
-            .ToListAsync();
+        var list = await query.OrderByDescending(p => p.Id).Take(100).Select(p => ToDto(p)).ToListAsync();
 
         return Ok(list);
     }
@@ -91,8 +81,9 @@ public class ParticipantsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ParticipantDto>> Get(int id)
     {
-        var participant = await _db.Participants.FindAsync(id);
-        if (participant == null) return NotFound();
+        var participant = await db.Participants.FindAsync(id);
+        if (participant == null)
+            return NotFound();
         return Ok(ToDto(participant));
     }
 
@@ -115,11 +106,11 @@ public class ParticipantsController : ControllerBase
             Country = dto.Country,
             MedicalInfo = dto.MedicalInfo,
             Barcode = barcode,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        _db.Participants.Add(entity);
-        await _db.SaveChangesAsync();
+        db.Participants.Add(entity);
+        await db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(Get), new { id = entity.Id }, ToDto(entity));
     }
@@ -128,8 +119,9 @@ public class ParticipantsController : ControllerBase
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateParticipantDto dto)
     {
-        var participant = await _db.Participants.FindAsync(id);
-        if (participant == null) return NotFound();
+        var participant = await db.Participants.FindAsync(id);
+        if (participant == null)
+            return NotFound();
 
         participant.FirstName = dto.FirstName;
         participant.LastName = dto.LastName;
@@ -143,28 +135,30 @@ public class ParticipantsController : ControllerBase
         participant.Country = dto.Country;
         participant.MedicalInfo = dto.MedicalInfo;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         return NoContent();
     }
 
     [HttpPost("{id:int}/checkin")]
     public async Task<IActionResult> CheckIn(int id)
     {
-        var participant = await _db.Participants.FindAsync(id);
-        if (participant == null) return NotFound();
+        var participant = await db.Participants.FindAsync(id);
+        if (participant == null)
+            return NotFound();
 
         participant.IsCheckedIn = true;
         participant.CheckedInAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         return Ok(new { message = "Participant checked in successfully", checkedInAt = participant.CheckedInAt });
     }
 
     [HttpGet("{id:int}/barcode")]
     public async Task<IActionResult> GetBarcode(int id)
     {
-        var participant = await _db.Participants.FindAsync(id);
-        if (participant == null) return NotFound();
+        var participant = await db.Participants.FindAsync(id);
+        if (participant == null)
+            return NotFound();
 
         return Ok(new { id = participant.Id, barcode = participant.Barcode });
     }
@@ -172,11 +166,12 @@ public class ParticipantsController : ControllerBase
     [HttpGet("{id:int}/schedule")]
     public async Task<IActionResult> GetSchedule(int id)
     {
-        var participant = await _db.Participants.FindAsync(id);
-        if (participant == null) return NotFound();
+        var participant = await db.Participants.FindAsync(id);
+        if (participant == null)
+            return NotFound();
 
-        var activitySchedules = await _db.ParticipantSchedules
-            .Include(ps => ps.Schedule)
+        var activitySchedules = await db
+            .ParticipantSchedules.Include(ps => ps.Schedule)
                 .ThenInclude(s => s.Activity)
             .Where(ps => ps.ParticipantId == id)
             .Select(ps => new
@@ -185,12 +180,12 @@ public class ParticipantsController : ControllerBase
                 title = ps.Schedule.Activity.Title,
                 startTime = ps.Schedule.StartTime,
                 endTime = ps.Schedule.EndTime,
-                role = ps.Role
+                role = ps.Role,
             })
             .ToListAsync();
 
-        var heroForceShifts = await _db.HeroForceShiftParticipants
-            .Include(gsp => gsp.Shift)
+        var heroForceShifts = await db
+            .HeroForceShiftParticipants.Include(gsp => gsp.Shift)
             .Where(gsp => gsp.ParticipantId == id)
             .Select(gsp => new
             {
@@ -198,7 +193,7 @@ public class ParticipantsController : ControllerBase
                 title = gsp.Shift.Title,
                 startTime = gsp.Shift.StartTime,
                 endTime = gsp.Shift.EndTime,
-                role = "Worker"
+                role = "Worker",
             })
             .ToListAsync();
 
@@ -207,21 +202,22 @@ public class ParticipantsController : ControllerBase
         return Ok(new { participantId = id, schedule = fullSchedule });
     }
 
-    private static ParticipantDto ToDto(Participant p) => new(
-        p.Id,
-        p.FirstName,
-        p.LastName,
-        p.Nickname,
-        p.Email,
-        p.PhoneNumber,
-        p.BirthDate,
-        p.Address,
-        p.ZipCode,
-        p.City,
-        p.Country,
-        p.IsCheckedIn,
-        p.CheckedInAt,
-        p.Barcode,
-        p.CreatedAt
-    );
+    private static ParticipantDto ToDto(Participant p) =>
+        new(
+            p.Id,
+            p.FirstName,
+            p.LastName,
+            p.Nickname,
+            p.Email,
+            p.PhoneNumber,
+            p.BirthDate,
+            p.Address,
+            p.ZipCode,
+            p.City,
+            p.Country,
+            p.IsCheckedIn,
+            p.CheckedInAt,
+            p.Barcode,
+            p.CreatedAt
+        );
 }

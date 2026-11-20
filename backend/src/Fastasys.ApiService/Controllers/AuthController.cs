@@ -6,20 +6,13 @@ namespace Fastasys.ApiService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(IAuthService authService) : ControllerBase
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
-    {
-        _authService = authService;
-    }
-
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto dto)
     {
-        var response = await _authService.LoginAsync(dto);
+        var response = await authService.LoginAsync(dto);
         if (response == null)
         {
             return Unauthorized(new { message = "Invalid username or password" });
@@ -31,7 +24,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<AuthResponseDto>> RefreshToken([FromBody] RefreshTokenDto dto)
     {
-        var response = await _authService.RefreshTokenAsync(dto);
+        var response = await authService.RefreshTokenAsync(dto);
         if (response == null)
         {
             return BadRequest(new { message = "Invalid or expired token" });
@@ -43,7 +36,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
     {
-        await _authService.ResetPasswordRequestAsync(dto);
+        await authService.ResetPasswordRequestAsync(dto);
         return Ok(new { message = "If the email exists, a password reset link has been sent." });
     }
 
@@ -64,6 +57,14 @@ public class AuthController : ControllerBase
         var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
         var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
 
-        return Ok(new { userId, username, email, roles });
+        return Ok(
+            new
+            {
+                userId,
+                username,
+                email,
+                roles,
+            }
+        );
     }
 }

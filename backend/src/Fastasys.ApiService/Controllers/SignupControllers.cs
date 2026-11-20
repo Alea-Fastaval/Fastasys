@@ -11,16 +11,13 @@ public record SignupSubmissionDto(string Email, string FormDataJson);
 [ApiController]
 [Route("api/[controller]")]
 [AllowAnonymous]
-public class SignupController : ControllerBase
+public class SignupController(InfosysDbContext db) : ControllerBase
 {
-    private readonly InfosysDbContext _db;
-    public SignupController(InfosysDbContext db) => _db = db;
-
     [HttpGet("pages")]
     public async Task<IActionResult> GetPages()
     {
-        var pages = await _db.SignupPages
-            .Include(p => p.Elements.OrderBy(e => e.OrderIndex))
+        var pages = await db
+            .SignupPages.Include(p => p.Elements.OrderBy(e => e.OrderIndex))
             .Where(p => p.IsActive)
             .OrderBy(p => p.OrderIndex)
             .AsNoTracking()
@@ -37,12 +34,19 @@ public class SignupController : ControllerBase
             FormDataJson = dto.FormDataJson,
             SubmittedAt = DateTime.UtcNow,
             IsConfirmed = false,
-            ConfirmationToken = Guid.NewGuid().ToString("N")
+            ConfirmationToken = Guid.NewGuid().ToString("N"),
         };
 
-        _db.SignupSubmissions.Add(submission);
-        await _db.SaveChangesAsync();
+        db.SignupSubmissions.Add(submission);
+        await db.SaveChangesAsync();
 
-        return Ok(new { submissionId = submission.Id, token = submission.ConfirmationToken, message = "Signup submitted successfully. Confirmation pending." });
+        return Ok(
+            new
+            {
+                submissionId = submission.Id,
+                token = submission.ConfirmationToken,
+                message = "Signup submitted successfully. Confirmation pending.",
+            }
+        );
     }
 }

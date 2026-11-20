@@ -5,7 +5,6 @@ using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Xunit;
 
 namespace Fastasys.Tests;
 
