@@ -22,23 +22,6 @@ jobs:
       fail-fast: false
       matrix:
         check: [Format, Build, Test, Migrations]
-    services:
-      postgres:
-        # Only Test needs PostgreSQL: migration, constraint, and concurrency tests use disposable databases.
-        # An empty image disables the service for the other matrix jobs.
-        image: ${{ matrix.check == 'Test' && 'postgres:18-alpine' || '' }}
-        env:
-          POSTGRES_USER: fastasys
-          POSTGRES_PASSWORD: signup-test-password
-          POSTGRES_DB: fastasys_signup_tests
-        ports:
-          # GitHub assigns a free host port, passed to the tests below.
-          - 5432/tcp
-        options: >-
-          --health-cmd "pg_isready -U fastasys -d fastasys_signup_tests"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -78,8 +61,6 @@ jobs:
 
       - name: Test
         if: matrix.check == 'Test'
-        env:
-          FASTASYS_TEST_POSTGRES: Host=127.0.0.1;Port=${{ job.services.postgres.ports['5432'] }};Database=fastasys_signup_tests;Username=fastasys;Password=signup-test-password
         run: dotnet test backend/tests/Fastasys.Tests/Fastasys.Tests.csproj --configuration Release --no-build --no-restore
 
       - name: Verify migrations are current

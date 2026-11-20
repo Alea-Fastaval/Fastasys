@@ -35,9 +35,9 @@ export class Toolbar {
     return this.router.url.startsWith('/resources');
   }
 
-  public isUserMgmtActive(): boolean {
+  public isManagementActive(): boolean {
     const url = this.router.url;
-    return url.includes('/user-management') || url.includes('/users') || url.includes('/roles');
+    return url.startsWith('/management') || url.startsWith('/user-management');
   }
 
   public openMenu(trigger: MatMenuTrigger): void {

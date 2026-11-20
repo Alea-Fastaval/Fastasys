@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Data;
 
-public class InfosysDbContext : DbContext
+public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbContext(options)
 {
-    public InfosysDbContext(DbContextOptions<InfosysDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Privilege> Privileges => Set<Privilege>();
@@ -18,6 +13,7 @@ public class InfosysDbContext : DbContext
 
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<ActivitySettings> ActivitySettings => Set<ActivitySettings>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
     public DbSet<Run> Runs => Set<Run>();
@@ -57,22 +53,27 @@ public class InfosysDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Composite Keys & Junction Tables (Provider agnostic)
-        modelBuilder.Entity<UserRole>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
+        modelBuilder.Entity<ActivitySettings>().Property(settings => settings.Id).ValueGeneratedNever();
 
-        modelBuilder.Entity<RolePrivilege>()
-            .HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
+        // Composite Keys & Junction Tables (Provider agnostic)
+        modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+
+        modelBuilder.Entity<RolePrivilege>().HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
 
         modelBuilder.Entity<ParticipantSchedule>(signup =>
         {
             signup.HasKey(s => s.Id);
-            // Infosys allows a GM (priority 0) and player preference (priority 1) for the same schedule.
-            // Null priorities represent existing unranked rows and must also be unique.
-            signup.HasIndex(s => new { s.ParticipantId, s.ScheduleId, s.Priority })
+            signup
+                .HasIndex(s => new
+                {
+                    s.ParticipantId,
+                    s.ScheduleId,
+                    s.Priority,
+                })
                 .IsUnique()
                 .AreNullsDistinct(false);
-            signup.HasOne(s => s.Schedule)
+            signup
+                .HasOne(s => s.Schedule)
                 .WithMany(s => s.ParticipantSchedules)
                 .HasForeignKey(s => s.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -87,7 +88,8 @@ public class InfosysDbContext : DbContext
         });
 
         // Infosys refuses to delete an activity that still has runs (afviklinger FK without cascade)
-        modelBuilder.Entity<Schedule>()
+        modelBuilder
+            .Entity<Schedule>()
             .HasOne(s => s.Activity)
             .WithMany(a => a.Schedules)
             .HasForeignKey(s => s.ActivityId)
@@ -100,10 +102,7 @@ public class InfosysDbContext : DbContext
                 .WithMany(s => s.Runs)
                 .HasForeignKey(r => r.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
-            run.HasOne(r => r.Room)
-                .WithMany()
-                .HasForeignKey(r => r.RoomId)
-                .OnDelete(DeleteBehavior.Restrict);
+            run.HasOne(r => r.Room).WithMany().HasForeignKey(r => r.RoomId).OnDelete(DeleteBehavior.Restrict);
             run.HasIndex(r => new { r.ScheduleId, r.Number }).IsUnique();
         });
 
@@ -123,13 +122,17 @@ public class InfosysDbContext : DbContext
             seat.Property(s => s.Role).HasConversion<string>();
         });
 
-        modelBuilder.Entity<HeroForceShiftParticipant>()
-            .HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
+        modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
 
-        modelBuilder.Entity<ParticipantFood>()
-            .HasKey(pf => new { pf.ParticipantId, pf.FoodTypeId, pf.Date });
+        modelBuilder
+            .Entity<ParticipantFood>()
+            .HasKey(pf => new
+            {
+                pf.ParticipantId,
+                pf.FoodTypeId,
+                pf.Date,
+            });
 
-        modelBuilder.Entity<ParticipantWear>()
-            .HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
+        modelBuilder.Entity<ParticipantWear>().HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
     }
 }

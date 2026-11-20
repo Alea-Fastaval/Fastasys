@@ -149,7 +149,7 @@ describe('ActivityDetailComponent', () => {
     ).toEqual([-12, -12]);
     expect(fixture.componentInstance.busy()).toBe(false);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('karma.cancelledHelp');
+    expect(fixture.nativeElement.textContent).toContain('activities.messages.cancelledHelp');
     fixture.componentInstance.createRun(cancelled);
     httpMock.expectNone('/api/runs');
   });

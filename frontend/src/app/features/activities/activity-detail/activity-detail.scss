@@ -84,9 +84,22 @@ app-card {
   margin-top: 0.5rem;
   border-collapse: collapse;
 
+  th,
   td {
     padding: 0.2rem 0.4rem;
     border-top: 1px solid #f3f4f6;
+    text-align: left;
+  }
+
+  .karma {
+    width: 3rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
   }
 
   .role {

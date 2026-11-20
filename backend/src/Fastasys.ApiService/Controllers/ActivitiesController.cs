@@ -8,12 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Controllers;
 
-public record ActivitySummaryDto(
-    int Id,
-    string Title,
-    string TitleEnglish,
-    ActivityType Type
-);
+public record ActivitySummaryDto(int Id, string Title, string TitleEnglish, ActivityType Type);
 
 public record ActivityDto(
     int Id,
@@ -93,57 +88,37 @@ public record ScheduleDto(
 );
 
 // Infosys aktivitet/opretafvikling: start, slut and mødelokale. Times are instants; they are stored in UTC.
-public record CreateScheduleDto(
-    DateTimeOffset? StartTime,
-    DateTimeOffset? EndTime,
-    int? RoomId
-);
+public record CreateScheduleDto(DateTimeOffset? StartTime, DateTimeOffset? EndTime, int? RoomId);
 
 // Infosys aktivitet/editafvikling: the same fields as creating
-public record UpdateScheduleDto(
-    DateTimeOffset? StartTime,
-    DateTimeOffset? EndTime,
-    int? RoomId
-);
+public record UpdateScheduleDto(DateTimeOffset? StartTime, DateTimeOffset? EndTime, int? RoomId);
 
 public record UpdateScheduleCancellationDto(bool? IsCancelled);
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "ActivityView")]
-public class ActivitiesController : ControllerBase
+public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesController> logger, KarmaService karma)
+    : ControllerBase
 {
     public const int MaxTextLength = 256;
     public const int HighestAllowedAge = 200;
     public const int MaxSignupsLimit = 1000;
     private const string ScheduleHasRunsMessage = "Schedule has runs and cannot be deleted";
     private const string ScheduleHasSignupsMessage = "Schedule has signups and cannot be deleted";
-
-    private readonly InfosysDbContext _db;
-    private readonly ILogger<ActivitiesController> _logger;
-    private readonly KarmaService _karma;
-
-    public ActivitiesController(InfosysDbContext db, ILogger<ActivitiesController> logger, KarmaService karma)
-    {
-        _db = db;
-        _logger = logger;
-        _karma = karma;
-    }
+    private readonly KarmaService _karma = karma;
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ActivitySummaryDto>>> GetAll()
     {
-        var activities = await _db.Activities
-            .AsNoTracking()
+        var activities = await db
+            .Activities.AsNoTracking()
             .Select(a => new ActivitySummaryDto(a.Id, a.Title, a.TitleEnglish, a.Type))
             .ToListAsync();
 
         // Infosys lists every activity, hidden ones included, sorted with strcmp (byte-wise, case-sensitive).
         // Ordinal comparison gives the same order and avoids depending on the database collation.
-        var sorted = activities
-            .OrderBy(a => a.Title, StringComparer.Ordinal)
-            .ThenBy(a => a.Id)
-            .ToList();
+        var sorted = activities.OrderBy(a => a.Title, StringComparer.Ordinal).ThenBy(a => a.Id).ToList();
 
         return Ok(sorted);
     }
@@ -151,8 +126,9 @@ public class ActivitiesController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ActivityDto>> Get(int id)
     {
-        var activity = await _db.Activities.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
-        if (activity == null) return NotFound(new { message = "Activity not found" });
+        var activity = await db.Activities.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (activity == null)
+            return NotFound(new { message = "Activity not found" });
         return Ok(ToDto(activity));
     }
 
@@ -161,15 +137,16 @@ public class ActivitiesController : ControllerBase
     public async Task<ActionResult<ActivityDto>> Create([FromBody] CreateActivityDto dto)
     {
         var (isValid, error) = Validate(dto);
-        if (!isValid) return BadRequest(new { message = error });
+        if (!isValid)
+            return BadRequest(new { message = error });
 
         var activity = new Activity();
         Apply(activity, dto);
 
-        _db.Activities.Add(activity);
-        await _db.SaveChangesAsync();
+        db.Activities.Add(activity);
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Activity {ActivityId} created by user {UserId}", activity.Id, CurrentUserId());
+        logger.LogInformation("Activity {ActivityId} created by user {UserId}", activity.Id, CurrentUserId());
 
         return CreatedAtAction(nameof(Get), new { id = activity.Id }, ToDto(activity));
     }
@@ -178,16 +155,18 @@ public class ActivitiesController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<ActivityDto>> Update(int id, [FromBody] UpdateActivityDto dto)
     {
-        var activity = await _db.Activities.FindAsync(id);
-        if (activity == null) return NotFound(new { message = "Activity not found" });
+        var activity = await db.Activities.FindAsync(id);
+        if (activity == null)
+            return NotFound(new { message = "Activity not found" });
 
         var (isValid, error) = Validate(dto);
-        if (!isValid) return BadRequest(new { message = error });
+        if (!isValid)
+            return BadRequest(new { message = error });
 
         Apply(activity, dto);
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Activity {ActivityId} updated by user {UserId}", activity.Id, CurrentUserId());
+        logger.LogInformation("Activity {ActivityId} updated by user {UserId}", activity.Id, CurrentUserId());
 
         return Ok(ToDto(activity));
     }
@@ -196,18 +175,19 @@ public class ActivitiesController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<IActionResult> Delete(int id)
     {
-        var activity = await _db.Activities.FindAsync(id);
-        if (activity == null) return NotFound(new { message = "Activity not found" });
+        var activity = await db.Activities.FindAsync(id);
+        if (activity == null)
+            return NotFound(new { message = "Activity not found" });
 
-        if (await _db.Schedules.AnyAsync(s => s.ActivityId == id))
+        if (await db.Schedules.AnyAsync(s => s.ActivityId == id))
         {
             return Conflict(new { message = "Activity has schedules and cannot be deleted" });
         }
 
-        _db.Activities.Remove(activity);
-        await _db.SaveChangesAsync();
+        db.Activities.Remove(activity);
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Activity {ActivityId} deleted by user {UserId}", id, CurrentUserId());
+        logger.LogInformation("Activity {ActivityId} deleted by user {UserId}", id, CurrentUserId());
 
         return Ok(new { message = "Activity deleted successfully" });
     }
@@ -216,7 +196,8 @@ public class ActivitiesController : ControllerBase
     [HttpGet("{id:int}/schedules")]
     public async Task<ActionResult<IEnumerable<ScheduleDto>>> GetSchedules(int id)
     {
-        if (!await _db.Activities.AnyAsync(a => a.Id == id)) return NotFound(new { message = "Activity not found" });
+        if (!await db.Activities.AnyAsync(a => a.Id == id))
+            return NotFound(new { message = "Activity not found" });
 
         var schedules = await SchedulesWithRuns()
             .Where(s => s.ActivityId == id)
@@ -224,7 +205,9 @@ public class ActivitiesController : ControllerBase
             .ThenBy(s => s.Id)
             .ToListAsync();
 
-        var karma = await _karma.CalculateAsync(schedules.SelectMany(s => s.Runs).SelectMany(r => r.Seats).Select(s => s.ParticipantId));
+        var karma = await _karma.CalculateAsync(
+            schedules.SelectMany(s => s.Runs).SelectMany(r => r.Seats).Select(s => s.ParticipantId)
+        );
         return Ok(schedules.Select(s => ToDto(s, karma)).ToList());
     }
 
@@ -233,34 +216,60 @@ public class ActivitiesController : ControllerBase
     public async Task<ActionResult<ScheduleDto>> GetSchedule(int id, int scheduleId)
     {
         var schedule = await SchedulesWithRuns().FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
-        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+        if (schedule == null)
+            return NotFound(new { message = "Schedule not found" });
         return Ok(await ToDtoAsync(schedule));
     }
 
     [HttpPut("{id:int}/schedules/{scheduleId:int}/cancellation")]
     [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ScheduleDto>> SetCancellation(int id, int scheduleId, [FromBody] UpdateScheduleCancellationDto dto)
+    public async Task<ActionResult<ScheduleDto>> SetCancellation(
+        int id,
+        int scheduleId,
+        [FromBody] UpdateScheduleCancellationDto dto
+    )
     {
-        if (dto.IsCancelled == null) return BadRequest(new { message = "IsCancelled is required" });
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleId);
-        var schedule = await _db.Schedules.Include(s => s.Activity)
+        if (dto.IsCancelled == null)
+            return BadRequest(new { message = "IsCancelled is required" });
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, scheduleId);
+        var schedule = await db
+            .Schedules.Include(s => s.Activity)
             .SingleOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
-        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+        if (schedule == null)
+            return NotFound(new { message = "Schedule not found" });
 
         if (schedule.IsCancelled != dto.IsCancelled.Value)
         {
             if (!dto.IsCancelled.Value)
             {
-                await ScheduleWriteLock.AcquireRoomsAsync(_db);
-                var bookings = await _db.Runs.AsNoTracking()
+                await ScheduleWriteLock.AcquireRoomsAsync(db);
+                var bookings = await db
+                    .Runs.AsNoTracking()
                     .Where(r => r.ScheduleId != scheduleId && !r.Schedule.IsCancelled)
-                    .Select(r => new RoomBooking(r.RoomId, r.Schedule.StartTime, r.Schedule.EndTime, r.Schedule.Activity.IsRoomExclusive))
+                    .Select(r => new RoomBooking(
+                        r.RoomId,
+                        r.Schedule.StartTime,
+                        r.Schedule.EndTime,
+                        r.Schedule.Activity.IsRoomExclusive
+                    ))
                     .ToListAsync();
-                var rooms = await _db.Runs.AsNoTracking().Where(r => r.ScheduleId == scheduleId).OrderBy(r => r.Id)
-                    .Select(r => r.RoomId).ToListAsync();
+                var rooms = await db
+                    .Runs.AsNoTracking()
+                    .Where(r => r.ScheduleId == scheduleId)
+                    .OrderBy(r => r.Id)
+                    .Select(r => r.RoomId)
+                    .ToListAsync();
                 foreach (var room in rooms)
                 {
-                    if (RunRules.IsRoomOccupied(room, schedule.StartTime, schedule.EndTime, schedule.Activity.IsRoomExclusive, bookings))
+                    if (
+                        RunRules.IsRoomOccupied(
+                            room,
+                            schedule.StartTime,
+                            schedule.EndTime,
+                            schedule.Activity.IsRoomExclusive,
+                            bookings
+                        )
+                    )
                         return Conflict(new { message = "Cannot restore schedule: a retained run's room is occupied" });
                     bookings.Add(new(room, schedule.StartTime, schedule.EndTime, schedule.Activity.IsRoomExclusive));
                 }
@@ -268,11 +277,16 @@ public class ActivitiesController : ControllerBase
             schedule.IsCancelled = dto.IsCancelled.Value;
             schedule.CancelledAt = schedule.IsCancelled ? DateTimeOffset.UtcNow : null;
             schedule.Activity.UpdatedAt = DateTimeOffset.UtcNow;
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Schedule {ScheduleId} cancellation set to {IsCancelled} by user {UserId}",
-                scheduleId, schedule.IsCancelled, CurrentUserId());
+            await db.SaveChangesAsync();
+            logger.LogInformation(
+                "Schedule {ScheduleId} cancellation set to {IsCancelled} by user {UserId}",
+                scheduleId,
+                schedule.IsCancelled,
+                CurrentUserId()
+            );
         }
-        if (transaction != null) await transaction.CommitAsync();
+        if (transaction != null)
+            await transaction.CommitAsync();
         var updated = await SchedulesWithRuns().SingleAsync(s => s.Id == scheduleId);
         return Ok(await ToDtoAsync(updated));
     }
@@ -282,26 +296,36 @@ public class ActivitiesController : ControllerBase
     // the times change.
     [HttpPut("{id:int}/schedules/{scheduleId:int}")]
     [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ScheduleDto>> UpdateSchedule(int id, int scheduleId, [FromBody] UpdateScheduleDto dto)
+    public async Task<ActionResult<ScheduleDto>> UpdateSchedule(
+        int id,
+        int scheduleId,
+        [FromBody] UpdateScheduleDto dto
+    )
     {
-        var schedule = await _db.Schedules
-            .Include(s => s.Activity)
+        var schedule = await db
+            .Schedules.Include(s => s.Activity)
             .FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
-        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+        if (schedule == null)
+            return NotFound(new { message = "Schedule not found" });
 
         var (isValid, error) = ValidateSchedule(dto.StartTime, dto.EndTime);
-        if (!isValid) return BadRequest(new { message = error });
+        if (!isValid)
+            return BadRequest(new { message = error });
 
         var start = dto.StartTime!.Value.UtcDateTime;
         var end = dto.EndTime!.Value.UtcDateTime;
         var roomId = NormalizeRoomId(dto.RoomId);
 
-        if (roomId != null && !await _db.Rooms.AnyAsync(r => r.Id == roomId))
+        if (roomId != null && !await db.Rooms.AnyAsync(r => r.Id == roomId))
         {
             return BadRequest(new { message = "Unknown room" });
         }
 
-        if (await _db.Schedules.AnyAsync(s => s.ActivityId == id && s.Id != scheduleId && s.StartTime == start && s.EndTime == end))
+        if (
+            await db.Schedules.AnyAsync(s =>
+                s.ActivityId == id && s.Id != scheduleId && s.StartTime == start && s.EndTime == end
+            )
+        )
         {
             return Conflict(new { message = "The activity already has a schedule with that start and end" });
         }
@@ -310,9 +334,14 @@ public class ActivitiesController : ControllerBase
         schedule.EndTime = end;
         schedule.RoomId = roomId;
         schedule.Activity.UpdatedAt = DateTimeOffset.UtcNow;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} updated by user {UserId}", scheduleId, id, CurrentUserId());
+        logger.LogInformation(
+            "Schedule {ScheduleId} for activity {ActivityId} updated by user {UserId}",
+            scheduleId,
+            id,
+            CurrentUserId()
+        );
 
         var updated = await SchedulesWithRuns().FirstAsync(s => s.Id == scheduleId);
         return Ok(await ToDtoAsync(updated));
@@ -325,23 +354,24 @@ public class ActivitiesController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<IActionResult> DeleteSchedule(int id, int scheduleId)
     {
-        var schedule = await _db.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
-        if (schedule == null) return NotFound(new { message = "Schedule not found" });
+        var schedule = await db.Schedules.FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
+        if (schedule == null)
+            return NotFound(new { message = "Schedule not found" });
 
-        if (await _db.Runs.AnyAsync(r => r.ScheduleId == scheduleId))
+        if (await db.Runs.AnyAsync(r => r.ScheduleId == scheduleId))
         {
             return Conflict(new { message = ScheduleHasRunsMessage });
         }
 
-        if (await _db.ParticipantSchedules.AnyAsync(s => s.ScheduleId == scheduleId))
+        if (await db.ParticipantSchedules.AnyAsync(s => s.ScheduleId == scheduleId))
         {
             return Conflict(new { message = ScheduleHasSignupsMessage });
         }
 
-        _db.Schedules.Remove(schedule);
+        db.Schedules.Remove(schedule);
         try
         {
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
         catch (DbUpdateException)
         {
@@ -349,7 +379,12 @@ public class ActivitiesController : ControllerBase
             return Conflict(new { message = "Schedule has runs or signups and cannot be deleted" });
         }
 
-        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} deleted by user {UserId}", scheduleId, id, CurrentUserId());
+        logger.LogInformation(
+            "Schedule {ScheduleId} for activity {ActivityId} deleted by user {UserId}",
+            scheduleId,
+            id,
+            CurrentUserId()
+        );
 
         return Ok(new { message = "Schedule deleted successfully" });
     }
@@ -359,23 +394,25 @@ public class ActivitiesController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<ScheduleDto>> CreateSchedule(int id, [FromBody] CreateScheduleDto dto)
     {
-        var activity = await _db.Activities.FindAsync(id);
-        if (activity == null) return NotFound(new { message = "Activity not found" });
+        var activity = await db.Activities.FindAsync(id);
+        if (activity == null)
+            return NotFound(new { message = "Activity not found" });
 
         var (isValid, error) = ValidateSchedule(dto.StartTime, dto.EndTime);
-        if (!isValid) return BadRequest(new { message = error });
+        if (!isValid)
+            return BadRequest(new { message = error });
 
         var start = dto.StartTime!.Value.UtcDateTime;
         var end = dto.EndTime!.Value.UtcDateTime;
         var roomId = NormalizeRoomId(dto.RoomId);
 
-        if (roomId != null && !await _db.Rooms.AnyAsync(r => r.Id == roomId))
+        if (roomId != null && !await db.Rooms.AnyAsync(r => r.Id == roomId))
         {
             return BadRequest(new { message = "Unknown room" });
         }
 
         // Infosys refuses a second schedule with the same start and end for the activity
-        if (await _db.Schedules.AnyAsync(s => s.ActivityId == id && s.StartTime == start && s.EndTime == end))
+        if (await db.Schedules.AnyAsync(s => s.ActivityId == id && s.StartTime == start && s.EndTime == end))
         {
             return Conflict(new { message = "The activity already has a schedule with that start and end" });
         }
@@ -385,17 +422,22 @@ public class ActivitiesController : ControllerBase
             ActivityId = id,
             StartTime = start,
             EndTime = end,
-            RoomId = roomId
+            RoomId = roomId,
         };
 
-        _db.Schedules.Add(schedule);
+        db.Schedules.Add(schedule);
         activity.UpdatedAt = DateTimeOffset.UtcNow;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Schedule {ScheduleId} for activity {ActivityId} created by user {UserId}", schedule.Id, id, CurrentUserId());
+        logger.LogInformation(
+            "Schedule {ScheduleId} for activity {ActivityId} created by user {UserId}",
+            schedule.Id,
+            id,
+            CurrentUserId()
+        );
 
-        var created = await _db.Schedules
-            .AsNoTracking()
+        var created = await db
+            .Schedules.AsNoTracking()
             .Include(s => s.Activity)
             .Include(s => s.Room)
             .FirstAsync(s => s.Id == schedule.Id);
@@ -407,18 +449,28 @@ public class ActivitiesController : ControllerBase
     // Returns whether the input is valid and, if not, why. Invalid input is expected, so it never throws.
     private static (bool IsValid, string Error) Validate(ActivityFieldsDto dto)
     {
-        if ((dto.Title?.Length ?? 0) > MaxTextLength) return (false, $"Title can be at most {MaxTextLength} characters");
-        if ((dto.TitleEnglish?.Length ?? 0) > MaxTextLength) return (false, $"English title can be at most {MaxTextLength} characters");
-        if ((dto.Author?.Length ?? 0) > MaxTextLength) return (false, $"Author can be at most {MaxTextLength} characters");
+        if ((dto.Title?.Length ?? 0) > MaxTextLength)
+            return (false, $"Title can be at most {MaxTextLength} characters");
+        if ((dto.TitleEnglish?.Length ?? 0) > MaxTextLength)
+            return (false, $"English title can be at most {MaxTextLength} characters");
+        if ((dto.Author?.Length ?? 0) > MaxTextLength)
+            return (false, $"Author can be at most {MaxTextLength} characters");
 
-        if (!Enum.IsDefined(dto.Type)) return (false, "Unknown activity type");
-        if (!Enum.IsDefined(dto.PlayerLanguage)) return (false, "Unknown player language");
-        if (!Enum.IsDefined(dto.GameMasterLanguage)) return (false, "Unknown game master language");
-        if (!Enum.IsDefined(dto.KarmaType)) return (false, "Unknown karma type");
-        if (!Enum.IsDefined(dto.AutoSignupCategory)) return (false, "Unknown auto signup category");
+        if (!Enum.IsDefined(dto.Type))
+            return (false, "Unknown activity type");
+        if (!Enum.IsDefined(dto.PlayerLanguage))
+            return (false, "Unknown player language");
+        if (!Enum.IsDefined(dto.GameMasterLanguage))
+            return (false, "Unknown game master language");
+        if (!Enum.IsDefined(dto.KarmaType))
+            return (false, "Unknown karma type");
+        if (!Enum.IsDefined(dto.AutoSignupCategory))
+            return (false, "Unknown auto signup category");
 
-        if (dto.MinAge is < 0 or > HighestAllowedAge) return (false, $"Minimum age must be between 0 and {HighestAllowedAge}");
-        if (dto.MaxSignups is < 0 or > MaxSignupsLimit) return (false, $"Max signups must be between 0 and {MaxSignupsLimit}");
+        if (dto.MinAge is < 0 or > HighestAllowedAge)
+            return (false, $"Minimum age must be between 0 and {HighestAllowedAge}");
+        if (dto.MaxSignups is < 0 or > MaxSignupsLimit)
+            return (false, $"Max signups must be between 0 and {MaxSignupsLimit}");
 
         return (true, string.Empty);
     }
@@ -427,8 +479,10 @@ public class ActivitiesController : ControllerBase
     // Returns whether the input is valid and, if not, why.
     private static (bool IsValid, string Error) ValidateSchedule(DateTimeOffset? startTime, DateTimeOffset? endTime)
     {
-        if (startTime == null || endTime == null) return (false, "Start and end are required");
-        if (startTime >= endTime) return (false, "Start must be before end");
+        if (startTime == null || endTime == null)
+            return (false, "Start and end are required");
+        if (startTime >= endTime)
+            return (false, "Start must be before end");
 
         return (true, string.Empty);
     }
@@ -438,28 +492,35 @@ public class ActivitiesController : ControllerBase
 
     // Schedules with what ToDto needs: the activity, the meeting room and the runs with their rooms and seats
     private IQueryable<Schedule> SchedulesWithRuns() =>
-        _db.Schedules
-            .AsNoTracking()
+        db
+            .Schedules.AsNoTracking()
             .Include(s => s.Activity)
             .Include(s => s.Room)
-            .Include(s => s.Runs).ThenInclude(r => r.Room)
-            .Include(s => s.Runs).ThenInclude(r => r.Seats).ThenInclude(seat => seat.Participant)
+            .Include(s => s.Runs)
+                .ThenInclude(r => r.Room)
+            .Include(s => s.Runs)
+                .ThenInclude(r => r.Seats)
+                    .ThenInclude(seat => seat.Participant)
             .AsSplitQuery();
 
     private async Task<ScheduleDto> ToDtoAsync(Schedule schedule) =>
-        ToDto(schedule, await _karma.CalculateAsync(schedule.Runs.SelectMany(r => r.Seats).Select(s => s.ParticipantId)));
+        ToDto(
+            schedule,
+            await _karma.CalculateAsync(schedule.Runs.SelectMany(r => r.Seats).Select(s => s.ParticipantId))
+        );
 
-    private static ScheduleDto ToDto(Schedule s, IReadOnlyDictionary<int, KarmaCalculation> karma) => new(
-        s.Id,
-        s.ActivityId,
-        s.StartTime,
-        s.EndTime,
-        s.RoomId,
-        s.Room?.Name,
-        s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s, karma)).ToList(),
-        s.IsCancelled,
-        s.CancelledAt
-    );
+    private static ScheduleDto ToDto(Schedule s, IReadOnlyDictionary<int, int> karma) =>
+        new(
+            s.Id,
+            s.ActivityId,
+            s.StartTime,
+            s.EndTime,
+            s.RoomId,
+            s.Room?.Name,
+            s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s, karma)).ToList(),
+            s.IsCancelled,
+            s.CancelledAt
+        );
 
     private static void Apply(Activity activity, ActivityFieldsDto dto)
     {
@@ -495,34 +556,35 @@ public class ActivitiesController : ControllerBase
 
     private string? CurrentUserId() => User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    private static ActivityDto ToDto(Activity a) => new(
-        a.Id,
-        a.Title,
-        a.TitleEnglish,
-        a.Author,
-        a.Type,
-        a.DescriptionDanish,
-        a.DescriptionEnglish,
-        a.TeaserDanish,
-        a.TeaserEnglish,
-        a.Note,
-        a.DurationHours,
-        a.MinPlayersPerTeam,
-        a.MaxPlayersPerTeam,
-        a.GameMastersPerTeam,
-        a.Price,
-        a.MaxSignups,
-        a.MinAge,
-        a.CanSignUp,
-        a.IsHidden,
-        a.IsRoomExclusive,
-        a.IsTimeExclusive,
-        a.IsReplayable,
-        a.PlayerLanguage,
-        a.GameMasterLanguage,
-        a.KarmaType,
-        a.AutoSignupCategory,
-        a.WordPressId,
-        a.UpdatedAt
-    );
+    private static ActivityDto ToDto(Activity a) =>
+        new(
+            a.Id,
+            a.Title,
+            a.TitleEnglish,
+            a.Author,
+            a.Type,
+            a.DescriptionDanish,
+            a.DescriptionEnglish,
+            a.TeaserDanish,
+            a.TeaserEnglish,
+            a.Note,
+            a.DurationHours,
+            a.MinPlayersPerTeam,
+            a.MaxPlayersPerTeam,
+            a.GameMastersPerTeam,
+            a.Price,
+            a.MaxSignups,
+            a.MinAge,
+            a.CanSignUp,
+            a.IsHidden,
+            a.IsRoomExclusive,
+            a.IsTimeExclusive,
+            a.IsReplayable,
+            a.PlayerLanguage,
+            a.GameMasterLanguage,
+            a.KarmaType,
+            a.AutoSignupCategory,
+            a.WordPressId,
+            a.UpdatedAt
+        );
 }

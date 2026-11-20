@@ -8,7 +8,7 @@
   } @if (notFound()) {
   <p class="flash error">{{ 'runs.messages.notFound' | translate }}</p>
   } @if (run(); as r) { @if (r.isCancelled) {
-  <p class="flash">{{ 'karma.cancelledHelp' | translate }}</p>
+  <p class="flash">{{ 'activities.messages.cancelledHelp' | translate }}</p>
   }
   <app-card [title]="'runs.detailTitle' | translate">
     <a mat-stroked-button class="edit-link" [routerLink]="['/runs', r.id, 'edit']">
@@ -59,7 +59,14 @@
         <tr>
           <th>{{ 'runs.fields.id' | translate }}</th>
           <th>{{ 'runs.fields.name' | translate }}</th>
-          <th>{{ 'runs.fields.karma' | translate }}</th>
+          <th
+            scope="col"
+            class="karma"
+            [attr.aria-label]="'runs.fields.karma' | translate"
+            [title]="'runs.fields.karma' | translate"
+          >
+            <mat-icon aria-hidden="true">balance</mat-icon>
+          </th>
           <th>{{ 'runs.fields.role' | translate }}</th>
           <th><span class="visually-hidden">{{ 'runs.buttons.remove' | translate }}</span></th>
         </tr>
@@ -68,7 +75,7 @@
         @for (seat of r.seats; track seat.seatNumber) {
         <tr>
           <td>{{ seat.participantId }}</td>
-          <td><a [routerLink]="['/participants', seat.participantId, 'karma']">{{ seat.participantName }}</a></td>
+          <td>{{ seat.participantName }}</td>
           <td class="karma">{{ seat.karma }}</td>
           <td>{{ 'runs.roles.' + seat.role | translate }}</td>
           <td>

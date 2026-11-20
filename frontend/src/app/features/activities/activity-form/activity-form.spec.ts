@@ -2,8 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { MatSelect } from '@angular/material/select';
 import { describe, afterEach, it, expect, vi } from 'vitest';
-import { Activity } from '@shared/types';
+import { Activity, ActivitySettings } from '@shared/types';
 import { ActivityFlashService } from '../activity-flash.service';
 import { ActivityFormComponent, newActivityForm, toDto, toForm } from './activity-form';
 
@@ -90,7 +92,10 @@ describe('ActivityFormComponent', () => {
     httpMock.verify();
   });
 
-  const setup = async (id: string | null) => {
+  const setup = async (
+    id: string | null,
+    settings: ActivitySettings | null = { smallKarma: 7, mediumKarma: 0, bigKarma: 10 },
+  ) => {
     await TestBed.configureTestingModule({
       imports: [ActivityFormComponent],
       providers: [
@@ -110,6 +115,12 @@ describe('ActivityFormComponent', () => {
     const fixture = TestBed.createComponent(ActivityFormComponent);
     fixture.detectChanges();
     httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
+    const settingsRequest = httpMock.expectOne('/api/management/activity-settings');
+    if (settings) {
+      settingsRequest.flush(settings);
+    } else {
+      settingsRequest.flush({}, { status: 500, statusText: 'Server error' });
+    }
 
     return { component: fixture.componentInstance, fixture, navigate, flash };
   };
@@ -119,6 +130,31 @@ describe('ActivityFormComponent', () => {
     if (!form) throw new Error('Form is not loaded');
     return form;
   };
+
+  it.each([null, '5'])('shows configured karma values in the dropdown for activity id %s', async id => {
+    const { fixture, component } = await setup(id, { smallKarma: 2, mediumKarma: 0, bigKarma: 9 });
+    if (id) httpMock.expectOne('/api/activities/5').flush(existing);
+    fixture.detectChanges();
+    httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
+    await fixture.whenStable();
+    const dropdown = fixture.debugElement.query(By.css('mat-select[name="karmaType"]')).componentInstance as MatSelect;
+    dropdown.open();
+    fixture.detectChanges();
+
+    expect(dropdown.options.map(option => option.viewValue.replace(/\s+/g, ' '))).toEqual([
+      'activities.karmaTypes.None (0)',
+      'activities.karmaTypes.Small (2)',
+      'activities.karmaTypes.Medium (0)',
+      'activities.karmaTypes.Big (9)',
+    ]);
+    expect(loadedForm(component).karmaType).toBe(id ? 'Small' : 'None');
+  });
+
+  it('keeps the activity form usable when karma values cannot be loaded', async () => {
+    const { component } = await setup(null, null);
+    expect(component.karmaPoints()).toBeNull();
+    expect(loadedForm(component).karmaType).toBe('None');
+  });
 
   it('creates an activity and opens it with a success message', async () => {
     const { component, navigate, flash } = await setup(null);

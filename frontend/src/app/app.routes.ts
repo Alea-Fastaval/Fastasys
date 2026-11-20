@@ -9,7 +9,7 @@ import { CommunicationsComponent } from './features/communications/communication
 import { HeroForceComponent } from './features/hero-force/hero-force';
 import { LoginComponent } from './features/login/login';
 import { ParticipantsComponent } from './features/participants/participants';
-import { ParticipantPlanningComponent } from './features/participants/participant-planning/participant-planning';
+import { ActivitySettingsComponent } from './features/management/activity-settings/activity-settings';
 import { FoodComponent } from './features/resources/food/food';
 import { RoomsComponent } from './features/resources/rooms/rooms';
 import { WearComponent } from './features/resources/wear/wear';
@@ -26,7 +26,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'participants', component: ParticipantsComponent, canActivate: [authGuard] },
-  { path: 'participants/:id/karma', component: ParticipantPlanningComponent, canActivate: [authGuard] },
+  { path: 'management/activity-settings', component: ActivitySettingsComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
   { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },

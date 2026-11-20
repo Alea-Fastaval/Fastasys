@@ -1,6 +1,4 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { AuthService } from '@shared/services';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -17,7 +15,6 @@ import { TranslatePipe } from '@shared/pipes';
   selector: 'app-participants',
   imports: [
     CommonModule,
-    RouterLink,
     FormsModule,
     MatTableModule,
     MatButtonModule,
@@ -32,9 +29,6 @@ import { TranslatePipe } from '@shared/pipes';
 })
 export class ParticipantsComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
-  public readonly canViewKarma = computed(() => this.auth.hasAnyPrivilege('activities_view', 'activities_edit'));
-
   public readonly participants = signal<Participant[]>([]);
   public searchQuery = '';
   public displayedColumns = ['id', 'name', 'email', 'barcode', 'status', 'actions'];

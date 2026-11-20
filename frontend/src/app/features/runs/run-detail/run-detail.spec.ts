@@ -81,6 +81,22 @@ describe('RunDetailComponent', () => {
       ['11', 'Test Spilleder', '0', 'runs.roles.GameMaster'],
       ['12', 'Test Spiller', '0', 'runs.roles.Player'],
     ]);
+    expect(element.querySelector('th.karma mat-icon')?.textContent).toBe('balance');
+    expect(element.querySelector('th.karma')?.getAttribute('aria-label')).toBe('runs.fields.karma');
+    expect(element.querySelector('a[href*="karma"]')).toBeNull();
+  });
+
+  it('shows negative karma as plain numbers without participant karma links', () => {
+    const fixture = render({
+      ...run,
+      seats: run.seats.map((seat, index) => ({ ...seat, karma: index === 0 ? -27 : -42 })),
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    expect(Array.from(element.querySelectorAll('td.karma')).map(cell => cell.textContent?.trim())).toEqual([
+      '-27',
+      '-42',
+    ]);
+    expect(element.querySelector('a[href*="karma"]')).toBeNull();
   });
 
   it('only offers the roles the run has room for, like Infosys', () => {
@@ -97,7 +113,7 @@ describe('RunDetailComponent', () => {
     const cancelled = { ...run, isCancelled: true };
     const fixture = render(cancelled);
     const component = fixture.componentInstance;
-    expect(fixture.nativeElement.textContent).toContain('karma.cancelledHelp');
+    expect(fixture.nativeElement.textContent).toContain('activities.messages.cancelledHelp');
     expect((fixture.nativeElement as HTMLElement).querySelector('.add-participant')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelectorAll('.seats-table tbody tr')).toHaveLength(2);
     expect(component.canAdd(cancelled, 'Player')).toBe(false);

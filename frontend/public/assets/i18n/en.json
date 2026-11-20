@@ -11,7 +11,6 @@
     "rooms": "Rooms & Locations",
     "boardgames": "Boardgames",
     "communications": "Comms",
-    "userManagement": "User Management",
     "users": "Users",
     "roles": "Roles & Access",
     "login": "Login",
@@ -19,7 +18,8 @@
     "logout": "Logout",
     "language": "Language",
     "english": "English",
-    "danish": "Dansk"
+    "danish": "Dansk",
+    "management": "Management"
   },
   "common": {
     "id": "ID",
@@ -202,12 +202,14 @@
       "scheduleCancelled": "Occurrence cancelled. Karma has been updated.",
       "scheduleRestored": "Occurrence restored. Karma has been updated.",
       "scheduleCancelFailed": "Could not cancel the occurrence. Reload and try again.",
-      "scheduleRestoreFailed": "Could not restore the occurrence. A retained run may have an occupied room; review its room and schedule, then try again."
+      "scheduleRestoreFailed": "Could not restore the occurrence. A retained run may have an occupied room; review its room and schedule, then try again.",
+      "cancelledHelp": "This occurrence is cancelled. Preferences and seats are retained and excluded from karma."
     },
     "cancelSchedule": "Cancel occurrence",
     "restoreSchedule": "Restore occurrence",
     "cancelScheduleConfirm": "Cancel this occurrence? Its preferences, runs and seats will be retained and excluded from karma. Room bookings will be released.",
-    "restoreScheduleConfirm": "Restore this occurrence? Retained preferences and seats will count again, provided the rooms are still available."
+    "restoreScheduleConfirm": "Restore this occurrence? Retained preferences and seats will count again, provided the rooms are still available.",
+    "cancelled": "Cancelled"
   },
   "runs": {
     "listTitle": "Runs - ({{count}}):",
@@ -336,63 +338,15 @@
     "signupSubtitle": "Register for Fastaval 2026",
     "submitSignup": "Submit Signup"
   },
-  "karma": {
-    "title": "Karma and activity preferences",
-    "back": "All participants",
-    "loading": "Loading preferences and karma…",
+  "activitySettings": {
+    "title": "Activity settings",
+    "karma": "Karma",
+    "description": "Points per assigned player seat, counting up to ten seats per activity size. Changes apply to current allocations.",
+    "loading": "Loading settings…",
     "retry": "Try again",
-    "total": "Current karma",
-    "explanation": "Karma combines ranked preferences with assigned player seats. Drop-in activities do not affect it. Karma is one input to planning; it does not guarantee a place.",
-    "grouped": "Points apply to each group, including its cap. Assignments do not replace preference points.",
-    "breakdown": "Contributions",
-    "rule": "Rule",
-    "count": "Count",
-    "points": "Points",
-    "gmRule": "Game-master / legacy priority 0 preferences",
-    "priorityRule": "Priority {{priority}} player preferences",
-    "assignmentRule": "Assigned player seats",
-    "noContributions": "No counted preferences or player seats.",
-    "preferences": "Activity preferences",
-    "add": "Add preference",
-    "edit": "Edit preference",
-    "activity": "Activity",
-    "time": "Schedule",
-    "role": "Role",
-    "priority": "Priority",
-    "unranked": "Unranked — choose a priority",
-    "noPreferences": "No activity preferences.",
-    "gmPriority": "0 — game master",
-    "preferenceHelp": "Player priorities run from 1 to 4. A game-master preference normally uses 0. Preferences and assigned seats are managed separately. Select an active schedule to save a preference; cancelled occurrences retain their existing records.",
-    "removeConfirm": "Remove this preference? Assigned seats will stay in place.",
-    "excluded": "Excluded from karma",
-    "noneExcluded": "No excluded inputs.",
-    "sources": {
-      "Signup": "Preference for schedule",
-      "Assignment": "Seat on run"
-    },
-    "reasons": {
-      "NonTimeExclusive": "Drop-in activity; it is not time-exclusive.",
-      "UnrankedPlayerSignup": "This player preference has no recorded priority.",
-      "GameMasterAssignment": "Game-master seats do not add assignment points.",
-      "UnknownSignupRole": "Unrecognized legacy role; review this preference.",
-      "CancelledSchedule": "This scheduled occurrence is cancelled."
-    },
-    "messages": {
-      "forbidden": "You need activity planning access to view karma.",
-      "notFound": "Participant not found.",
-      "loadFailed": "Could not load current preferences and karma.",
-      "optionsFailed": "Could not load activity or schedule options. Close the form and try again.",
-      "saveFailed": "Could not save. Check the schedule, role and priority, then try again.",
-      "conflict": "This preference conflicts with current data. Check for a duplicate schedule and priority, or reload if another planner changed the participant or schedule.",
-      "removeFailed": "Could not remove the preference. Try again.",
-      "saved": "Preference saved.",
-      "removed": "Preference removed.",
-      "refreshed": "Karma recalculated from current preferences and seats."
-    },
-    "noSchedules": "This activity has no schedules. Add a schedule on the activity page before adding a preference.",
-    "openActivity": "Open activity",
-    "cancelled": "Cancelled",
-    "cancelledHelp": "This occurrence is cancelled. Preferences and seats are retained and excluded from karma.",
-    "refresh": "Recalculate karma"
+    "loadFailed": "Could not load activity settings.",
+    "saveFailed": "Could not save activity settings. Please try again.",
+    "saved": "Activity settings saved.",
+    "forbidden": "You do not have permission to manage activity settings."
   }
 }

@@ -11,10 +11,7 @@ public class KarmaRulesTests
     {
         var result = KarmaRules.Calculate([], []);
 
-        Assert.Equal(0, result.Total);
-        Assert.Empty(result.Signups);
-        Assert.Empty(result.Assignments);
-        Assert.Equal(new KarmaExclusions(0, 0, 0, 0), result.Exclusions);
+        Assert.Equal(0, result);
     }
 
     [Theory]
@@ -45,11 +42,7 @@ public class KarmaRulesTests
     {
         var result = KarmaRules.Calculate(PlayerSignups(priority, count), []);
 
-        Assert.Equal(expected, result.Total);
-        if (count > 0)
-        {
-            Assert.Equal(new KarmaSignupContribution(priority, count, expected), Assert.Single(result.Signups));
-        }
+        Assert.Equal(expected, result);
     }
 
     [Theory]
@@ -63,29 +56,28 @@ public class KarmaRulesTests
 
         var result = KarmaRules.Calculate(signups, []);
 
-        Assert.Equal(expected, result.Total);
-        Assert.Equal(0, result.Exclusions.UnrankedPlayerSignups);
-        if (count > 0)
-        {
-            Assert.Equal(new KarmaSignupContribution(0, count, -7), Assert.Single(result.Signups));
-        }
+        Assert.Equal(expected, result);
     }
 
     [Fact]
     public void GameMasterPriority_IsIgnored_AndLegacyPlayerPriorityZeroSharesTheSameRule()
     {
         var result = KarmaRules.Calculate(
-            [new(1, RunSeatRole.GameMaster, true), new(4, RunSeatRole.GameMaster, true), new(0, RunSeatRole.Player, true)],
-            []);
+            [
+                new(1, RunSeatRole.GameMaster, true),
+                new(4, RunSeatRole.GameMaster, true),
+                new(0, RunSeatRole.Player, true),
+            ],
+            []
+        );
 
-        Assert.Equal(-7, result.Total);
-        Assert.Equal(new KarmaSignupContribution(0, 3, -7), Assert.Single(result.Signups));
+        Assert.Equal(-7, result);
     }
 
     [Fact]
     public void LegacyPlayerPriorityZero_ContributesWithoutAGameMasterSignup()
     {
-        Assert.Equal(-7, KarmaRules.Calculate(PlayerSignups(0, 1), []).Total);
+        Assert.Equal(-7, KarmaRules.Calculate(PlayerSignups(0, 1), []));
     }
 
     [Theory]
@@ -107,38 +99,29 @@ public class KarmaRulesTests
         var big = KarmaRules.Calculate([], PlayerAssignments(KarmaType.Big, count));
         var small = KarmaRules.Calculate([], PlayerAssignments(KarmaType.Small, count));
 
-        Assert.Equal(bigPoints, big.Total);
-        Assert.Equal(smallPoints, small.Total);
-        if (count > 0)
-        {
-            Assert.Equal(new KarmaAssignmentContribution(KarmaType.Big, count, bigPoints), Assert.Single(big.Assignments));
-            Assert.Equal(new KarmaAssignmentContribution(KarmaType.Small, count, smallPoints), Assert.Single(small.Assignments));
-        }
+        Assert.Equal(bigPoints, big);
+        Assert.Equal(smallPoints, small);
     }
 
     [Theory]
     [InlineData(KarmaType.None)]
     [InlineData(KarmaType.Medium)]
-    public void NoneAndMediumAssignments_HaveZeroPointsButRemainVisibleInTheBreakdown(KarmaType type)
+    public void DefaultNoneAndMediumAssignments_HaveZeroPoints(KarmaType type)
     {
         var result = KarmaRules.Calculate([], PlayerAssignments(type, 2));
 
-        Assert.Equal(0, result.Total);
-        Assert.Equal(new KarmaAssignmentContribution(type, 2, 0), Assert.Single(result.Assignments));
+        Assert.Equal(0, result);
     }
 
     [Fact]
     public void AssignedGameMasters_DoNotContribute_OrGrantTheSignupBonus()
     {
-        var result = KarmaRules.Calculate([], [
-            new(KarmaType.Big, RunSeatRole.GameMaster, true),
-            new(KarmaType.Small, RunSeatRole.GameMaster, true)
-        ]);
+        var result = KarmaRules.Calculate(
+            [],
+            [new(KarmaType.Big, RunSeatRole.GameMaster, true), new(KarmaType.Small, RunSeatRole.GameMaster, true)]
+        );
 
-        Assert.Equal(0, result.Total);
-        Assert.Empty(result.Signups);
-        Assert.Empty(result.Assignments);
-        Assert.Equal(new KarmaExclusions(0, 0, 0, 2), result.Exclusions);
+        Assert.Equal(0, result);
     }
 
     [Fact]
@@ -158,15 +141,7 @@ public class KarmaRulesTests
         var result = KarmaRules.Calculate(signups, assignments);
 
         // Preferences: -7 -20 -3 -1. Assigned players: +30 +14. Total: 13.
-        Assert.Equal(13, result.Total);
-        Assert.Equal(new KarmaSignupContribution[] {
-            new(0, 1, -7), new(1, 2, -20), new(2, 4, -3), new(3, 2, -1), new(4, 3, 0)
-        }, result.Signups);
-        Assert.Equal(new KarmaAssignmentContribution[] {
-            new(KarmaType.None, 1, 0), new(KarmaType.Big, 3, 30),
-            new(KarmaType.Medium, 1, 0), new(KarmaType.Small, 2, 14)
-        }, result.Assignments);
-        Assert.Equal(new KarmaExclusions(0, 0, 0, 1), result.Exclusions);
+        Assert.Equal(13, result);
     }
 
     [Fact]
@@ -174,8 +149,8 @@ public class KarmaRulesTests
     {
         var signups = PlayerSignups(1, 1);
 
-        Assert.Equal(-12, KarmaRules.Calculate(signups, []).Total);
-        Assert.Equal(-2, KarmaRules.Calculate(signups, PlayerAssignments(KarmaType.Big, 1)).Total);
+        Assert.Equal(-12, KarmaRules.Calculate(signups, []));
+        Assert.Equal(-2, KarmaRules.Calculate(signups, PlayerAssignments(KarmaType.Big, 1)));
     }
 
     [Fact]
@@ -184,8 +159,7 @@ public class KarmaRulesTests
         // A signup has no karma-type input: even an activity with type None contributes by priority.
         var result = KarmaRules.Calculate(PlayerSignups(1, 1), PlayerAssignments(KarmaType.None, 1));
 
-        Assert.Equal(-12, result.Total);
-        Assert.Equal(new KarmaSignupContribution(1, 1, -12), Assert.Single(result.Signups));
+        Assert.Equal(-12, result);
     }
 
     [Fact]
@@ -193,9 +167,7 @@ public class KarmaRulesTests
     {
         var result = KarmaRules.Calculate([new(null, RunSeatRole.Player, true)], []);
 
-        Assert.Equal(0, result.Total);
-        Assert.Empty(result.Signups);
-        Assert.Equal(new KarmaExclusions(0, 1, 0, 0), result.Exclusions);
+        Assert.Equal(0, result);
     }
 
     [Theory]
@@ -214,10 +186,8 @@ public class KarmaRulesTests
 
         var result = KarmaRules.Calculate(signups.Append(new KarmaSignup(priority, role, false)), assignments);
 
-        Assert.Equal(-2, result.Total);
-        Assert.Equal(baseline.Signups, result.Signups);
-        Assert.Equal(baseline.Assignments, result.Assignments);
-        Assert.Equal(new KarmaExclusions(1, 0, 0, 0), result.Exclusions);
+        Assert.Equal(-2, result);
+        Assert.Equal(baseline, result);
     }
 
     [Theory]
@@ -234,10 +204,8 @@ public class KarmaRulesTests
 
         var result = KarmaRules.Calculate(signups, assignments.Append(new KarmaAssignment(type, role, false)));
 
-        Assert.Equal(-2, result.Total);
-        Assert.Equal(baseline.Signups, result.Signups);
-        Assert.Equal(baseline.Assignments, result.Assignments);
-        Assert.Equal(new KarmaExclusions(0, 0, 1, 0), result.Exclusions);
+        Assert.Equal(-2, result);
+        Assert.Equal(baseline, result);
     }
 
     [Fact]
@@ -252,33 +220,49 @@ public class KarmaRulesTests
         var withDropIn = KarmaRules.Calculate(signups.Append(dropInSignup), assignments.Append(dropInSeat));
         var withExclusive = KarmaRules.Calculate(
             signups.Append(dropInSignup with { IsTimeExclusive = true }),
-            assignments.Append(dropInSeat with { IsTimeExclusive = true }));
+            assignments.Append(dropInSeat with { IsTimeExclusive = true })
+        );
         var afterRemoval = KarmaRules.Calculate(signups, assignments);
 
-        Assert.Equal(-2, baseline.Total);
-        Assert.Equal(-2, withDropIn.Total);
-        Assert.Equal(new KarmaExclusions(1, 0, 1, 0), withDropIn.Exclusions);
+        Assert.Equal(-2, baseline);
+        Assert.Equal(-2, withDropIn);
         // Two first priorities: -20; one Big and one Small seat: +10 +7.
-        Assert.Equal(-3, withExclusive.Total);
-        Assert.Equal(-2, afterRemoval.Total);
+        Assert.Equal(-3, withExclusive);
+        Assert.Equal(-2, afterRemoval);
     }
 
     [Fact]
     public void OnlyExcludedInputs_HaveZeroKarma()
     {
-        var result = KarmaRules.Calculate([
-            new(1, RunSeatRole.Player, false),
-            new(null, RunSeatRole.GameMaster, false),
-            new(null, RunSeatRole.Player, true)
-        ], [
-            new(KarmaType.Big, RunSeatRole.Player, false),
-            new(KarmaType.Small, RunSeatRole.GameMaster, true)
-        ]);
+        var result = KarmaRules.Calculate(
+            [
+                new(1, RunSeatRole.Player, false),
+                new(null, RunSeatRole.GameMaster, false),
+                new(null, RunSeatRole.Player, true),
+            ],
+            [new(KarmaType.Big, RunSeatRole.Player, false), new(KarmaType.Small, RunSeatRole.GameMaster, true)]
+        );
 
-        Assert.Equal(0, result.Total);
-        Assert.Empty(result.Signups);
-        Assert.Empty(result.Assignments);
-        Assert.Equal(new KarmaExclusions(2, 1, 1, 1), result.Exclusions);
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public void ConfiguredAssignmentValues_ApplyToEachSize_WithIndependentTenSeatCaps()
+    {
+        var settings = new ActivitySettings
+        {
+            SmallKarma = 2,
+            MediumKarma = 4,
+            BigKarma = 9,
+        };
+        var assignments = PlayerAssignments(KarmaType.Small, 11)
+            .Concat(PlayerAssignments(KarmaType.Medium, 12))
+            .Concat(PlayerAssignments(KarmaType.Big, 13))
+            .Concat(PlayerAssignments(KarmaType.None, 1))
+            .Append(new KarmaAssignment(KarmaType.Big, RunSeatRole.GameMaster, true))
+            .Append(new KarmaAssignment(KarmaType.Big, RunSeatRole.Player, false));
+
+        Assert.Equal(150, KarmaRules.Calculate([], assignments, settings));
     }
 
     private static IEnumerable<KarmaSignup> PlayerSignups(int priority, int count) =>

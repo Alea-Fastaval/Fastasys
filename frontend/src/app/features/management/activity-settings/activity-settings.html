@@ -1,0 +1,69 @@
+<div class="page-container">
+  <h1>{{ 'activitySettings.title' | translate }}</h1>
+  @if (loading()) {
+  <p role="status">{{ 'activitySettings.loading' | translate }}</p>
+  } @if (error(); as error) {
+  <p class="error" role="alert">{{ 'activitySettings.' + error | translate }}</p>
+  @if (!loaded() && error !== 'forbidden') {
+  <button mat-button (click)="load()" [disabled]="loading()">{{ 'activitySettings.retry' | translate }}</button>
+  } } @if (loaded()) {
+  <app-card [title]="'activitySettings.karma' | translate">
+    <p>{{ 'activitySettings.description' | translate }}</p>
+    <form #settingsForm="ngForm" (ngSubmit)="save()">
+      <div class="karma-values">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.karmaTypes.Small' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="smallKarma"
+            required
+            min="0"
+            max="1000"
+            step="1"
+            [(ngModel)]="form.smallKarma"
+            [disabled]="saving()"
+            (ngModelChange)="saved.set(false)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.karmaTypes.Medium' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="mediumKarma"
+            required
+            min="0"
+            max="1000"
+            step="1"
+            [(ngModel)]="form.mediumKarma"
+            [disabled]="saving()"
+            (ngModelChange)="saved.set(false)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'activities.karmaTypes.Big' | translate }}</mat-label>
+          <input
+            matInput
+            type="number"
+            name="bigKarma"
+            required
+            min="0"
+            max="1000"
+            step="1"
+            [(ngModel)]="form.bigKarma"
+            [disabled]="saving()"
+            (ngModelChange)="saved.set(false)"
+          />
+        </mat-form-field>
+      </div>
+      <button mat-raised-button type="submit" [disabled]="!canSave() || settingsForm.invalid">
+        {{ 'common.save' | translate }}
+      </button>
+      @if (saved()) {
+      <p role="status">{{ 'activitySettings.saved' | translate }}</p>
+      }
+    </form>
+  </app-card>
+  }
+</div>

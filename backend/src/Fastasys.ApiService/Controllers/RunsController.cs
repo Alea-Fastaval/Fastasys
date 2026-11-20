@@ -8,13 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Controllers;
 
-public record RunSeatDto(
-    int SeatNumber,
-    int ParticipantId,
-    string ParticipantName,
-    int Karma,
-    RunSeatRole Role
-);
+public record RunSeatDto(int SeatNumber, int ParticipantId, string ParticipantName, int Karma, RunSeatRole Role);
 
 public record RunDto(
     int Id,
@@ -61,25 +55,14 @@ public record CreateRunSeatDto(int ParticipantId, RunSeatRole Role);
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "ActivityView")]
-public class RunsController : ControllerBase
+public class RunsController(InfosysDbContext db, ILogger<RunsController> logger, KarmaService karma) : ControllerBase
 {
-    private readonly InfosysDbContext _db;
-    private readonly ILogger<RunsController> _logger;
-    private readonly KarmaService _karma;
-
-    public RunsController(InfosysDbContext db, ILogger<RunsController> logger, KarmaService karma)
-    {
-        _db = db;
-        _logger = logger;
-        _karma = karma;
-    }
-
     // Infosys hold/visalle: every run, in id order
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RunSummaryDto>>> GetAll()
     {
-        var rows = await _db.Runs
-            .AsNoTracking()
+        var rows = await db
+            .Runs.AsNoTracking()
             .OrderBy(r => r.Id)
             .Select(r => new
             {
@@ -96,7 +79,7 @@ public class RunsController : ControllerBase
                 r.Schedule.Activity.MinPlayersPerTeam,
                 r.Schedule.Activity.GameMastersPerTeam,
                 Players = r.Seats.Count(s => s.Role == RunSeatRole.Player),
-                GameMasters = r.Seats.Count(s => s.Role == RunSeatRole.GameMaster)
+                GameMasters = r.Seats.Count(s => s.Role == RunSeatRole.GameMaster),
             })
             .ToListAsync();
 
@@ -123,7 +106,8 @@ public class RunsController : ControllerBase
     public async Task<ActionResult<RunDto>> Get(int id)
     {
         var run = await LoadRunAsync(id);
-        if (run == null) return NotFound(new { message = "Run not found" });
+        if (run == null)
+            return NotFound(new { message = "Run not found" });
         return Ok(await ToDtoAsync(run));
     }
 
@@ -133,34 +117,43 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> Create([FromBody] CreateRunDto dto)
     {
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, dto.ScheduleId);
-        var schedule = await _db.Schedules
-            .Include(s => s.Activity)
-            .FirstOrDefaultAsync(s => s.Id == dto.ScheduleId);
-        if (schedule == null) return NotFound(new { message = "Could not find schedule" });
-        if (schedule.IsCancelled) return Conflict(new { message = "Schedule is cancelled" });
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, dto.ScheduleId);
+        var schedule = await db.Schedules.Include(s => s.Activity).FirstOrDefaultAsync(s => s.Id == dto.ScheduleId);
+        if (schedule == null)
+            return NotFound(new { message = "Could not find schedule" });
+        if (schedule.IsCancelled)
+            return Conflict(new { message = "Schedule is cancelled" });
 
-        await ScheduleWriteLock.AcquireRoomsAsync(_db);
+        await ScheduleWriteLock.AcquireRoomsAsync(db);
         var bookings = await LoadRoomBookingsAsync();
-        var roomIds = await _db.Rooms.OrderBy(r => r.Id).Select(r => r.Id).ToListAsync();
+        var roomIds = await db.Rooms.OrderBy(r => r.Id).Select(r => r.Id).ToListAsync();
         var freeRoomId = roomIds
-            .Where(roomId => !RunRules.IsRoomOccupied(roomId, schedule.StartTime, schedule.EndTime, schedule.Activity.IsRoomExclusive, bookings))
+            .Where(roomId =>
+                !RunRules.IsRoomOccupied(
+                    roomId,
+                    schedule.StartTime,
+                    schedule.EndTime,
+                    schedule.Activity.IsRoomExclusive,
+                    bookings
+                )
+            )
             .Cast<int?>()
             .FirstOrDefault();
-        if (freeRoomId == null) return Conflict(new { message = "No available room" });
+        if (freeRoomId == null)
+            return Conflict(new { message = "No available room" });
 
-        var numbers = await _db.Runs.Where(r => r.ScheduleId == schedule.Id).Select(r => r.Number).ToListAsync();
+        var numbers = await db.Runs.Where(r => r.ScheduleId == schedule.Id).Select(r => r.Number).ToListAsync();
         var run = new Run
         {
             ScheduleId = schedule.Id,
             Number = RunRules.NextRunNumber(numbers),
-            RoomId = freeRoomId.Value
+            RoomId = freeRoomId.Value,
         };
 
-        _db.Runs.Add(run);
+        db.Runs.Add(run);
         try
         {
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
         catch (DbUpdateException)
         {
@@ -168,8 +161,9 @@ public class RunsController : ControllerBase
             return Conflict(new { message = "Failed to create group" });
         }
 
-        _logger.LogInformation("Run {RunId} created by user {UserId}", run.Id, CurrentUserId());
-        if (transaction != null) await transaction.CommitAsync();
+        logger.LogInformation("Run {RunId} created by user {UserId}", run.Id, CurrentUserId());
+        if (transaction != null)
+            await transaction.CommitAsync();
 
         var created = await LoadRunAsync(run.Id);
         return CreatedAtAction(nameof(Get), new { id = run.Id }, await ToDtoAsync(created!));
@@ -180,20 +174,30 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<IEnumerable<RunRoomDto>>> GetAvailableRooms(int id)
     {
-        var run = await _db.Runs
-            .AsNoTracking()
+        var run = await db
+            .Runs.AsNoTracking()
             .Include(r => r.Room)
-            .Include(r => r.Schedule).ThenInclude(s => s.Activity)
+            .Include(r => r.Schedule)
+                .ThenInclude(s => s.Activity)
             .FirstOrDefaultAsync(r => r.Id == id);
-        if (run == null) return NotFound(new { message = "Run not found" });
+        if (run == null)
+            return NotFound(new { message = "Run not found" });
 
         var bookings = await LoadRoomBookingsAsync();
-        var rooms = await _db.Rooms.AsNoTracking().OrderBy(r => r.Id).ToListAsync();
+        var rooms = await db.Rooms.AsNoTracking().OrderBy(r => r.Id).ToListAsync();
 
         // Infosys lists the current room twice when its activity doesn't fill the room; it is listed once here.
         var available = rooms
             .Where(room => room.Id != run.RoomId)
-            .Where(room => !RunRules.IsRoomOccupied(room.Id, run.Schedule.StartTime, run.Schedule.EndTime, run.Schedule.Activity.IsRoomExclusive, bookings))
+            .Where(room =>
+                !RunRules.IsRoomOccupied(
+                    room.Id,
+                    run.Schedule.StartTime,
+                    run.Schedule.EndTime,
+                    run.Schedule.Activity.IsRoomExclusive,
+                    bookings
+                )
+            )
             .Select(room => new RunRoomDto(room.Id, room.Name, room.Location));
 
         return Ok(available.Prepend(new RunRoomDto(run.Room.Id, run.Room.Name, run.Room.Location)).ToList());
@@ -204,24 +208,29 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> Update(int id, [FromBody] UpdateRunDto dto)
     {
-        var scheduleId = await _db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
-        if (scheduleId == null) return NotFound(new { message = "Run not found" });
+        var scheduleId = await db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
+        if (scheduleId == null)
+            return NotFound(new { message = "Run not found" });
 
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleId.Value);
-        await ScheduleWriteLock.AcquireRoomsAsync(_db);
-        var run = await _db.Runs
-            .Include(r => r.Schedule).ThenInclude(s => s.Activity)
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, scheduleId.Value);
+        await ScheduleWriteLock.AcquireRoomsAsync(db);
+        var run = await db
+            .Runs.Include(r => r.Schedule)
+                .ThenInclude(s => s.Activity)
             .FirstOrDefaultAsync(r => r.Id == id);
-        if (run == null) return NotFound(new { message = "Run not found" });
+        if (run == null)
+            return NotFound(new { message = "Run not found" });
 
         var (isValid, error) = await ValidateRoomAsync(run, dto.RoomId);
-        if (!isValid) return BadRequest(new { message = error });
+        if (!isValid)
+            return BadRequest(new { message = error });
 
         run.RoomId = dto.RoomId;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Run {RunId} updated by user {UserId}", run.Id, CurrentUserId());
-        if (transaction != null) await transaction.CommitAsync();
+        logger.LogInformation("Run {RunId} updated by user {UserId}", run.Id, CurrentUserId());
+        if (transaction != null)
+            await transaction.CommitAsync();
 
         var updated = await LoadRunAsync(id);
         return Ok(await ToDtoAsync(updated!));
@@ -233,19 +242,21 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<IActionResult> Delete(int id, [FromQuery] bool removeParticipants = false)
     {
-        var run = await _db.Runs.Include(r => r.Seats).FirstOrDefaultAsync(r => r.Id == id);
-        if (run == null) return NotFound(new { message = "Run not found" });
+        var run = await db.Runs.Include(r => r.Seats).FirstOrDefaultAsync(r => r.Id == id);
+        if (run == null)
+            return NotFound(new { message = "Run not found" });
 
         if (run.Seats.Count > 0)
         {
-            if (!removeParticipants) return Conflict(new { message = "Run has participants and cannot be deleted" });
-            _db.RunSeats.RemoveRange(run.Seats);
+            if (!removeParticipants)
+                return Conflict(new { message = "Run has participants and cannot be deleted" });
+            db.RunSeats.RemoveRange(run.Seats);
         }
 
-        _db.Runs.Remove(run);
-        await _db.SaveChangesAsync();
+        db.Runs.Remove(run);
+        await db.SaveChangesAsync();
 
-        _logger.LogInformation("Run {RunId} deleted by user {UserId}", id, CurrentUserId());
+        logger.LogInformation("Run {RunId} deleted by user {UserId}", id, CurrentUserId());
 
         return Ok(new { message = "Run deleted successfully" });
     }
@@ -255,19 +266,23 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> CreateSeat(int id, [FromBody] CreateRunSeatDto dto)
     {
-        if (!Enum.IsDefined(dto.Role)) return BadRequest(new { message = "Unknown role" });
+        if (!Enum.IsDefined(dto.Role))
+            return BadRequest(new { message = "Unknown role" });
 
-        var scheduleId = await _db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
-        if (scheduleId == null) return NotFound(new { message = "Run not found" });
+        var scheduleId = await db.Runs.Where(r => r.Id == id).Select(r => (int?)r.ScheduleId).SingleOrDefaultAsync();
+        if (scheduleId == null)
+            return NotFound(new { message = "Run not found" });
 
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleId.Value);
-        var run = await _db.Runs
-            .Include(r => r.Schedule).ThenInclude(s => s.Activity)
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, scheduleId.Value);
+        var run = await db
+            .Runs.Include(r => r.Schedule)
+                .ThenInclude(s => s.Activity)
             .Include(r => r.Seats)
             .FirstOrDefaultAsync(r => r.Id == id);
-        if (run == null) return NotFound(new { message = "Run not found" });
+        if (run == null)
+            return NotFound(new { message = "Run not found" });
 
-        if (!await _db.Participants.AnyAsync(p => p.Id == dto.ParticipantId))
+        if (!await db.Participants.AnyAsync(p => p.Id == dto.ParticipantId))
         {
             return NotFound(new { message = "Participant not found" });
         }
@@ -276,19 +291,22 @@ public class RunsController : ControllerBase
             return Conflict(new { message = "Schedule is cancelled" });
 
         var (isValid, error) = ValidateSeat(run, dto);
-        if (!isValid) return Conflict(new { message = error });
+        if (!isValid)
+            return Conflict(new { message = error });
 
-        _db.RunSeats.Add(new RunSeat
-        {
-            RunId = run.Id,
-            SeatNumber = RunRules.NextSeatNumber(run.Seats.Select(s => s.SeatNumber)),
-            Role = dto.Role,
-            ParticipantId = dto.ParticipantId
-        });
+        db.RunSeats.Add(
+            new RunSeat
+            {
+                RunId = run.Id,
+                SeatNumber = RunRules.NextSeatNumber(run.Seats.Select(s => s.SeatNumber)),
+                Role = dto.Role,
+                ParticipantId = dto.ParticipantId,
+            }
+        );
 
         try
         {
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
         catch (DbUpdateException)
         {
@@ -296,8 +314,14 @@ public class RunsController : ControllerBase
             return Conflict(new { message = "Could not add to group" });
         }
 
-        _logger.LogInformation("Participant {ParticipantId} added to run {RunId} by user {UserId}", dto.ParticipantId, run.Id, CurrentUserId());
-        if (transaction != null) await transaction.CommitAsync();
+        logger.LogInformation(
+            "Participant {ParticipantId} added to run {RunId} by user {UserId}",
+            dto.ParticipantId,
+            run.Id,
+            CurrentUserId()
+        );
+        if (transaction != null)
+            await transaction.CommitAsync();
 
         var updated = await LoadRunAsync(id);
         return Ok(await ToDtoAsync(updated!));
@@ -309,19 +333,25 @@ public class RunsController : ControllerBase
     [Authorize(Policy = "ActivityManagement")]
     public async Task<ActionResult<RunDto>> DeleteSeat(int id, int participantId)
     {
-        if (!await _db.Runs.AnyAsync(r => r.Id == id)) return NotFound(new { message = "Run not found" });
+        if (!await db.Runs.AnyAsync(r => r.Id == id))
+            return NotFound(new { message = "Run not found" });
 
-        if (!await _db.Participants.AnyAsync(p => p.Id == participantId))
+        if (!await db.Participants.AnyAsync(p => p.Id == participantId))
         {
             return NotFound(new { message = "Participant not found" });
         }
 
-        var seat = await _db.RunSeats.FirstOrDefaultAsync(s => s.RunId == id && s.ParticipantId == participantId);
+        var seat = await db.RunSeats.FirstOrDefaultAsync(s => s.RunId == id && s.ParticipantId == participantId);
         if (seat != null)
         {
-            _db.RunSeats.Remove(seat);
-            await _db.SaveChangesAsync();
-            _logger.LogInformation("Participant {ParticipantId} removed from run {RunId} by user {UserId}", participantId, id, CurrentUserId());
+            db.RunSeats.Remove(seat);
+            await db.SaveChangesAsync();
+            logger.LogInformation(
+                "Participant {ParticipantId} removed from run {RunId} by user {UserId}",
+                participantId,
+                id,
+                CurrentUserId()
+            );
         }
 
         var updated = await LoadRunAsync(id);
@@ -330,16 +360,22 @@ public class RunsController : ControllerBase
 
     // Maps a run with its room and seats (with participants) loaded. The schedule is passed separately and must
     // have its activity loaded.
-    internal static RunDto ToDto(Run run, Schedule schedule, IReadOnlyDictionary<int, KarmaCalculation> karma)
+    internal static RunDto ToDto(Run run, Schedule schedule, IReadOnlyDictionary<int, int> karma)
     {
         var activity = schedule.Activity;
         var players = run.Seats.Count(s => s.Role == RunSeatRole.Player);
         var gameMasters = run.Seats.Count(s => s.Role == RunSeatRole.GameMaster);
 
         // Infosys Hold::getPladser orders by pladsnummer and shows "fornavn efternavn"
-        var seats = run.Seats
-            .OrderBy(s => s.SeatNumber)
-            .Select(s => new RunSeatDto(s.SeatNumber, s.ParticipantId, s.Participant.LegalName(), karma[s.ParticipantId].Karma.Total, s.Role))
+        var seats = run
+            .Seats.OrderBy(s => s.SeatNumber)
+            .Select(s => new RunSeatDto(
+                s.SeatNumber,
+                s.ParticipantId,
+                s.Participant.LegalName(),
+                karma[s.ParticipantId],
+                s.Role
+            ))
             .ToList();
 
         return new RunDto(
@@ -372,7 +408,12 @@ public class RunsController : ControllerBase
         var gameMasters = run.Seats.Count(s => s.Role == RunSeatRole.GameMaster);
         if (!RunRules.HasRoomFor(dto.Role, players, gameMasters, run.Schedule.Activity))
         {
-            return (false, dto.Role == RunSeatRole.Player ? "The run cannot use more players" : "The run needs no more game masters");
+            return (
+                false,
+                dto.Role == RunSeatRole.Player
+                    ? "The run cannot use more players"
+                    : "The run needs no more game masters"
+            );
         }
 
         return (true, string.Empty);
@@ -382,12 +423,22 @@ public class RunsController : ControllerBase
     // Returns whether the room can be used and, if not, why.
     private async Task<(bool IsValid, string Error)> ValidateRoomAsync(Run run, int roomId)
     {
-        if (roomId == run.RoomId) return (true, string.Empty);
+        if (roomId == run.RoomId)
+            return (true, string.Empty);
 
-        if (!await _db.Rooms.AnyAsync(r => r.Id == roomId)) return (false, "Unknown room");
+        if (!await db.Rooms.AnyAsync(r => r.Id == roomId))
+            return (false, "Unknown room");
 
         var bookings = await LoadRoomBookingsAsync();
-        if (RunRules.IsRoomOccupied(roomId, run.Schedule.StartTime, run.Schedule.EndTime, run.Schedule.Activity.IsRoomExclusive, bookings))
+        if (
+            RunRules.IsRoomOccupied(
+                roomId,
+                run.Schedule.StartTime,
+                run.Schedule.EndTime,
+                run.Schedule.Activity.IsRoomExclusive,
+                bookings
+            )
+        )
         {
             return (false, "Room is not available at that time");
         }
@@ -396,21 +447,28 @@ public class RunsController : ControllerBase
     }
 
     private async Task<List<RoomBooking>> LoadRoomBookingsAsync() =>
-        await _db.Runs
-            .AsNoTracking()
+        await db
+            .Runs.AsNoTracking()
             .Where(r => !r.Schedule.IsCancelled)
-            .Select(r => new RoomBooking(r.RoomId, r.Schedule.StartTime, r.Schedule.EndTime, r.Schedule.Activity.IsRoomExclusive))
+            .Select(r => new RoomBooking(
+                r.RoomId,
+                r.Schedule.StartTime,
+                r.Schedule.EndTime,
+                r.Schedule.Activity.IsRoomExclusive
+            ))
             .ToListAsync();
 
     private async Task<RunDto> ToDtoAsync(Run run) =>
-        ToDto(run, run.Schedule, await _karma.CalculateAsync(run.Seats.Select(s => s.ParticipantId)));
+        ToDto(run, run.Schedule, await karma.CalculateAsync(run.Seats.Select(s => s.ParticipantId)));
 
     private async Task<Run?> LoadRunAsync(int id) =>
-        await _db.Runs
-            .AsNoTracking()
-            .Include(r => r.Schedule).ThenInclude(s => s.Activity)
+        await db
+            .Runs.AsNoTracking()
+            .Include(r => r.Schedule)
+                .ThenInclude(s => s.Activity)
             .Include(r => r.Room)
-            .Include(r => r.Seats).ThenInclude(s => s.Participant)
+            .Include(r => r.Seats)
+                .ThenInclude(s => s.Participant)
             .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Id == id);
 

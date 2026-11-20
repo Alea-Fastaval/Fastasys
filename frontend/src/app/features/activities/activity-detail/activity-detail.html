@@ -170,7 +170,7 @@
   >
     <p class="meeting-room">{{ schedule.roomName ?? ('activities.noMeetingRoom' | translate) }}</p>
     @if (schedule.isCancelled) {
-    <p class="cancelled-label">{{ 'karma.cancelledHelp' | translate }}</p>
+    <p class="cancelled-label">{{ 'activities.messages.cancelledHelp' | translate }}</p>
     }
     <div class="card-actions">
       @if (canManage()) {
@@ -214,11 +214,25 @@
         </header>
         @if (run.seats.length > 0) {
         <table class="seats">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'runs.fields.role' | translate }}</th>
+              <th scope="col">{{ 'runs.fields.name' | translate }}</th>
+              <th
+                scope="col"
+                class="karma"
+                [attr.aria-label]="'runs.fields.karma' | translate"
+                [title]="'runs.fields.karma' | translate"
+              >
+                <mat-icon aria-hidden="true">balance</mat-icon>
+              </th>
+            </tr>
+          </thead>
           <tbody>
             @for (seat of run.seats; track seat.seatNumber) {
             <tr>
               <td class="role">{{ 'runs.roleShort.' + seat.role | translate }}</td>
-              <td><a [routerLink]="['/participants', seat.participantId, 'karma']">{{ seat.participantName }}</a></td>
+              <td>{{ seat.participantName }}</td>
               <td class="karma">{{ seat.karma }}</td>
             </tr>
             }

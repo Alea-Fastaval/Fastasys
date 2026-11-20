@@ -132,6 +132,25 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("activities");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ActivitySettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BigKarma")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MediumKarma")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SmallKarma")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("activity_settings");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Boardgame", b =>
                 {
                     b.Property<int>("Id")
