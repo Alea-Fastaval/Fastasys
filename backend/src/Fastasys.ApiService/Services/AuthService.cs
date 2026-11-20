@@ -8,21 +8,12 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Fastasys.ApiService.Services;
 
-public class AuthService : IAuthService
+public class AuthService(InfosysDbContext db, IConfiguration configuration) : IAuthService
 {
-    private readonly InfosysDbContext _db;
-    private readonly IConfiguration _configuration;
-
-    public AuthService(InfosysDbContext db, IConfiguration configuration)
-    {
-        _db = db;
-        _configuration = configuration;
-    }
-
     public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
+        var user = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
@@ -45,7 +36,7 @@ public class AuthService : IAuthService
         }
 
         user.LastLoginAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         return GenerateAuthResponse(user);
     }
@@ -54,25 +45,28 @@ public class AuthService : IAuthService
     {
         // Simple token validation / refresh logic for initial implementation
         var principal = GetPrincipalFromExpiredToken(dto.Token);
-        if (principal == null) return null;
+        if (principal == null)
+            return null;
 
         var username = principal.Identity?.Name;
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
+        var user = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
             .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
 
-        if (user == null) return null;
+        if (user == null)
+            return null;
 
         return GenerateAuthResponse(user);
     }
 
     public async Task<bool> ResetPasswordRequestAsync(ResetPasswordDto dto)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null) return false;
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        if (user == null)
+            return false;
 
         // Reset password request token logic - returns true if email matches
         return true;
@@ -80,13 +74,13 @@ public class AuthService : IAuthService
 
     private AuthResponseDto GenerateAuthResponse(User user)
     {
-        var jwtSecret = _configuration["Jwt:Secret"] ?? "FastasysSuperSecretSecurityKey2026!FormatLengthForHS256";
+        var jwtSecret = configuration["Jwt:Secret"] ?? "FastasysSuperSecretSecurityKey2026!FormatLengthForHS256";
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var roles = user.UserRoles.Select(ur => ur.Role.Name).Distinct().ToList();
-        var privileges = user.UserRoles
-            .SelectMany(ur => ur.Role.RolePrivileges)
+        var privileges = user
+            .UserRoles.SelectMany(ur => ur.Role.RolePrivileges)
             .Select(rp => rp.Privilege.Key)
             .Distinct()
             .ToList();
@@ -97,7 +91,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim("FirstName", user.FirstName),
-            new Claim("LastName", user.LastName)
+            new Claim("LastName", user.LastName),
         };
 
         foreach (var role in roles)
@@ -112,8 +106,8 @@ public class AuthService : IAuthService
 
         var expiresAt = DateTime.UtcNow.AddHours(8);
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"] ?? "Fastasys",
-            audience: _configuration["Jwt:Audience"] ?? "FastasysClients",
+            issuer: configuration["Jwt:Issuer"] ?? "Fastasys",
+            audience: configuration["Jwt:Audience"] ?? "FastasysClients",
             claims: claims,
             expires: expiresAt,
             signingCredentials: creds
@@ -137,7 +131,8 @@ public class AuthService : IAuthService
 
     private static (bool IsValid, bool NeedsUpgrade) VerifyPassword(string inputPassword, string passwordHash)
     {
-        if (string.IsNullOrEmpty(passwordHash)) return (false, false);
+        if (string.IsNullOrEmpty(passwordHash))
+            return (false, false);
 
         // 1. Check BCrypt hash (starts with $2a$, $2b$, or $2y$)
         if (passwordHash.StartsWith("$2") && passwordHash.Length >= 60)
@@ -175,22 +170,31 @@ public class AuthService : IAuthService
 
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
-        var jwtSecret = _configuration["Jwt:Secret"] ?? "FastasysSuperSecretSecurityKey2026!FormatLengthForHS256";
+        var jwtSecret = configuration["Jwt:Secret"] ?? "FastasysSuperSecretSecurityKey2026!FormatLengthForHS256";
         var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false,
             ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
-            ValidateLifetime = false
+            ValidateLifetime = false,
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();
         try
         {
-            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            var principal = tokenHandler.ValidateToken(
+                token,
+                tokenValidationParameters,
+                out SecurityToken securityToken
+            );
+            if (
+                securityToken is not JwtSecurityToken jwtSecurityToken
+                || !jwtSecurityToken.Header.Alg.Equals(
+                    SecurityAlgorithms.HmacSha256,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
             {
                 return null;
             }

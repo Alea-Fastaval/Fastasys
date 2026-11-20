@@ -27,6 +27,21 @@
         "cwd": "${workspaceFolder}/frontend"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Fastasys: remove unused C# usings",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["format", "style", "Fastasys.slnx", "--diagnostics", "IDE0005", "--severity", "info", "--no-restore"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Fastasys: format C#",
+      "dependsOn": ["Fastasys: remove unused C# usings"],
+      "type": "process",
+      "command": "dotnet",
+      "args": ["csharpier", "format", "backend", "--include-generated"],
+      "problemMatcher": []
     }
   ]
 }

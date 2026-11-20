@@ -10,61 +10,62 @@ namespace Fastasys.Tests;
 
 // Infosys: every activity admin page requires a logged-in user whose role grants the Activity controller method.
 // Fastasys maps that onto the activities_view / activities_edit privileges.
-public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFactory>
+public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly TestWebApplicationFactory _factory;
-
-    public ActivitiesAuthorizationTests(TestWebApplicationFactory factory)
-    {
-        _factory = factory;
-    }
-
-    private static T NewActivity<T>(string title) where T : ActivityFieldsDto, new() => new T
-    {
-        Title = title,
-        Type = ActivityType.Scenario,
-        DurationHours = 4,
-        MinPlayersPerTeam = 3,
-        MaxPlayersPerTeam = 5,
-        GameMastersPerTeam = 1,
-        Price = 30,
-        CanSignUp = true,
-        IsRoomExclusive = true,
-        IsTimeExclusive = true,
-        PlayerLanguage = ActivityLanguage.Danish,
-        GameMasterLanguage = ActivityLanguage.Danish,
-        KarmaType = KarmaType.None,
-        AutoSignupCategory = AutoSignupCategory.None
-    };
+    private static T NewActivity<T>(string title)
+        where T : ActivityFieldsDto, new() =>
+        new T
+        {
+            Title = title,
+            Type = ActivityType.Scenario,
+            DurationHours = 4,
+            MinPlayersPerTeam = 3,
+            MaxPlayersPerTeam = 5,
+            GameMastersPerTeam = 1,
+            Price = 30,
+            CanSignUp = true,
+            IsRoomExclusive = true,
+            IsTimeExclusive = true,
+            PlayerLanguage = ActivityLanguage.Danish,
+            GameMasterLanguage = ActivityLanguage.Danish,
+            KarmaType = KarmaType.None,
+            AutoSignupCategory = AutoSignupCategory.None,
+        };
 
     private async Task<HttpClient> CreateClientWithPrivilegeAsync(string privilegeKey)
     {
         var suffix = Guid.NewGuid().ToString("N");
         const string password = "test-password";
 
-        using (var scope = _factory.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<InfosysDbContext>();
             var role = new Role { Name = $"role-{suffix}" };
-            role.RolePrivileges.Add(new RolePrivilege { Privilege = new Privilege { Name = privilegeKey, Key = privilegeKey } });
+            role.RolePrivileges.Add(
+                new RolePrivilege
+                {
+                    Privilege = new Privilege { Name = privilegeKey, Key = privilegeKey },
+                }
+            );
             var user = new User
             {
                 Username = $"user-{suffix}",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 Email = $"{suffix}@example.invalid",
-                IsActive = true
+                IsActive = true,
             };
             user.UserRoles.Add(new UserRole { Role = role });
             db.Users.Add(user);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        using var loginScope = _factory.Services.CreateScope();
-        var auth = await loginScope.ServiceProvider.GetRequiredService<IAuthService>()
+        using var loginScope = factory.Services.CreateScope();
+        var auth = await loginScope
+            .ServiceProvider.GetRequiredService<IAuthService>()
             .LoginAsync(new LoginDto($"user-{suffix}", password));
         Assert.NotNull(auth);
 
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
         return client;
     }
@@ -72,7 +73,7 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
     [Fact]
     public async Task Anonymous_CannotListActivities()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/activities", TestContext.Current.CancellationToken);
 
@@ -118,7 +119,11 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         Assert.NotNull(created);
 
         var get = await client.GetAsync($"/api/activities/{created.Id}", ct);
-        var update = await client.PutAsJsonAsync($"/api/activities/{created.Id}", NewActivity<UpdateActivityDto>("Redigeret"), ct);
+        var update = await client.PutAsJsonAsync(
+            $"/api/activities/{created.Id}",
+            NewActivity<UpdateActivityDto>("Redigeret"),
+            ct
+        );
         var delete = await client.DeleteAsync($"/api/activities/{created.Id}", ct);
 
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
@@ -132,7 +137,14 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         var client = await CreateClientWithPrivilegeAsync("activities_edit");
         var ct = TestContext.Current.CancellationToken;
 
-        var create = await client.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Enum-navne") with { KarmaType = KarmaType.Big }, ct);
+        var create = await client.PostAsJsonAsync(
+            "/api/activities",
+            NewActivity<CreateActivityDto>("Enum-navne") with
+            {
+                KarmaType = KarmaType.Big,
+            },
+            ct
+        );
         using var json = JsonDocument.Parse(await create.Content.ReadAsStringAsync(ct));
 
         Assert.Equal("Scenario", json.RootElement.GetProperty("type").GetString());
@@ -147,8 +159,15 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         // Agreed deviation: Infosys had a maximum age (activityageranges 'max'); Fastasys only keeps the minimum.
         var client = await CreateClientWithPrivilegeAsync("activities_edit");
         var ct = TestContext.Current.CancellationToken;
-        var body = JsonSerializer.SerializeToNode(NewActivity<CreateActivityDto>("Uden maksimumalder") with { MinAge = 12 },
-            new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+        var body = JsonSerializer
+            .SerializeToNode(
+                NewActivity<CreateActivityDto>("Uden maksimumalder") with
+                {
+                    MinAge = 12,
+                },
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            )!
+            .AsObject();
         body["maxAge"] = 17;
 
         var create = await client.PostAsJsonAsync("/api/activities", body, ct);

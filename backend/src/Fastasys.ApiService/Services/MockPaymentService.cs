@@ -22,21 +22,19 @@ public interface IMockPaymentService
     Task<PaymentTransactionResult?> GetTransactionStatusAsync(string transactionId);
 }
 
-public class MockPaymentService : IMockPaymentService
+public class MockPaymentService(ILogger<MockPaymentService> logger) : IMockPaymentService
 {
     private readonly Dictionary<string, PaymentTransactionResult> _transactions = new();
-    private readonly ILogger<MockPaymentService> _logger;
-
-    public MockPaymentService(ILogger<MockPaymentService> logger)
-    {
-        _logger = logger;
-    }
 
     public Task<PaymentTransactionResult> ProcessPaymentAsync(PaymentTransactionRequest request)
     {
         var transactionId = "MOCK-FRITID-" + Guid.NewGuid().ToString("N")[..12].ToUpper();
-        _logger.LogInformation("Processing mock payment via fritid.dk gateway: Participant {ParticipantId}, Amount {Amount} {Currency}",
-            request.ParticipantId, request.Amount, request.Currency);
+        logger.LogInformation(
+            "Processing mock payment via fritid.dk gateway: Participant {ParticipantId}, Amount {Amount} {Currency}",
+            request.ParticipantId,
+            request.Amount,
+            request.Currency
+        );
 
         var result = new PaymentTransactionResult(
             transactionId,
@@ -52,7 +50,11 @@ public class MockPaymentService : IMockPaymentService
 
     public Task<PaymentTransactionResult> RefundPaymentAsync(string transactionId, decimal amount)
     {
-        _logger.LogInformation("Processing mock refund for Transaction {TransactionId}, Amount {Amount}", transactionId, amount);
+        logger.LogInformation(
+            "Processing mock refund for Transaction {TransactionId}, Amount {Amount}",
+            transactionId,
+            amount
+        );
 
         var result = new PaymentTransactionResult(
             "REFUND-" + transactionId,
