@@ -679,6 +679,23 @@ public class ParticipantsControllerTests
     }
 
     [Fact]
+    public async Task UpdateField_AcceptsANicknameOf256Characters()
+    {
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        var controller = CreateController(db);
+
+        var accepted = Ok(await controller.UpdateField(1, "nickname", new UpdateParticipantFieldDto(Json(new string('x', 256)))));
+        db.ChangeTracker.Clear();
+        var refused = await controller.UpdateField(1, "nickname", new UpdateParticipantFieldDto(Json(new string('y', 257))));
+
+        var stored = await db.Participants.AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(256, accepted.Nickname.Length);
+        Assert.IsType<BadRequestObjectResult>(refused.Result);
+        Assert.Equal(new string('x', 256), stored.Nickname);
+    }
+
+    [Fact]
     public async Task UpdateField_RefusesAnInvalidBirthDate_AndNullMeansUnknown()
     {
         // Infosys stored 0000-00-00 when it couldn't read the date (fixed)
@@ -745,6 +762,8 @@ public class ParticipantsControllerTests
 
         Assert.True(await Accepted("pronouns", "fsfo"));
         Assert.False(await Accepted("pronouns", "fsfs"));
+        // Infosys could set "Ingen"; nobody can be given no pronouns since 2026-11-21
+        Assert.False(await Accepted("pronouns", "none"));
         Assert.True(await Accepted("categoryId", ParticipantCategory.OrganizerId));
         Assert.False(await Accepted("categoryId", 99));
         Assert.True(await Accepted("countryCode", "SE"));

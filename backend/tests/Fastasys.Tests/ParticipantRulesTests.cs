@@ -1,3 +1,4 @@
+using Fastasys.ApiService.Data.Entities;
 using Fastasys.ApiService.Services;
 using Microsoft.Extensions.Configuration;
 
@@ -146,8 +147,9 @@ public class ParticipantRulesTests
         Assert.Equal("someone@example.invalid", ParticipantRules.NormalizeEmail("  someone@example.invalid "));
     }
 
+    // Infosys's widget could also save "none" ("Ingen"); since 2026-11-21 nobody can be given no pronouns
     [Theory]
-    [InlineData("none", true)]
+    [InlineData("none", false)]
     [InlineData("ask", true)]
     [InlineData("ns", true)]
     [InlineData("nsno", true)]
@@ -244,5 +246,35 @@ public class ParticipantRulesTests
     public void AgeOn_IsUnknownWithoutABirthDate()
     {
         Assert.Null(ParticipantRules.AgeOn(null, new DateOnly(2027, 3, 24)));
+    }
+
+    // Deltagere::getPronoun, in the participant's language. Pronouns not given yet ("none") are blank since 2026-11-21;
+    // Infosys showed "Ingen"/"None".
+    [Theory]
+    [InlineData("fsfo", PreferredLanguage.Danish, "Hun/Hende")]
+    [InlineData("fsfo", PreferredLanguage.English, "She/Her")]
+    [InlineData("nsno", PreferredLanguage.Danish, "De/Dem")]
+    [InlineData("msfo", PreferredLanguage.English, "He/Her")]
+    [InlineData("mo", PreferredLanguage.Danish, "Ham")]
+    [InlineData("ns", PreferredLanguage.English, "They")]
+    [InlineData("none", PreferredLanguage.Danish, "")]
+    [InlineData("none", PreferredLanguage.English, "")]
+    [InlineData("ask", PreferredLanguage.Danish, "Spørg mig")]
+    [InlineData("ask", PreferredLanguage.English, "Ask me")]
+    public void PronounText_IsTheWordsForTheCodes(string pronouns, PreferredLanguage language, string expected)
+    {
+        Assert.Equal(expected, ParticipantRules.PronounText(pronouns, language));
+    }
+
+    // Deltagere::getName: the nickname when there is one, otherwise the first and last name, trimmed
+    [Theory]
+    [InlineData("Testa", "Testesen", "", "Testa Testesen")]
+    [InlineData("Testa", "Testesen", "Testo", "Testo")]
+    [InlineData("Testa", "", "", "Testa")]
+    [InlineData("", "Testesen", "", "Testesen")]
+    public void DisplayName_IsTheNicknameOrTheFullName(string first, string last, string nickname, string expected)
+    {
+        Assert.Equal(expected, Participant.DisplayName(first, last, nickname));
+        Assert.Equal(expected, new Participant { FirstName = first, LastName = last, Nickname = nickname }.DisplayName());
     }
 }

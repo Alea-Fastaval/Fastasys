@@ -435,6 +435,9 @@
       "listFailed": "Kunne ikke hente deltagerne.",
       "activitiesLocked": "Deltagerens aktiviteter kan ikke ændres.",
       "activitiesUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "activitiesNoChanges": "Der var ingen ændringer at gemme.",
+      "activitiesUpdatedRunFull": "Deltageren blev opdateret, men der var ikke plads på et af holdene.",
+      "activitiesNotUpdatedRunFull": "Deltageren blev ikke opdateret: der var ikke plads på holdet.",
       "signupAlreadySignedUp": "Kan ikke flytte afvikling - deltageren er allerede tilmeldt afviklingen der flyttes til",
       "signupNotFound": "Kan ikke finde afvikling",
       "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
@@ -612,10 +615,8 @@
     "dataSources": {
       "Id": "ID",
       "Name": "Navn",
-      "DoctorName": "Dr. + Navn",
       "OrganizerArea": "Arbejdsområde",
-      "Game": "Scenarie",
-      "YouthClub": "Ungdomsskole"
+      "Pronouns": "Pronomen"
     },
     "messages": {
       "saveFailed": "Failed to save template",

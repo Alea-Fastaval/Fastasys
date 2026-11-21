@@ -62,6 +62,10 @@ public record UpdateParticipantSeatsDto(IReadOnlyList<ParticipantSeatChoiceDto> 
 
 public record ParticipantSeatChoiceDto(int RunId, RunSeatRole Role);
 
+// What "Opdater" did: whether anything was saved, and the runs in the list that had no room for the role (by id, in
+// the list's order)
+public record UpdateParticipantSeatsResultDto(bool IsChanged, IReadOnlyList<int> FullRunIds);
+
 // Infosys ParticipantController::updateAktiviteter and ParticipantModel::updateAktiviteter. Infosys lets the roles
 // Activity-admin, Infonaut and admin use it (plus one hard-coded e-mail address, which is not ported). Here it takes
 // the right to edit participants and the right to edit activities (whose seats it changes, like the run page).
@@ -202,15 +206,17 @@ public class ParticipantSeatsController : ControllerBase
     }
 
     // "Opdater": Infosys ParticipantModel::updateAktiviteter. The posted list replaces the participant's seats:
-    // - A seat on a run that is in the list is kept as it is. Its role is not changed, even if the list has the other
-    //   role for that run (legacy behaviour, kept).
     // - A seat on a run that is not in the list is removed. An empty list removes every seat.
     // - A run in the list that the participant has no seat on gets a new seat with the first free seat number, if
-    //   the run has room for the role (Pladser::setDeltagerPlads). If it hasn't, Infosys skips it without telling
-    //   anyone and still says "Deltageren blev opdateret." (legacy behaviour, kept).
+    //   the run has room for the role (Pladser::setDeltagerPlads).
+    // - A seat on a run that is in the list keeps its seat number. If the list has the other role, the role is
+    //   changed, if the run has room for it. Infosys matched on hold_id only and kept the old role (fixed 2026-11-21).
+    // - A run without room for the role is skipped, and the rest of the list is still saved. The result names the
+    //   skipped runs and says whether anything was saved, so the page can say so. Infosys skipped them without telling
+    //   anyone and always said "Deltageren blev opdateret." (fixed 2026-11-21).
     // Infosys only greys out busy schedules in the select; it doesn't check them when saving, and neither does this.
     [HttpPut]
-    public async Task<IActionResult> Update(int participantId, [FromBody] UpdateParticipantSeatsDto dto)
+    public async Task<ActionResult<UpdateParticipantSeatsResultDto>> Update(int participantId, [FromBody] UpdateParticipantSeatsDto dto)
     {
         var choices = dto.Seats ?? [];
         if (choices.Any(c => !Enum.IsDefined(c.Role))) return BadRequest(new { message = "Unknown role" });
@@ -233,25 +239,43 @@ public class ParticipantSeatsController : ControllerBase
         if (runs.Count != runIds.Count) return BadRequest(new { message = "Unknown run" });
 
         var currentSeats = await _db.RunSeats.Where(s => s.ParticipantId == participantId).ToListAsync();
-        _db.RunSeats.RemoveRange(currentSeats.Where(s => !runIds.Contains(s.RunId)));
+        var removedSeats = currentSeats.Where(s => !runIds.Contains(s.RunId)).ToList();
+        _db.RunSeats.RemoveRange(removedSeats);
+        var isChanged = removedSeats.Count > 0;
+        var fullRunIds = new List<int>();
 
         foreach (var choice in choices)
         {
-            if (currentSeats.Any(s => s.RunId == choice.RunId)) continue;
+            var currentSeat = currentSeats.SingleOrDefault(s => s.RunId == choice.RunId);
+            if (currentSeat?.Role == choice.Role) continue;
 
+            // The run's seats include a current seat of the participant's, in its old role, which doesn't take room
+            // from the new role
             var run = runs.Single(r => r.Id == choice.RunId);
             var players = run.Seats.Count(s => s.Role == RunSeatRole.Player);
             var gameMasters = run.Seats.Count(s => s.Role == RunSeatRole.GameMaster);
-            if (!RunRules.HasRoomFor(choice.Role, players, gameMasters, run.Schedule.Activity)) continue;
-
-            var seat = new RunSeat
+            if (!RunRules.HasRoomFor(choice.Role, players, gameMasters, run.Schedule.Activity))
             {
-                RunId = run.Id,
-                SeatNumber = RunRules.NextSeatNumber(run.Seats.Select(s => s.SeatNumber)),
-                Role = choice.Role,
-                ParticipantId = participantId
-            };
-            run.Seats.Add(seat);
+                fullRunIds.Add(run.Id);
+                continue;
+            }
+
+            if (currentSeat != null)
+            {
+                currentSeat.Role = choice.Role;
+            }
+            else
+            {
+                run.Seats.Add(new RunSeat
+                {
+                    RunId = run.Id,
+                    SeatNumber = RunRules.NextSeatNumber(run.Seats.Select(s => s.SeatNumber)),
+                    Role = choice.Role,
+                    ParticipantId = participantId
+                });
+            }
+
+            isChanged = true;
         }
 
         try
@@ -264,8 +288,17 @@ public class ParticipantSeatsController : ControllerBase
             return Conflict(new { message = "Could not update the participant's seats" });
         }
 
-        _logger.LogInformation("Participant {ParticipantId}'s seats updated by user {UserId}", participantId, CurrentUserId());
-        return NoContent();
+        if (isChanged)
+        {
+            _logger.LogInformation("Participant {ParticipantId}'s seats updated by user {UserId}", participantId, CurrentUserId());
+        }
+
+        if (fullRunIds.Count > 0)
+        {
+            _logger.LogInformation("Runs {RunIds} had no room for participant {ParticipantId}", fullRunIds, participantId);
+        }
+
+        return Ok(new UpdateParticipantSeatsResultDto(isChanged, fullRunIds));
     }
 
     private string? CurrentUserId() => User?.FindFirstValue(ClaimTypes.NameIdentifier);

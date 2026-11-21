@@ -20,14 +20,15 @@ const price: ParticipantPrice = {
 };
 
 describe('priceText (an amount in the Infosys Pris breakdown)', () => {
-  it('shows whole kroner followed by ",-", like Infosys', () => {
-    expect(priceText(450)).toBe('450,-');
-    expect(priceText(0)).toBe('0,-');
-    expect(priceText(12500)).toBe('12500,-');
+  it('shows whole kroner followed by DKK (Infosys: ",-"; changed 2026-11-21)', () => {
+    expect(priceText(450)).toBe('450 DKK');
+    expect(priceText(0)).toBe('0 DKK');
+    // No thousands separator, like Infosys
+    expect(priceText(12500)).toBe('12500 DKK');
   });
 
   it('keeps the minus of a negative amount', () => {
-    expect(priceText(-150)).toBe('-150,-');
+    expect(priceText(-150)).toBe('-150 DKK');
   });
 });
 
@@ -84,21 +85,21 @@ describe('ParticipantPriceComponent', () => {
 
     const rows = [...element.querySelectorAll('.price-breakdown tr')].map(rowText);
     expect(rows).toEqual([
-      ['participants.price.originalPrice', '900,-'],
+      ['participants.price.originalPrice', '900 DKK'],
       [],
-      ['participants.price.entry', '400,-'],
-      ['participants.price.food', '150,-'],
-      ['participants.price.wear', '200,-'],
-      ['participants.price.activities', '90,-'],
-      ['participants.price.other', '75,-'],
-      ['participants.price.alea', '50,-'],
-      ['participants.price.signupTotal', '965,-'],
-      ['participants.price.amountPaid', '450,-'],
-      ['participants.price.signupDifference', '515,-'],
+      ['participants.price.entry', '400 DKK'],
+      ['participants.price.food', '150 DKK'],
+      ['participants.price.wear', '200 DKK'],
+      ['participants.price.activities', '90 DKK'],
+      ['participants.price.other', '75 DKK'],
+      ['participants.price.alea', '50 DKK'],
+      ['participants.price.signupTotal', '965 DKK'],
+      ['participants.price.amountPaid', '450 DKK'],
+      ['participants.price.signupDifference', '515 DKK'],
       [],
-      ['participants.price.unassignedActivities', '60,-'],
-      ['participants.price.checkInTotal', '905,-'],
-      ['participants.price.checkInDifference', '455,-'],
+      ['participants.price.unassignedActivities', '60 DKK'],
+      ['participants.price.checkInTotal', '905 DKK'],
+      ['participants.price.checkInDifference', '455 DKK'],
     ]);
     expect(element.querySelector('.not-ported')).toBeNull();
   });
@@ -126,12 +127,12 @@ describe('ParticipantPriceComponent', () => {
 
   it('follows the amount paid when it changes, e.g. after Forudbetalt is edited on the page', async () => {
     const element = await render(price, 450);
-    expect(element.querySelector('.signup-difference .amount')?.textContent?.trim()).toBe('515,-');
+    expect(element.querySelector('.signup-difference .amount')?.textContent?.trim()).toBe('515 DKK');
 
     fixture().componentRef.setInput('amountPaid', 965);
     fixture().detectChanges();
 
-    expect(element.querySelector('.amount-paid .amount')?.textContent?.trim()).toBe('965,-');
-    expect(element.querySelector('.signup-difference .amount')?.textContent?.trim()).toBe('0,-');
+    expect(element.querySelector('.amount-paid .amount')?.textContent?.trim()).toBe('965 DKK');
+    expect(element.querySelector('.signup-difference .amount')?.textContent?.trim()).toBe('0 DKK');
   });
 });

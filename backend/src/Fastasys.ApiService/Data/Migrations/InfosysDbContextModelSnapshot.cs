@@ -2387,8 +2387,8 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Property<string>("Nickname")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<int?>("OrganizerAreaId")
                         .HasColumnType("integer");

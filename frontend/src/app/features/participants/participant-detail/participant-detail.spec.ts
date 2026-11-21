@@ -374,7 +374,7 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
 
     // Prepaid 450 (amountPaid), so 965 - 450 is still to pay for the signup
     expect(element.querySelector('app-participant-price .signup-difference .amount')?.textContent?.trim()).toBe(
-      '515,-',
+      '515 DKK',
     );
   });
 
@@ -536,6 +536,33 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
 
     httpMock.expectOne('/api/participants/7/fields/pronouns').flush({ ...participant, pronouns: 'ask' });
     expect(component.participant()?.pronouns).toBe('ask');
+  });
+
+  it('shows pronouns not given yet blank and saves only once some are picked', async () => {
+    // Infosys showed "Ingen" and could save it; since 2026-11-21 nobody can be given no pronouns
+    const { component, fixture, element } = await setup({ ...participant, pronouns: 'none' });
+    const def = field(component, 'pronouns');
+    const editing = () => {
+      const editor = component.editor();
+      if (!editor) throw new Error('No field is being edited');
+      return editor;
+    };
+    expect(def.text?.(shown(component))).toBe('');
+
+    component.startEdit(def, shown(component));
+    fixture.detectChanges();
+    const first = element.querySelector<HTMLSelectElement>('select[name="first"]');
+    expect(Array.from(first?.options ?? []).map(o => o.value)).toEqual(['', 'ns', 'no', 'fs', 'fo', 'ms', 'mo', 'ask']);
+    expect(element.querySelector('select[name="second"]')).toBeNull();
+    expect(component.canSubmit(def, editing())).toBe(false);
+    component.submitEdit(def);
+    httpMock.expectNone('/api/participants/7/fields/pronouns');
+
+    component.changeFirstPronoun('ms');
+    expect(component.canSubmit(def, editing())).toBe(true);
+    component.submitEdit(def);
+    httpMock.expectOne('/api/participants/7/fields/pronouns').flush({ ...participant, pronouns: 'msmo' });
+    expect(component.participant()?.pronouns).toBe('msmo');
   });
 
   it('keeps the editor open with an error when the save fails', async () => {

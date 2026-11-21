@@ -101,7 +101,7 @@ public class IdCardsTests
         var items = new[]
         {
             new IdCardTemplateItemDto(IdCardItemType.Photo, 30, 40, 213, 295, 0, IdCardDataSource.Name),
-            Text(IdCardDataSource.DoctorName),
+            Text(IdCardDataSource.Pronouns),
         };
 
         var updated = Value(await Templates(db).Update(template.Id, new UpdateIdCardTemplateDto("Ny", items)));
@@ -112,7 +112,7 @@ public class IdCardsTests
             new[]
             {
                 new IdCardTemplateItemDto(IdCardItemType.Photo, 30, 40, 213, 295, 0, null),
-                Text(IdCardDataSource.DoctorName),
+                Text(IdCardDataSource.Pronouns),
             },
             Value(await Templates(db).Get(template.Id)).Items);
         Assert.Equal(2, await db.IdCardTemplateItems.CountAsync(Ct));
@@ -320,46 +320,46 @@ public class IdCardsTests
     [Fact]
     public async Task Cards_HaveTheTextsTheBarcodeAndWhetherThereIsAPhoto()
     {
-        // Infosys IdTemplateRenderer::addTextElement and Deltagere::getEan8Number with the convention's year
+        // Infosys IdTemplateRenderer::addTextElement and Deltagere::getEan8Number with the convention's year. Agreed
+        // 2026-11-21: "Dr. + Navn", "Scenarie" and "Ungdomsskole" were dropped and the pronouns added.
         using var db = CreateDbContext();
-        var game = new Activity { Id = 5, Title = "Drømmespil" };
-        db.Activities.Add(game);
-        await db.SaveChangesAsync(Ct);
         var template = await AddTemplateAsync(db, "Egen");
         await AddParticipantAsync(db, 42, p =>
         {
             p.IdCardTemplateId = template.Id;
             p.OrganizerAreaId = OrganizerArea.BoardGameDesignerId;
-            p.GameActivityId = 5;
-            p.YouthClub = "Testklubben";
+            p.Pronouns = "fsfo";
         });
         await AddParticipantAsync(db, 43, p => { p.IdCardTemplateId = template.Id; p.Nickname = "Testo"; });
+        await AddParticipantAsync(db, 44, p =>
+        {
+            p.IdCardTemplateId = template.Id;
+            p.Pronouns = "ask";
+            p.PreferredLanguage = PreferredLanguage.English;
+        });
         db.ParticipantPhotos.Add(new ParticipantPhoto { ParticipantId = 42, Original = [1], OriginalContentType = "image/png", Cropped = [1], CroppedContentType = "image/png" });
         await db.SaveChangesAsync(Ct);
 
-        var cards = Value(await Cards(db, new DateOnly(2027, 3, 24)).Get("42-43")).Cards;
+        var cards = Value(await Cards(db, new DateOnly(2027, 3, 24)).Get("42-43-44")).Cards;
 
         var first = cards[0];
         Assert.True(first.HasPhoto);
         Assert.Equal(ParticipantRules.Ean8ForParticipant(42, 2027), first.Barcode);
-        Assert.Equal("Testa Testesen", first.Texts[IdCardDataSource.Name]);
-        Assert.Equal("Dr. Testa Testesen", first.Texts[IdCardDataSource.DoctorName]);
-        Assert.Equal("42", first.Texts[IdCardDataSource.Id]);
-        Assert.Equal("Brætspilsdesigner", first.Texts[IdCardDataSource.OrganizerArea]);
-        Assert.Equal("Drømmespil", first.Texts[IdCardDataSource.Game]);
-        Assert.Equal("Testklubben", first.Texts[IdCardDataSource.YouthClub]);
-        // Deltagere::getName: the nickname when there is one
+        Assert.Equal(
+            new Dictionary<IdCardDataSource, string>
+            {
+                [IdCardDataSource.Id] = "42",
+                [IdCardDataSource.Name] = "Testa Testesen",
+                [IdCardDataSource.OrganizerArea] = "Brætspilsdesigner",
+                // In the participant's language (Danish by default)
+                [IdCardDataSource.Pronouns] = "Hun/Hende",
+            },
+            first.Texts);
+        // Deltagere::getName: the nickname when there is one. Pronouns not given yet ("none") leave the box blank.
         Assert.False(cards[1].HasPhoto);
         Assert.Equal("Testo", cards[1].Texts[IdCardDataSource.Name]);
-        Assert.Equal(string.Empty, cards[1].Texts[IdCardDataSource.Game]);
-    }
-
-    [Theory]
-    [InlineData("Testa", "Testesen", "", "Testa Testesen")]
-    [InlineData("Testa", "Testesen", "Testo", "Testo")]
-    [InlineData("Testa", "", "", "Testa")]
-    public void Name_IsTheNicknameOrTheFullName(string first, string last, string nickname, string expected)
-    {
-        Assert.Equal(expected, IdCardTexts.Name(first, last, nickname));
+        Assert.Equal(string.Empty, cards[1].Texts[IdCardDataSource.Pronouns]);
+        Assert.Equal(string.Empty, cards[1].Texts[IdCardDataSource.OrganizerArea]);
+        Assert.Equal("Ask me", cards[2].Texts[IdCardDataSource.Pronouns]);
     }
 }

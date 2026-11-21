@@ -456,6 +456,12 @@ export interface UpdateParticipantSeatsDto {
   seats: { runId: number; role: RunSeatRole }[];
 }
 
+// What "Opdater" did: whether anything was saved, and the runs in the list that had no room for the role
+export interface UpdateParticipantSeatsResult {
+  isChanged: boolean;
+  fullRunIds: number[];
+}
+
 // Infosys deltager/updatetilmelding ("Opdater Aktivitets-tilmeldinger") and the row dialog of the Aktivitetstilmeldinger box
 export interface ParticipantSignups {
   participantId: number;

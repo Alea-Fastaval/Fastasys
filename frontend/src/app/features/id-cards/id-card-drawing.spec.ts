@@ -93,10 +93,8 @@ const card: IdCard = {
   texts: {
     Id: '1234',
     Name: 'Anna',
-    DoctorName: 'Dr. Anna',
     OrganizerArea: 'Kiosken',
-    Game: '',
-    YouthClub: '',
+    Pronouns: 'Hun/Hende',
   },
 };
 

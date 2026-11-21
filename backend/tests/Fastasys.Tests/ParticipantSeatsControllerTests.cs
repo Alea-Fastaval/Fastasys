@@ -71,6 +71,13 @@ public class ParticipantSeatsControllerTests
     private static RunSeat Seat(int runId, int seatNumber, int participantId, RunSeatRole role = RunSeatRole.Player) =>
         new() { RunId = runId, SeatNumber = seatNumber, ParticipantId = participantId, Role = role };
 
+    private static void AssertResult(ActionResult<UpdateParticipantSeatsResultDto> result, bool isChanged, params int[] fullRunIds)
+    {
+        var dto = Ok(result);
+        Assert.Equal(isChanged, dto.IsChanged);
+        Assert.Equal(fullRunIds, dto.FullRunIds);
+    }
+
     [Fact]
     public async Task Get_IsNotFoundForAnUnknownParticipant()
     {
@@ -237,7 +244,7 @@ public class ParticipantSeatsControllerTests
             new ParticipantSeatChoiceDto(300, RunSeatRole.Player),
         ]));
 
-        Assert.IsType<NoContentResult>(result);
+        AssertResult(result, true);
         var seats = await db.RunSeats.AsNoTracking().Where(s => s.ParticipantId == 1).OrderBy(s => s.RunId).ToListAsync(TestContext.Current.CancellationToken);
         Assert.Equal([100, 300], seats.Select(s => s.RunId));
         // The first free seat number on run 300, where 1 and 3 are taken
@@ -246,25 +253,44 @@ public class ParticipantSeatsControllerTests
     }
 
     [Fact]
-    public async Task Update_KeepsTheRoleOfASeatThatIsKept()
+    public async Task Update_ChangesTheRoleOfAKeptSeat()
     {
-        // Legacy: updateAktiviteter matches on hold_id only, so a kept seat keeps its role
+        // Fixed 2026-11-21: Infosys's updateAktiviteter matched on hold_id only, so a kept seat kept its old role
         using var db = await SeedAsync(d =>
         {
             AddGame(d, 1, "Spil", Wednesday(8));
-            d.RunSeats.Add(Seat(100, 1, 1, RunSeatRole.Player));
+            d.RunSeats.AddRange(Seat(100, 1, 2), Seat(100, 2, 1, RunSeatRole.Player));
         });
 
-        await CreateController(db).Update(1, new UpdateParticipantSeatsDto([new ParticipantSeatChoiceDto(100, RunSeatRole.GameMaster)]));
+        var result = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([new ParticipantSeatChoiceDto(100, RunSeatRole.GameMaster)]));
 
+        AssertResult(result, true);
+        var seat = await db.RunSeats.AsNoTracking().SingleAsync(s => s.ParticipantId == 1, TestContext.Current.CancellationToken);
+        Assert.Equal((RunSeatRole.GameMaster, 2), (seat.Role, seat.SeatNumber));
+    }
+
+    [Fact]
+    public async Task Update_KeepsTheRoleOfAKeptSeatWhenTheRunHasNoRoomForTheNewRole()
+    {
+        // The run has its one game master, so the player can't become one
+        using var db = await SeedAsync(d =>
+        {
+            AddGame(d, 1, "Spil", Wednesday(8));
+            d.RunSeats.AddRange(Seat(100, 1, 2, RunSeatRole.GameMaster), Seat(100, 2, 1, RunSeatRole.Player));
+        });
+
+        var result = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([new ParticipantSeatChoiceDto(100, RunSeatRole.GameMaster)]));
+
+        AssertResult(result, false, 100);
         var seat = await db.RunSeats.AsNoTracking().SingleAsync(s => s.ParticipantId == 1, TestContext.Current.CancellationToken);
         Assert.Equal(RunSeatRole.Player, seat.Role);
     }
 
     [Fact]
-    public async Task Update_SkipsARunWithoutRoomForTheRole()
+    public async Task Update_SavesTheRestAndNamesARunWithoutRoomForTheRole()
     {
-        // Legacy: Pladser::setDeltagerPlads refuses, and Infosys still says "Deltageren blev opdateret."
+        // Pladser::setDeltagerPlads refuses. Fixed 2026-11-21: Infosys skipped the run without telling anyone and still
+        // said "Deltageren blev opdateret."
         using var db = await SeedAsync(d =>
         {
             AddGame(d, 1, "Fyldt", Wednesday(8));
@@ -278,9 +304,42 @@ public class ParticipantSeatsControllerTests
             new ParticipantSeatChoiceDto(200, RunSeatRole.GameMaster),
         ]));
 
-        Assert.IsType<NoContentResult>(result);
+        AssertResult(result, true, 100);
         var seat = await db.RunSeats.AsNoTracking().SingleAsync(s => s.ParticipantId == 1, TestContext.Current.CancellationToken);
         Assert.Equal(200, seat.RunId);
+    }
+
+    [Fact]
+    public async Task Update_SaysNothingChangedWhenTheOnlyRunHasNoRoom()
+    {
+        using var db = await SeedAsync(d =>
+        {
+            AddGame(d, 1, "Fyldt", Wednesday(8));
+            d.RunSeats.AddRange(Seat(100, 1, 2), Seat(100, 2, 3), Seat(100, 3, 4));
+        });
+
+        var result = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([new ParticipantSeatChoiceDto(100, RunSeatRole.Player)]));
+
+        AssertResult(result, false, 100);
+        Assert.False(await db.RunSeats.AnyAsync(s => s.ParticipantId == 1, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Update_SaysNothingChangedForTheSameList()
+    {
+        // Fixed 2026-11-21: Infosys said "Deltageren blev opdateret." here too
+        using var db = await SeedAsync(d =>
+        {
+            AddGame(d, 1, "Spil", Wednesday(8));
+            d.RunSeats.Add(Seat(100, 1, 1, RunSeatRole.GameMaster));
+        });
+
+        var same = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([new ParticipantSeatChoiceDto(100, RunSeatRole.GameMaster)]));
+        var nothing = await CreateController(db).Update(2, new UpdateParticipantSeatsDto([]));
+
+        AssertResult(same, false);
+        AssertResult(nothing, false);
+        Assert.Equal(1, await db.RunSeats.CountAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -292,8 +351,9 @@ public class ParticipantSeatsControllerTests
             d.RunSeats.AddRange(Seat(100, 1, 1), Seat(100, 2, 2));
         });
 
-        await CreateController(db).Update(1, new UpdateParticipantSeatsDto([]));
+        var result = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([]));
 
+        AssertResult(result, true);
         Assert.Equal([2], await db.RunSeats.AsNoTracking().Select(s => s.ParticipantId).ToListAsync(TestContext.Current.CancellationToken));
     }
 
@@ -310,7 +370,7 @@ public class ParticipantSeatsControllerTests
 
         var result = await CreateController(db).Update(1, new UpdateParticipantSeatsDto([]));
 
-        Assert.IsType<ConflictObjectResult>(result);
+        Assert.IsType<ConflictObjectResult>(result.Result);
         Assert.Equal(1, await db.RunSeats.CountAsync(TestContext.Current.CancellationToken));
     }
 
@@ -326,10 +386,10 @@ public class ParticipantSeatsControllerTests
             [new ParticipantSeatChoiceDto(100, RunSeatRole.Player), new ParticipantSeatChoiceDto(100, RunSeatRole.GameMaster)]));
         var unknownParticipant = await controller.Update(99, new UpdateParticipantSeatsDto([]));
 
-        Assert.IsType<BadRequestObjectResult>(unknownRun);
-        Assert.IsType<BadRequestObjectResult>(unknownRole);
-        Assert.IsType<BadRequestObjectResult>(twice);
-        Assert.IsType<NotFoundObjectResult>(unknownParticipant);
+        Assert.IsType<BadRequestObjectResult>(unknownRun.Result);
+        Assert.IsType<BadRequestObjectResult>(unknownRole.Result);
+        Assert.IsType<BadRequestObjectResult>(twice.Result);
+        Assert.IsType<NotFoundObjectResult>(unknownParticipant.Result);
         Assert.Equal(0, await db.RunSeats.CountAsync(TestContext.Current.CancellationToken));
     }
 }

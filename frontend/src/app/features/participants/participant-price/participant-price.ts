@@ -3,9 +3,10 @@ import { ParticipantPrice } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 
-// An amount as Infosys shows it: the whole number of kroner followed by ",-", e.g. "450,-" or "-150,-"
+// An amount: the whole number of kroner followed by "DKK", e.g. "450 DKK" or "-150 DKK". Infosys wrote "450,-";
+// changed on 2026-11-21 after a PR review. The Wear box uses it too.
 export function priceText(amount: number): string {
-  return `${amount},-`;
+  return `${amount} DKK`;
 }
 
 // The lines of the box that Infosys works out in the template (visdeltager.phtml) instead of in Deltagere

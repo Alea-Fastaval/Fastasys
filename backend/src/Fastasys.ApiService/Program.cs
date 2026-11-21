@@ -17,8 +17,14 @@ if (builder.Environment.IsEnvironment("Testing"))
 
 builder.Services.AddHealthChecks();
 
-builder.Services.AddDbContext<InfosysDbContext>(options =>
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AmountPaidLogInterceptor>();
+
+builder.Services.AddDbContext<InfosysDbContext>((services, options) =>
 {
+    // Logs every saved change to a participant's amount paid
+    options.AddInterceptors(services.GetRequiredService<AmountPaidLogInterceptor>());
+
     if (builder.Environment.IsEnvironment("Testing"))
     {
         options.UseInMemoryDatabase("InfosysDbFallback");

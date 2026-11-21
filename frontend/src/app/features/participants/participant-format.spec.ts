@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
+  PRONOUNS_NOT_GIVEN,
+  PRONOUN_FIRST_CHOICES,
   changeFirstPronoun,
   formatBirthDate,
   formatConventionDate,
   formatConventionDateTime,
+  hasSecondPronoun,
   pronounText,
   pronounValue,
   sortByDanish,
@@ -16,11 +19,15 @@ describe('pronounText (Infosys Deltagere::getPronoun)', () => {
     expect(pronounText('fsfo', 'English')).toBe('She/Her');
   });
 
-  it('shows one pronoun, none and ask', () => {
+  it('shows one pronoun and ask', () => {
     expect(pronounText('ns', 'Danish')).toBe('De');
-    expect(pronounText('none', 'Danish')).toBe('Ingen');
     expect(pronounText('ask', 'Danish')).toBe('Spørg mig');
     expect(pronounText('ask', 'English')).toBe('Ask me');
+  });
+
+  it('is blank when the pronouns are not given yet (Infosys: Ingen; changed 2026-11-21)', () => {
+    expect(pronounText(PRONOUNS_NOT_GIVEN, 'Danish')).toBe('');
+    expect(pronounText(PRONOUNS_NOT_GIVEN, 'English')).toBe('');
   });
 });
 
@@ -29,12 +36,19 @@ describe('the pronoun widget', () => {
     expect(toPronounChoice('nsno')).toEqual({ first: 'ns', second: 'no' });
     expect(toPronounChoice('ms')).toEqual({ first: 'ms', second: '' });
     expect(toPronounChoice('ask')).toEqual({ first: 'ask', second: '' });
-    // An unknown value shows as Ingen, like the widget
-    expect(toPronounChoice('xx')).toEqual({ first: 'none', second: '' });
+  });
+
+  it('picks nothing when the pronouns are not given yet or unknown (Infosys showed Ingen)', () => {
+    expect(toPronounChoice(PRONOUNS_NOT_GIVEN)).toEqual({ first: '', second: '' });
+    expect(toPronounChoice('xx')).toEqual({ first: '', second: '' });
+  });
+
+  it('cannot choose no pronouns', () => {
+    expect(PRONOUN_FIRST_CHOICES).toEqual(['ns', 'no', 'fs', 'fo', 'ms', 'mo', 'ask']);
   });
 
   it('suggests the usual pair when the second select appears', () => {
-    expect(changeFirstPronoun({ first: 'none', second: '' }, 'fs')).toEqual({ first: 'fs', second: 'fo' });
+    expect(changeFirstPronoun({ first: '', second: '' }, 'fs')).toEqual({ first: 'fs', second: 'fo' });
     expect(changeFirstPronoun({ first: 'ask', second: '' }, 'no')).toEqual({ first: 'no', second: '' });
   });
 
@@ -43,8 +57,11 @@ describe('the pronoun widget', () => {
     expect(changeFirstPronoun({ first: 'ns', second: 'fo' }, 'fo')).toEqual({ first: 'fo', second: '' });
   });
 
-  it('hides the second select for none and ask', () => {
-    expect(changeFirstPronoun({ first: 'ns', second: 'no' }, 'none')).toEqual({ first: 'none', second: '' });
+  it('hides the second select while nothing is picked and for ask', () => {
+    expect(hasSecondPronoun({ first: '', second: '' })).toBe(false);
+    expect(hasSecondPronoun({ first: 'ask', second: '' })).toBe(false);
+    expect(hasSecondPronoun({ first: 'ns', second: '' })).toBe(true);
+    expect(changeFirstPronoun({ first: 'ns', second: 'no' }, 'ask')).toEqual({ first: 'ask', second: '' });
     expect(pronounValue({ first: 'ask', second: 'no' })).toBe('ask');
     expect(pronounValue({ first: 'ns', second: 'no' })).toBe('nsno');
     expect(pronounValue({ first: 'ns', second: '' })).toBe('ns');

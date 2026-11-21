@@ -111,6 +111,28 @@ public class ActivitySignupsControllerTests
     }
 
     [Fact]
+    public async Task Get_ShowsTheChosenName()
+    {
+        // The nickname when there is one, otherwise the legal name, trimmed like Infosys Deltagere::getName
+        // (agreed 2026-11-21; Infosys's table shows fornavn and efternavn)
+        using var db = await SeedAsync(d =>
+        {
+            d.Participants.Single(p => p.Id == 1).Nickname = "Kaldenavn";
+            d.Participants.Single(p => p.Id == 2).FirstName = "";
+            d.ScheduleSignups.AddRange(
+                Wish(1, 10, RunSeatRole.Player, 1),
+                Wish(2, 10, RunSeatRole.Player, 2),
+                Wish(3, 10, RunSeatRole.Player, 3));
+        });
+
+        var names = (await RowsAsync(db, 10)).ToDictionary(r => r.ParticipantId, r => r.Name);
+
+        Assert.Equal("Kaldenavn", names[1]);
+        Assert.Equal("Efternavn2", names[2]);
+        Assert.Equal("Fornavn3 Efternavn3", names[3]);
+    }
+
+    [Fact]
     public async Task Get_ShowsTheAgeTheLanguageFlagAndTheNote()
     {
         using var db = await SeedAsync(d =>

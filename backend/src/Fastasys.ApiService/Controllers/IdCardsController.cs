@@ -55,9 +55,9 @@ public class IdCardsController : ControllerBase
                 p.FirstName,
                 p.LastName,
                 p.Nickname,
-                p.YouthClub,
+                p.Pronouns,
+                p.PreferredLanguage,
                 OrganizerArea = p.OrganizerArea != null ? p.OrganizerArea.NameDanish : null,
-                Game = p.GameActivity != null ? p.GameActivity.Title : null,
                 // Infosys IdTemplateModel::getParticipantTemplate: their own template, or else their category's
                 TemplateId = p.IdCardTemplateId ?? p.Category.IdCardTemplateId,
                 HasPhoto = _db.ParticipantPhotos.Any(photo => photo.ParticipantId == p.Id)
@@ -90,7 +90,6 @@ public class IdCardsController : ControllerBase
             .Select(id =>
             {
                 var p = participants[id];
-                var name = IdCardTexts.Name(p.FirstName, p.LastName, p.Nickname);
                 return new IdCardDto(
                     p.Id,
                     p.TemplateId!.Value,
@@ -99,23 +98,14 @@ public class IdCardsController : ControllerBase
                     new Dictionary<IdCardDataSource, string>
                     {
                         [IdCardDataSource.Id] = p.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        [IdCardDataSource.Name] = name,
-                        [IdCardDataSource.DoctorName] = "Dr. " + name,
+                        [IdCardDataSource.Name] = Participant.DisplayName(p.FirstName, p.LastName, p.Nickname),
                         [IdCardDataSource.OrganizerArea] = p.OrganizerArea ?? string.Empty,
-                        [IdCardDataSource.Game] = p.Game ?? string.Empty,
-                        [IdCardDataSource.YouthClub] = p.YouthClub
+                        // Blank when the pronouns aren't given yet (agreed 2026-11-21; Infosys's badge generator says "Ingen")
+                        [IdCardDataSource.Pronouns] = ParticipantRules.PronounText(p.Pronouns, p.PreferredLanguage)
                     });
             })
             .ToList();
 
         return Ok(new IdCardsDto(cards, templates));
     }
-}
-
-// The texts of an ID card (Infosys IdTemplateRenderer::addTextElement)
-public static class IdCardTexts
-{
-    // Infosys Deltagere::getName: the nickname when there is one, otherwise the first and last name
-    public static string Name(string firstName, string lastName, string nickname) =>
-        !string.IsNullOrEmpty(nickname) ? nickname : $"{firstName} {lastName}".Trim();
 }

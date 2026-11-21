@@ -435,6 +435,9 @@
       "listFailed": "Could not load the participants.",
       "activitiesLocked": "The participant's activities cannot be changed.",
       "activitiesUpdateFailed": "Could not update the participant.",
+      "activitiesNoChanges": "There were no changes to save.",
+      "activitiesUpdatedRunFull": "The participant was updated, but one of the runs had no room.",
+      "activitiesNotUpdatedRunFull": "The participant was not updated: the run had no room.",
       "signupAlreadySignedUp": "Cannot move the signup - the participant is already signed up for the schedule it is moved to",
       "signupNotFound": "Cannot find the schedule",
       "signupNoGameMasters": "The activity has no game masters.",
@@ -612,10 +615,8 @@
     "dataSources": {
       "Id": "ID",
       "Name": "Name",
-      "DoctorName": "Dr. + Name",
       "OrganizerArea": "Organizer area",
-      "Game": "Scenario",
-      "YouthClub": "Youth school/club"
+      "Pronouns": "Pronouns"
     },
     "messages": {
       "saveFailed": "Failed to save template",

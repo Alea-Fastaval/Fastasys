@@ -62,22 +62,22 @@ public enum IdCardItemType
     Barcode
 }
 
-/// <summary>Infosys idtemplates_items.datasource: id, name, doctorname, workarea, scenario, group.</summary>
+/// <summary>
+/// What a text item on an ID card shows. Infosys idtemplates_items.datasource had id, name, doctorname, workarea,
+/// scenario and group. Agreed 2026-11-21: doctorname ("Dr. + Navn"), scenario (the participant's own game) and group
+/// (the ungdomsskole) are dropped, and the pronouns are added (Infosys only had them on its separate badge generator).
+/// </summary>
 [JsonConverter(typeof(JsonStringEnumConverter<IdCardDataSource>))]
 public enum IdCardDataSource
 {
-    // "ID"
+    // "ID": the participant number
     Id,
-    // "Navn": the nickname, or else the first and last name (Deltagere::getName)
+    // "Navn": the chosen name (Participant.DisplayName)
     Name,
-    // "Dr. + Navn"
-    DoctorName,
-    // "Arbejdsområde": the organizer area
+    // "Arbejdsområde": the organizer area, e.g. "Kiosken"
     OrganizerArea,
-    // "Scenarie": the participant's own scenario or board game
-    Game,
-    // "Ungdomsskole"
-    YouthClub
+    // "Pronomen": e.g. "Hun/Hende" in the participant's language; blank when they gave none
+    Pronouns
 }
 
 /// <summary>

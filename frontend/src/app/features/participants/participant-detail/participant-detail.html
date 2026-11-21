@@ -49,13 +49,15 @@
           <input type="number" name="value" [(ngModel)]="e.value" />
           } @case ('pronouns') {
           <select name="first" [ngModel]="e.pronouns.first" (ngModelChange)="changeFirstPronoun($event)">
-            @for (code of pronounFirstChoices; track code) {
+            @if (!e.pronouns.first) {
+            <option value="" disabled></option>
+            } @for (code of pronounFirstChoices; track code) {
             <option [value]="code" [disabled]="code === e.pronouns.second">
               {{ pronounWord(code, p.preferredLanguage) }}
             </option>
             }
           </select>
-          @if (e.pronouns.first !== 'none' && e.pronouns.first !== 'ask') {
+          @if (hasSecondPronoun(e.pronouns)) {
           <span>/</span>
           <select name="second" [ngModel]="e.pronouns.second" (ngModelChange)="changeSecondPronoun($event)">
             <option value=""></option>
@@ -68,7 +70,9 @@
           } } @default {
           <input type="text" name="value" [(ngModel)]="e.value" />
           } }
-          <button mat-stroked-button type="submit" [disabled]="busy()">{{ 'participants.ok' | translate }}</button>
+          <button mat-stroked-button type="submit" [disabled]="!canSubmit(def, e)">
+            {{ 'participants.ok' | translate }}
+          </button>
           <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
         </form>
       </dd>

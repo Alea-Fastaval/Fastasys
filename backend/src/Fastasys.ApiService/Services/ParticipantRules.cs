@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Fastasys.ApiService.Data.Entities;
 
 namespace Fastasys.ApiService.Services;
 
@@ -7,8 +8,12 @@ namespace Fastasys.ApiService.Services;
 /// </summary>
 public static partial class ParticipantRules
 {
-    // Infosys deltagere.pronouns: "none", "ask", or one or two pronoun codes
-    public const string NoPronouns = "none";
+    // Infosys deltagere.pronouns: "none", "ask", or one or two pronoun codes.
+    // "none" is the column's default: the participant hasn't given their pronouns yet. Infosys showed it as "Ingen" and
+    // let staff choose it. That was dropped on 2026-11-21 after a PR review, because nobody has no pronouns: it is
+    // shown blank and can't be chosen. Participants created by staff still start with it. When the signup is ported,
+    // pronouns are obligatory there, so everyone who signs up has picked some (the user, 2026-11-21).
+    public const string PronounsNotGiven = "none";
     public const string AskForPronouns = "ask";
     public static readonly IReadOnlyList<string> PronounCodes = ["ns", "no", "fs", "fo", "ms", "mo"];
 
@@ -76,10 +81,11 @@ public static partial class ParticipantRules
     // Infosys Deltagere::normalizeEmail
     public static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim();
 
-    // The values the Infosys pronoun widget can save: "none", "ask", one code, or two different codes
+    // The values the pronoun picker can save: "ask", one code, or two different codes. Infosys's widget could also save
+    // "none" ("Ingen"); not any more (2026-11-21, see PronounsNotGiven).
     public static bool IsValidPronouns(string? pronouns)
     {
-        if (pronouns is NoPronouns or AskForPronouns) return true;
+        if (pronouns is AskForPronouns) return true;
         if (pronouns is null || (pronouns.Length != 2 && pronouns.Length != 4)) return false;
 
         var first = pronouns[..2];
@@ -89,6 +95,42 @@ public static partial class ParticipantRules
         var second = pronouns[2..];
         return PronounCodes.Contains(second) && second != first;
     }
+
+    // Infosys Deltagere::getPronoun: "Spørg mig", "Hun" or "Hun/Hende", in the given language. Blank when the pronouns
+    // aren't given yet (Infosys: "Ingen"; changed 2026-11-21). The frontend's pronounText (participant-format.ts) does
+    // the same for the participant page. An unknown code is shown as it is.
+    public static string PronounText(string pronouns, PreferredLanguage language)
+    {
+        var words = language == PreferredLanguage.English ? EnglishPronouns : DanishPronouns;
+        string Word(string code) => words.GetValueOrDefault(code, code);
+
+        // "none" is four letters too, so it is checked first, as in Infosys
+        if (pronouns == PronounsNotGiven) return string.Empty;
+        if (pronouns == AskForPronouns || pronouns.Length != 4) return Word(pronouns);
+        return Word(pronouns[..2]) + "/" + Word(pronouns[2..]);
+    }
+
+    private static readonly Dictionary<string, string> DanishPronouns = new()
+    {
+        [AskForPronouns] = "Spørg mig",
+        ["ns"] = "De",
+        ["no"] = "Dem",
+        ["fs"] = "Hun",
+        ["fo"] = "Hende",
+        ["ms"] = "Han",
+        ["mo"] = "Ham"
+    };
+
+    private static readonly Dictionary<string, string> EnglishPronouns = new()
+    {
+        [AskForPronouns] = "Ask me",
+        ["ns"] = "They",
+        ["no"] = "Them",
+        ["fs"] = "She",
+        ["fo"] = "Her",
+        ["ms"] = "He",
+        ["mo"] = "Him"
+    };
 
     // Infosys EANToNumber: a scanned badge is turned back into a participant id. A valid EAN-8 whose first two
     // digits are the current year (two digits) holds the id in its last five digits; a valid EAN-8 from another

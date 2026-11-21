@@ -2,12 +2,14 @@ import { Component, Input } from '@angular/core';
 import { ParticipantWearOrder } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
+import { priceText } from '../participant-price/participant-price';
 
 // What Infosys shows for one order, without its "Udleveret"/"Ikke udleveret":
-// "2 stk. T-shirt-Sort, str. L — 300,- (150,-)". Infosys has a stray space before ", str."; it is left out.
+// "2 stk. T-shirt-Sort, str. L — 300 DKK (150 DKK)". Infosys wrote the amounts as "300,- (150,-)" (changed on
+// 2026-11-21, like the Pris box) and has a stray space before ", str."; it is left out.
 export function wearOrderText(order: ParticipantWearOrder, pieces: string, size: string): string {
   const sizeText = order.size ? `, ${size} ${order.size}` : '';
-  return `${order.amount} ${pieces} ${order.name}${sizeText} — ${order.unitPrice * order.amount},- (${order.unitPrice},-)`;
+  return `${order.amount} ${pieces} ${order.name}${sizeText} — ${priceText(order.unitPrice * order.amount)} (${priceText(order.unitPrice)})`;
 }
 
 // The Wear box of the Infosys participant page (visdeltager.phtml, #wear_info): one line per order with the amount,

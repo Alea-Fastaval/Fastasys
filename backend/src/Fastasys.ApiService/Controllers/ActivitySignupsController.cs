@@ -13,6 +13,7 @@ public record ScheduleSignupsDto(int ScheduleId, IReadOnlyList<SignupPoolRowDto>
 // A row of the table. Infosys shows: an SL icon for a game master wish, the name (linked to the participant), Pri,
 // karma, age, a heart, a language flag and a note icon; hovering the row shows the language, age, wanted activities
 // and the note.
+// - Name is the chosen name (agreed 2026-11-21; Infosys shows fornavn and efternavn).
 // - Karma is not ported yet, so it is always null (like the runs' karma).
 // - Age is null when the birth date is unknown.
 // - Language is "dk", "uk" or null (see SignupRules.LanguageFlag); ActivityLanguages is what the hover shows.
@@ -132,7 +133,7 @@ public class ActivitySignupsController : ControllerBase
 
                     return new SignupPoolRowDto(
                         p.Id,
-                        p.LegalName(),
+                        p.DisplayName(),
                         w.Role,
                         w.Priority,
                         Karma: null,

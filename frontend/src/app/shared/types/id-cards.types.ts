@@ -3,17 +3,11 @@
 
 export type IdCardItemType = 'Photo' | 'Text' | 'Barcode';
 
-// What a text item shows: ID, Navn, Dr. + Navn, Arbejdsområde, Scenarie or Ungdomsskole
-export type IdCardDataSource = 'Id' | 'Name' | 'DoctorName' | 'OrganizerArea' | 'Game' | 'YouthClub';
+// What a text item shows: ID, Navn, Arbejdsområde or Pronomen. Infosys also had Dr. + Navn, Scenarie and Ungdomsskole,
+// and no pronouns; changed 2026-11-21.
+export type IdCardDataSource = 'Id' | 'Name' | 'OrganizerArea' | 'Pronouns';
 
-export const ID_CARD_DATA_SOURCES: readonly IdCardDataSource[] = [
-  'Id',
-  'Name',
-  'DoctorName',
-  'OrganizerArea',
-  'Game',
-  'YouthClub',
-];
+export const ID_CARD_DATA_SOURCES: readonly IdCardDataSource[] = ['Id', 'Name', 'OrganizerArea', 'Pronouns'];
 
 // An item on a template; positions and sizes in pixels of the background, rotation in degrees clockwise
 export interface IdCardTemplateItem {

@@ -11,6 +11,7 @@ import {
   isLocked,
   roleOptionDisabled,
   runOptionDisabled,
+  updateMessage,
 } from './participant-seats';
 
 // 24 March 2027 is a Wednesday; Copenhagen is UTC+1 that week
@@ -86,6 +87,31 @@ describe('canAddSeat ("Tilføj Aktivitet")', () => {
   it('adds a run only once, like imwedit.js checkForAlreadySelected', () => {
     const listed = { ...page.seats[0], runId: free.id };
     expect(canAddSeat([listed], activity, schedule, free, 'GameMaster')).toBe(false);
+  });
+});
+
+describe('updateMessage ("Opdater")', () => {
+  // Fixed 2026-11-21: Infosys always said "Deltageren blev opdateret."
+  it('says the participant was updated when something was saved and every run had room', () => {
+    expect(updateMessage({ isChanged: true, fullRunIds: [] })).toEqual({ type: 'success', key: 'updated' });
+  });
+
+  it('says there was nothing to save when the list was unchanged', () => {
+    expect(updateMessage({ isChanged: false, fullRunIds: [] })).toEqual({
+      type: 'success',
+      key: 'activitiesNoChanges',
+    });
+  });
+
+  it('warns when a run had no room, saying whether the rest was saved', () => {
+    expect(updateMessage({ isChanged: true, fullRunIds: [100] })).toEqual({
+      type: 'error',
+      key: 'activitiesUpdatedRunFull',
+    });
+    expect(updateMessage({ isChanged: false, fullRunIds: [100] })).toEqual({
+      type: 'error',
+      key: 'activitiesNotUpdatedRunFull',
+    });
   });
 });
 
@@ -243,9 +269,23 @@ describe('ParticipantSeatsComponent (Infosys deltager/updateaktivitet)', () => {
     component.submit();
     const req = httpMock.expectOne({ method: 'PUT', url: '/api/participants/7/seats' });
     expect(req.request.body).toEqual({ seats: [{ runId: 100, role: 'Player' }] });
-    req.flush(null, { status: 204, statusText: 'No Content' });
+    req.flush({ isChanged: true, fullRunIds: [] });
 
     expect(set).toHaveBeenCalledWith('success', 'updated');
+    expect(navigate).toHaveBeenCalledWith(['/participants', 7]);
+  });
+
+  it('goes back to the participant with a warning when a run had no room', async () => {
+    const { component, navigate, flash } = await setup();
+    httpMock.expectOne('/api/participants/7/seats').flush(page);
+    const set = vi.spyOn(flash, 'set');
+
+    component.submit();
+    httpMock
+      .expectOne({ method: 'PUT', url: '/api/participants/7/seats' })
+      .flush({ isChanged: false, fullRunIds: [100] });
+
+    expect(set).toHaveBeenCalledWith('error', 'activitiesNotUpdatedRunFull');
     expect(navigate).toHaveBeenCalledWith(['/participants', 7]);
   });
 

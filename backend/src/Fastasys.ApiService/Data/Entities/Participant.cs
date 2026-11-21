@@ -22,7 +22,7 @@ public class Participant
     [MaxLength(256)]
     public string LastName { get; set; } = string.Empty;
 
-    [MaxLength(255)]
+    [MaxLength(256)]
     public string Nickname { get; set; } = string.Empty;
 
     [MaxLength(512)]
@@ -53,7 +53,8 @@ public class Participant
     // null means unknown (Infosys stores 0000-00-00)
     public DateOnly? BirthDate { get; set; }
 
-    // Infosys codes: "none", "ask", or one or two of ns/no/fs/fo/ms/mo (e.g. "nsno")
+    // Infosys codes: "none" (not given yet, see ParticipantRules.PronounsNotGiven), "ask", or one or two of
+    // ns/no/fs/fo/ms/mo (e.g. "nsno")
     [MaxLength(4)]
     public string Pronouns { get; set; } = "none";
 
@@ -129,7 +130,8 @@ public class Participant
     // null means not checked in (Infosys stores 0000-00-00 00:00:00)
     public DateTime? CheckedInAt { get; set; }
 
-    // Infosys: betalt_beloeb ("Forudbetalt"). Whole DKK, like Infosys.
+    // Infosys: betalt_beloeb ("Forudbetalt"). Whole DKK, like Infosys. AmountPaidLogInterceptor logs every saved change
+    // with the old and the new amount, whichever code sets it.
     public int AmountPaid { get; set; }
 
     // Infosys: admin_note, beskeder, paid_note
@@ -150,10 +152,18 @@ public class Participant
     public virtual ICollection<ParticipantFood> Foods { get; set; } = new List<ParticipantFood>();
     public virtual ICollection<ParticipantWear> Wears { get; set; } = new List<ParticipantWear>();
 
-    // Infosys Deltagere::getName: the nickname, or else the legal name
+    // The participant's chosen name. Fastasys shows this name everywhere; the legal name is only shown on the
+    // participant page.
     public string DisplayName()
     {
-        return Nickname == string.Empty ? LegalName() : Nickname;
+        return DisplayName(FirstName, LastName, Nickname);
+    }
+
+    // Infosys Deltagere::getName: the nickname, or else the trimmed legal name. For queries that read only the name
+    // columns instead of the whole participant.
+    public static string DisplayName(string firstName, string lastName, string nickname)
+    {
+        return string.IsNullOrEmpty(nickname) ? (firstName + " " + lastName).Trim() : nickname;
     }
 
     public string LegalName()

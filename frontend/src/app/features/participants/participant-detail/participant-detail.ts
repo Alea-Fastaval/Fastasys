@@ -27,6 +27,7 @@ import {
   PRONOUN_FIRST_CHOICES,
   PronounChoice,
   changeFirstPronoun,
+  hasSecondPronoun,
   formatBirthDate,
   formatConventionDate,
   formatConventionDateTime,
@@ -144,6 +145,7 @@ export class ParticipantDetailComponent {
   public readonly pronounFirstChoices = PRONOUN_FIRST_CHOICES;
   public readonly pronounCodes = PRONOUN_CODES;
   public readonly pronounWord = pronounWord;
+  public readonly hasSecondPronoun = hasSecondPronoun;
   public readonly formatBirthDate = formatBirthDate;
 
   private readonly categoryOptions = computed<SelectOption[]>(() =>
@@ -465,10 +467,15 @@ export class ParticipantDetailComponent {
     if (editor) this.editor.set({ ...editor, pronouns: { ...editor.pronouns, second } });
   }
 
+  // The pronouns can't be saved until some are picked: "not given" can't be chosen (2026-11-21)
+  public canSubmit(def: EditableField, editor: FieldEditor): boolean {
+    return !this.busy() && (def.kind !== 'pronouns' || editor.pronouns.first !== '');
+  }
+
   public submitEdit(def: EditableField): void {
     const editor = this.editor();
     const participant = this.participant();
-    if (!editor || !participant) return;
+    if (!editor || !participant || !this.canSubmit(def, editor)) return;
 
     this.busy.set(true);
     this.http

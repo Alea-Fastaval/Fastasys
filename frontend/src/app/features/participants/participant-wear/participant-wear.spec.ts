@@ -10,11 +10,12 @@ const mug: ParticipantWearOrder = { amount: 1, name: 'Krus', size: null, unitPri
 
 describe('wearOrderText (an order in the Infosys Wear box)', () => {
   it('shows the amount, name, size, total and price for one piece', () => {
-    expect(wearOrderText(shirt, 'stk.', 'str.')).toBe('2 stk. T-shirt-Sort, str. L — 300,- (150,-)');
+    // Infosys wrote "300,- (150,-)"; DKK since 2026-11-21
+    expect(wearOrderText(shirt, 'stk.', 'str.')).toBe('2 stk. T-shirt-Sort, str. L — 300 DKK (150 DKK)');
   });
 
   it('leaves the size out when the order has none', () => {
-    expect(wearOrderText(mug, 'stk.', 'str.')).toBe('1 stk. Krus — 60,- (60,-)');
+    expect(wearOrderText(mug, 'stk.', 'str.')).toBe('1 stk. Krus — 60 DKK (60 DKK)');
   });
 });
 
@@ -48,8 +49,8 @@ describe('ParticipantWearComponent', () => {
       li.textContent?.replace(/\s+/g, ' ').trim(),
     );
     expect(lines).toEqual([
-      '2 participants.wear.pieces T-shirt-Sort, participants.wear.size L — 300,- (150,-) — (participants.wear.notReceived)',
-      '1 participants.wear.pieces Krus — 60,- (60,-) — (participants.wear.received)',
+      '2 participants.wear.pieces T-shirt-Sort, participants.wear.size L — 300 DKK (150 DKK) — (participants.wear.notReceived)',
+      '1 participants.wear.pieces Krus — 60 DKK (60 DKK) — (participants.wear.received)',
     ]);
     expect(element.querySelector('.not-ported')).toBeNull();
   });

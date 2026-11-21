@@ -15,10 +15,11 @@ import {
   SeatScheduleOption,
   SeatWish,
   UpdateParticipantSeatsDto,
+  UpdateParticipantSeatsResult,
 } from '@shared/types';
 import { Card } from '@shared/components';
 import { TimeSpanPipe, TranslatePipe } from '@shared/pipes';
-import { ParticipantFlashService } from '../participant-flash.service';
+import { ParticipantFlash, ParticipantFlashService } from '../participant-flash.service';
 
 // The API refuses an activity-locked participant with 409 and reason "locked" (409 alone can also mean that a seat
 // was taken at the same time)
@@ -35,6 +36,15 @@ export function runOptionDisabled(run: SeatRunOption): boolean {
 // when it needs no more game masters
 export function roleOptionDisabled(run: SeatRunOption, role: RunSeatRole): boolean {
   return role === 'Player' ? !run.canUsePlayers : !run.needsGameMasters;
+}
+
+// The message "Opdater" goes back to the participant with. Infosys always said "Deltageren blev opdateret.", even when
+// a run had no room or nothing changed (fixed 2026-11-21).
+export function updateMessage(result: UpdateParticipantSeatsResult): ParticipantFlash {
+  if (result.fullRunIds.length > 0) {
+    return { type: 'error', key: result.isChanged ? 'activitiesUpdatedRunFull' : 'activitiesNotUpdatedRunFull' };
+  }
+  return { type: 'success', key: result.isChanged ? 'updated' : 'activitiesNoChanges' };
 }
 
 // "Tilføj Aktivitet" (imwedit.js setupAktivitet): needs all four choices, and a run can only be in the list once
@@ -186,15 +196,16 @@ export class ParticipantSeatsComponent implements OnInit {
     this.seats.update(seats => seats.filter(s => s !== seat));
   }
 
-  // Infosys goes back to the participant with "Deltageren blev opdateret." or an error
+  // Goes back to the participant with what was done (see updateMessage) or an error
   public submit(): void {
     const dto: UpdateParticipantSeatsDto = {
       seats: this.seats().map(seat => ({ runId: seat.runId, role: seat.role })),
     };
     this.busy.set(true);
-    this.http.put(`/api/participants/${this.participantId}/seats`, dto).subscribe({
-      next: () => {
-        this.backToParticipant('success', 'updated');
+    this.http.put<UpdateParticipantSeatsResult>(`/api/participants/${this.participantId}/seats`, dto).subscribe({
+      next: result => {
+        const { type, key } = updateMessage(result);
+        this.backToParticipant(type, key);
       },
       error: (err: HttpErrorResponse) => {
         this.backToParticipant('error', isLocked(err) ? 'activitiesLocked' : 'activitiesUpdateFailed');

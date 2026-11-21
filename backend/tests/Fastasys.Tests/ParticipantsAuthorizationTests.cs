@@ -306,6 +306,6 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         var update = await client.PutAsJsonAsync($"/api/participants/{created.Id}/seats", new UpdateParticipantSeatsDto([]), ct);
 
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
     }
 }

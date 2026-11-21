@@ -770,7 +770,7 @@ public class ParticipantsController : ControllerBase
             case "lastName": return SetText(value, 256, v => p.LastName = v);
             case "addressLine1": return SetText(value, 128, v => p.AddressLine1 = v);
             case "addressLine2": return SetText(value, 128, v => p.AddressLine2 = v);
-            case "nickname": return SetText(value, 255, v => p.Nickname = v);
+            case "nickname": return SetText(value, 256, v => p.Nickname = v);
             case "email": return SetText(value, 512, v => p.Email = v);
             case "phoneNumber": return SetText(value, 32, v => p.PhoneNumber = v);
             case "zipCode": return SetText(value, 32, v => p.ZipCode = v);
