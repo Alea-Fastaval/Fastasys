@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ public class ActivitySignupsControllerTests
     }
 
     private static ActivitySignupsController CreateController(InfosysDbContext db, bool mayEditParticipants = true) =>
-        new(db, new FakeAuthorization(mayEditParticipants));
+        new(db, new FakeAuthorization(mayEditParticipants), new KarmaService(db));
 
     private static InfosysDbContext CreateDbContext()
     {
@@ -106,8 +107,27 @@ public class ActivitySignupsControllerTests
         var row = tables[0].Signups[0];
         Assert.Equal("Fornavn3 Efternavn3", row.Name);
         Assert.Equal((RunSeatRole.GameMaster, 0), (row.Role, row.Priority));
-        // Karma is not ported yet
-        Assert.Null(row.Karma);
+    }
+
+    [Fact]
+    public async Task Get_ShowsEachParticipantsCurrentKarma_AsTheRunsDo()
+    {
+        // Infosys's table has a karma column; it is the participant's total over all wishes and seats
+        using var db = await SeedAsync(d =>
+        {
+            d.Activities.Single(a => a.Id == 2).KarmaType = KarmaType.Big;
+            d.ScheduleSignups.AddRange(
+                Wish(1, 10, RunSeatRole.Player, 1),
+                Wish(2, 10, RunSeatRole.Player, 2),
+                Wish(3, 10, RunSeatRole.GameMaster, 0));
+            d.RunSeats.Add(Seat(200, 1, 1));
+        });
+
+        var karma = (await RowsAsync(db, 10)).ToDictionary(r => r.ParticipantId, r => r.Karma);
+
+        Assert.Equal(-2, karma[1]); // -12 for the single first priority, +10 for the seat on the big-karma activity
+        Assert.Equal(-1, karma[2]);
+        Assert.Equal(-7, karma[3]);
     }
 
     [Fact]
