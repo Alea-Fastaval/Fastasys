@@ -297,9 +297,12 @@ public static class DbSeeder
         }
     }
 
+    // If there is already a role named `roleName` then do nothing.
+    // Else we create it, and populate it with the privileges found in privilegeKeys.
+    // the privileges found in privilegeKeys must already exist in the database.
     private static void SeedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
     {
-        var role = db.Roles.First(r => r.Name == roleName);
+        var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
         if (role == null)
         {
             role = new Role
