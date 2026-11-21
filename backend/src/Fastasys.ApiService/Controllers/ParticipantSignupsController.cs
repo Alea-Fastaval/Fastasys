@@ -64,6 +64,9 @@ public class ParticipantSignupsController : ControllerBase
     private static readonly object NotSignedUp = new { message = "Participant is not signed up for the schedule", reason = "notSignedUp" };
     private static readonly object AlreadySignedUp = new { message = "Participant is already signed up for the schedule", reason = "alreadySignedUp" };
     private static readonly object NoGameMasters = new { message = "The activity has no game masters", reason = "noGameMasters" };
+    // A cancelled schedule (not in Infosys) gets no new wishes, like it gets no new runs or seats (agreed 2026-11-21).
+    // Its existing wishes can still have their priority changed or be removed.
+    private static readonly object Cancelled = new { message = "Schedule is cancelled", reason = "cancelled" };
 
     private readonly InfosysDbContext _db;
     private readonly ILogger<ParticipantSignupsController> _logger;
@@ -122,18 +125,22 @@ public class ParticipantSignupsController : ControllerBase
         if (participant == null) return refusal!;
 
         var scheduleIds = choices.Select(c => c.ScheduleId).Distinct().ToList();
-        var gameMastersBySchedule = await _db.Schedules
+        // Cancelling a schedule takes the same lock, so it can't happen between the check below and the save
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleIds);
+        var schedules = await _db.Schedules
             .Where(s => scheduleIds.Contains(s.Id))
-            .Select(s => new { s.Id, s.Activity.GameMastersPerTeam })
-            .ToDictionaryAsync(s => s.Id, s => s.GameMastersPerTeam);
-        if (gameMastersBySchedule.Count != scheduleIds.Count) return BadRequest(new { message = "Unknown schedule" });
+            .Select(s => new { s.Id, s.Activity.GameMastersPerTeam, s.IsCancelled })
+            .ToDictionaryAsync(s => s.Id);
+        if (schedules.Count != scheduleIds.Count) return BadRequest(new { message = "Unknown schedule" });
 
         var current = await _db.ScheduleSignups.Where(s => s.ParticipantId == participantId).ToListAsync();
         var isNew = (ParticipantSignupChoiceDto c) => !current.Any(s => s.ScheduleId == c.ScheduleId && s.Role == c.Role);
-        if (choices.Any(c => isNew(c) && !SignupRules.CanWish(c.Role, gameMastersBySchedule[c.ScheduleId])))
+        if (choices.Any(c => isNew(c) && !SignupRules.CanWish(c.Role, schedules[c.ScheduleId].GameMastersPerTeam)))
         {
             return BadRequest(NoGameMasters);
         }
+
+        if (choices.Any(c => isNew(c) && schedules[c.ScheduleId].IsCancelled)) return Conflict(Cancelled);
 
         foreach (var signup in current)
         {
@@ -160,6 +167,7 @@ public class ParticipantSignupsController : ControllerBase
         }
 
         if (!await TrySaveAsync()) return Conflict(new { message = "Could not update the participant's signups" });
+        if (transaction != null) await transaction.CommitAsync();
 
         _logger.LogInformation("Participant {ParticipantId}'s signups updated by user {UserId}", participantId, CurrentUserId());
         return NoContent();
@@ -183,6 +191,8 @@ public class ParticipantSignupsController : ControllerBase
         var signup = await _db.ScheduleSignups.FirstOrDefaultAsync(s => s.ParticipantId == participantId && s.ScheduleId == scheduleId && s.Role == role);
         if (signup == null) return NotFound(NotSignedUp);
 
+        // Cancelling a schedule takes the same lock, so it can't happen between the check below and the save
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, dto.ScheduleId);
         var target = await _db.Schedules.Include(s => s.Activity).FirstOrDefaultAsync(s => s.Id == dto.ScheduleId);
         if (target == null) return BadRequest(new { message = "Unknown schedule" });
 
@@ -190,6 +200,7 @@ public class ParticipantSignupsController : ControllerBase
         if (moves)
         {
             if (!SignupRules.CanWish(dto.Role, target.Activity.GameMastersPerTeam)) return BadRequest(NoGameMasters);
+            if (target.IsCancelled) return Conflict(Cancelled);
             if (await _db.ScheduleSignups.AnyAsync(s => s.ParticipantId == participantId && s.ScheduleId == dto.ScheduleId && s.Role == dto.Role))
             {
                 return Conflict(AlreadySignedUp);
@@ -205,6 +216,7 @@ public class ParticipantSignupsController : ControllerBase
         }
 
         if (!await TrySaveAsync()) return Conflict(AlreadySignedUp);
+        if (transaction != null) await transaction.CommitAsync();
 
         _logger.LogInformation("Participant {ParticipantId}'s signup for schedule {ScheduleId} updated by user {UserId}", participantId, dto.ScheduleId, CurrentUserId());
 

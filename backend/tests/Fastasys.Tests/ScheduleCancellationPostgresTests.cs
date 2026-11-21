@@ -199,8 +199,10 @@ public class ScheduleCancellationPostgresTests
         Assert.False((await Change(false)).IsCancelled);
         Assert.Equal(-2, (await new KarmaService(db).CalculateAsync([participant.Id], Ct))[participant.Id]);
 
-        // Hold cancellation uncommitted. Each API write must wait on the same row before checking state.
-        for (var operation = 1; operation < 3; operation++)
+        // Hold cancellation uncommitted. Each API write must wait on the same row before checking state: a new wish in
+        // the participant's signup editor, a new run, a new seat on the run, and a new seat in the participant's seat
+        // editor.
+        for (var operation = 0; operation < 4; operation++)
         {
             await Change(false);
             await using var cancelling = new InfosysDbContext(options);
@@ -218,6 +220,18 @@ public class ScheduleCancellationPostgresTests
             );
             async Task<IActionResult> Write()
             {
+                if (operation == 0)
+                    return await new ParticipantSignupsController(
+                        allocating,
+                        NullLogger<ParticipantSignupsController>.Instance
+                    ).Update(other.Id, new([new(scheduleId, RunSeatRole.Player, 1)]));
+                if (operation == 3)
+                    return (
+                        await new ParticipantSeatsController(
+                            allocating,
+                            NullLogger<ParticipantSeatsController>.Instance
+                        ).Update(other.Id, new([new(run.Id, RunSeatRole.Player)]))
+                    ).Result!;
                 var controller = new RunsController(
                     allocating,
                     NullLogger<RunsController>.Instance,

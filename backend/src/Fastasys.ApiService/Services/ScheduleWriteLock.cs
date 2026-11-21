@@ -28,4 +28,25 @@ public static class ScheduleWriteLock
             throw;
         }
     }
+
+    // The participant editors save several schedules at once. The rows are locked in id order, so two requests
+    // can't deadlock.
+    public static async Task<IDbContextTransaction?> AcquireAsync(InfosysDbContext db, IEnumerable<int> scheduleIds)
+    {
+        if (!db.Database.IsNpgsql()) return null;
+        var ids = scheduleIds.Distinct().Order().ToArray();
+        var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM schedule WHERE \"Id\" = ANY({ids}) ORDER BY \"Id\" FOR UPDATE"
+            );
+            return transaction;
+        }
+        catch
+        {
+            await transaction.DisposeAsync();
+            throw;
+        }
+    }
 }

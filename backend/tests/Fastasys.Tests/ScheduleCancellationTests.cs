@@ -22,6 +22,18 @@ public class ScheduleCancellationTests
     private static RunsController Runs(InfosysDbContext db) =>
         new(db, NullLogger<RunsController>.Instance, new KarmaService(db));
 
+    private static ParticipantSignupsController Signups(InfosysDbContext db) =>
+        new(db, NullLogger<ParticipantSignupsController>.Instance);
+
+    private static ParticipantSeatsController Seats(InfosysDbContext db) =>
+        new(db, NullLogger<ParticipantSeatsController>.Instance);
+
+    private static void AssertCancelledRefusal(IActionResult? result)
+    {
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Contains("reason = cancelled", conflict.Value!.ToString());
+    }
+
     private static ScheduleDto ScheduleValue(ActionResult<ScheduleDto> result) =>
         Assert.IsType<ScheduleDto>(Assert.IsType<OkObjectResult>(result.Result).Value);
 
@@ -178,6 +190,105 @@ public class ScheduleCancellationTests
         Assert.IsType<OkObjectResult>((await Runs(db).DeleteSeat(s.Run.Id, s.Participant.Id)).Result);
         Assert.Single(db.ScheduleSignups);
         Assert.Empty(db.RunSeats);
+    }
+
+    // Main's participant signup editor (Infosys deltager/updatetilmelding and its row dialog): no new wishes on a
+    // cancelled schedule (agreed 2026-11-21), but the wishes already there can be re-prioritised or removed
+    [Fact]
+    public async Task CancelledOccurrence_SignupEditorRefusesNewWishes_ButKeepsAndRemovesExistingOnes()
+    {
+        using var db = CreateDb();
+        var s = await SeedAsync(db);
+        var otherOccurrence = new Schedule
+        {
+            Activity = s.Schedule.Activity,
+            StartTime = Start.AddDays(1),
+            EndTime = Start.AddDays(1).AddHours(4),
+        };
+        db.Add(
+            new ScheduleSignup
+            {
+                Participant = s.Other,
+                Schedule = otherOccurrence,
+                Role = RunSeatRole.Player,
+                Priority = 1,
+            }
+        );
+        await db.SaveChangesAsync(Ct);
+        ScheduleValue(await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true)));
+        db.ChangeTracker.Clear();
+
+        // A new wish, through the edit page's list or by moving a wish there in the row dialog
+        AssertCancelledRefusal(
+            await Signups(db).Update(s.Other.Id, new([new(s.Schedule.Id, RunSeatRole.Player, 1)]))
+        );
+        AssertCancelledRefusal(
+            await Signups(db).Update(
+                s.Participant.Id,
+                new([new(s.Schedule.Id, RunSeatRole.Player, 1), new(s.Schedule.Id, RunSeatRole.GameMaster, 1)])
+            )
+        );
+        AssertCancelledRefusal(
+            (
+                await Signups(db).UpdateOne(
+                    s.Other.Id,
+                    otherOccurrence.Id,
+                    RunSeatRole.Player,
+                    new(s.Schedule.Id, RunSeatRole.Player, 1)
+                )
+            ).Result
+        );
+        Assert.Equal(2, db.ScheduleSignups.Count());
+        Assert.Single(db.ScheduleSignups.AsNoTracking(), w => w.ScheduleId == s.Schedule.Id);
+
+        // The wish that is already on the cancelled schedule
+        Assert.IsType<NoContentResult>(
+            await Signups(db).Update(s.Participant.Id, new([new(s.Schedule.Id, RunSeatRole.Player, 2)]))
+        );
+        Assert.IsType<OkObjectResult>(
+            (
+                await Signups(db).UpdateOne(
+                    s.Participant.Id,
+                    s.Schedule.Id,
+                    RunSeatRole.Player,
+                    new(s.Schedule.Id, RunSeatRole.Player, 3)
+                )
+            ).Result
+        );
+        Assert.Equal(3, db.ScheduleSignups.AsNoTracking().Single(w => w.ScheduleId == s.Schedule.Id).Priority);
+        Assert.IsType<NoContentResult>(await Signups(db).Update(s.Participant.Id, new([])));
+        Assert.DoesNotContain(db.ScheduleSignups.AsNoTracking(), w => w.ScheduleId == s.Schedule.Id);
+    }
+
+    // Main's participant seat editor (Infosys deltager/updateaktivitet): no new seats and no role changes on a cancelled
+    // schedule, like the runs' own seat endpoint (agreed 2026-11-21); the seats already there can be kept or removed
+    [Fact]
+    public async Task CancelledOccurrence_SeatEditorRefusesNewSeatsAndRoleChanges_ButKeepsAndRemovesExistingOnes()
+    {
+        using var db = CreateDb();
+        var s = await SeedAsync(db);
+        ScheduleValue(await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true)));
+        db.ChangeTracker.Clear();
+
+        AssertCancelledRefusal((await Seats(db).Update(s.Other.Id, new([new(s.Run.Id, RunSeatRole.Player)]))).Result);
+        AssertCancelledRefusal(
+            (await Seats(db).Update(s.Participant.Id, new([new(s.Run.Id, RunSeatRole.GameMaster)]))).Result
+        );
+        var seat = Assert.Single(db.RunSeats.AsNoTracking());
+        Assert.Equal((s.Participant.Id, RunSeatRole.Player), (seat.ParticipantId, seat.Role));
+
+        var kept = Assert.IsType<UpdateParticipantSeatsResultDto>(
+            Assert.IsType<OkObjectResult>(
+                (await Seats(db).Update(s.Participant.Id, new([new(s.Run.Id, RunSeatRole.Player)]))).Result
+            ).Value
+        );
+        Assert.False(kept.IsChanged);
+        Assert.Single(db.RunSeats.AsNoTracking());
+        var removed = Assert.IsType<UpdateParticipantSeatsResultDto>(
+            Assert.IsType<OkObjectResult>((await Seats(db).Update(s.Participant.Id, new([]))).Result).Value
+        );
+        Assert.True(removed.IsChanged);
+        Assert.Empty(db.RunSeats.AsNoTracking());
     }
 
     [Fact]
