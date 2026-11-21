@@ -3,6 +3,7 @@ using Fastasys.ApiService.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -10,7 +11,14 @@ public record OrderFoodDto(int ParticipantId, int FoodTypeId, DateTime Date, int
 
 public record OrderWearDto(int ParticipantId, int WearItemId, int Quantity = 1);
 
-public record CreateRoomDto(string Name, string Location, int Capacity, string Description);
+public record CreateRoomDto(
+    string Name,
+    string Location,
+    int Capacity,
+    bool IsSleepingRoom,
+    bool CanBook,
+    string Description
+);
 
 [ApiController]
 [Route("api/[controller]")]
@@ -107,6 +115,8 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
             Name = dto.Name,
             Location = dto.Location,
             Capacity = dto.Capacity,
+            IsSleepingRoom = dto.IsSleepingRoom,
+            CanBook = dto.CanBook,
             Description = dto.Description,
         };
 
