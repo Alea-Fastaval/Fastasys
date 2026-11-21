@@ -29,7 +29,6 @@ import { TranslatePipe } from '@shared/pipes';
 })
 export class ParticipantsComponent implements OnInit {
   private readonly http = inject(HttpClient);
-
   public readonly participants = signal<Participant[]>([]);
   public searchQuery = '';
   public displayedColumns = ['id', 'name', 'email', 'barcode', 'status', 'actions'];

@@ -1,49 +1,41 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Fastasys.ApiService.Controllers;
-using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
-using Fastasys.ApiService.Services;
 using Fastasys.Tests.testHelpers;
 
 namespace Fastasys.Tests;
 
 // Infosys: every activity admin page requires a logged-in user whose role grants the Activity controller method.
 // Fastasys maps that onto the activities_view / activities_edit privileges.
-public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFactory>
+public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly TestWebApplicationFactory _factory;
-    private readonly TestHelper _testHelper;
+    private readonly TestHelper _testHelper = new(factory);
 
-    public ActivitiesAuthorizationTests(TestWebApplicationFactory factory)
-    {
-        _factory = factory;
-        _testHelper = new TestHelper(factory);
-    }
-
-    private static T NewActivity<T>(string title) where T : ActivityFieldsDto, new() => new T
-    {
-        Title = title,
-        Type = ActivityType.Scenario,
-        DurationHours = 4,
-        MinPlayersPerTeam = 3,
-        MaxPlayersPerTeam = 5,
-        GameMastersPerTeam = 1,
-        Price = 30,
-        CanSignUp = true,
-        IsRoomExclusive = true,
-        IsTimeExclusive = true,
-        PlayerLanguage = ActivityLanguage.Danish,
-        GameMasterLanguage = ActivityLanguage.Danish,
-        KarmaType = KarmaType.None,
-        AutoSignupCategory = AutoSignupCategory.None
-    };
+    private static T NewActivity<T>(string title)
+        where T : ActivityFieldsDto, new() =>
+        new T
+        {
+            Title = title,
+            Type = ActivityType.Scenario,
+            DurationHours = 4,
+            MinPlayersPerTeam = 3,
+            MaxPlayersPerTeam = 5,
+            GameMastersPerTeam = 1,
+            Price = 30,
+            CanSignUp = true,
+            IsRoomExclusive = true,
+            IsTimeExclusive = true,
+            PlayerLanguage = ActivityLanguage.Danish,
+            GameMasterLanguage = ActivityLanguage.Danish,
+            KarmaType = KarmaType.None,
+            AutoSignupCategory = AutoSignupCategory.None,
+        };
 
     [Fact]
     public async Task Anonymous_CannotListActivities()
     {
-        var client = _factory.CreateClient();
+        var client = factory.CreateClient();
 
         var response = await client.GetAsync("/api/activities", TestContext.Current.CancellationToken);
 
@@ -89,7 +81,11 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         Assert.NotNull(created);
 
         var get = await client.GetAsync($"/api/activities/{created.Id}", ct);
-        var update = await client.PutAsJsonAsync($"/api/activities/{created.Id}", NewActivity<UpdateActivityDto>("Redigeret"), ct);
+        var update = await client.PutAsJsonAsync(
+            $"/api/activities/{created.Id}",
+            NewActivity<UpdateActivityDto>("Redigeret"),
+            ct
+        );
         var delete = await client.DeleteAsync($"/api/activities/{created.Id}", ct);
 
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
@@ -106,8 +102,14 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         var getActivities = await client.GetAsync("/api/activities", ct);
         Assert.Equal(HttpStatusCode.OK, getActivities.StatusCode);
 
-        var create = await client.PostAsJsonAsync("/api/activities",
-            NewActivity<CreateActivityDto>("Enum-navne") with { KarmaType = KarmaType.Big }, ct);
+        var create = await client.PostAsJsonAsync(
+            "/api/activities",
+            NewActivity<CreateActivityDto>("Enum-navne") with
+            {
+                KarmaType = KarmaType.Big,
+            },
+            ct
+        );
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         using var json = JsonDocument.Parse(await create.Content.ReadAsStringAsync(ct));
 
@@ -123,8 +125,15 @@ public class ActivitiesAuthorizationTests : IClassFixture<TestWebApplicationFact
         // Agreed deviation: Infosys had a maximum age (activityageranges 'max'); Fastasys only keeps the minimum.
         var client = await _testHelper.CreateClientWithPrivilegeAsync(["activities_edit", "activities_view"]);
         var ct = TestContext.Current.CancellationToken;
-        var body = JsonSerializer.SerializeToNode(NewActivity<CreateActivityDto>("Uden maksimumalder") with { MinAge = 12 },
-            new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+        var body = JsonSerializer
+            .SerializeToNode(
+                NewActivity<CreateActivityDto>("Uden maksimumalder") with
+                {
+                    MinAge = 12,
+                },
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            )!
+            .AsObject();
         body["maxAge"] = 17;
 
         var create = await client.PostAsJsonAsync("/api/activities", body, ct);

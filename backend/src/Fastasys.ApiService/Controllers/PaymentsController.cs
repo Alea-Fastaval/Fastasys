@@ -8,33 +8,24 @@ using Microsoft.EntityFrameworkCore;
 namespace Fastasys.ApiService.Controllers;
 
 public record CreatePaymentRequestDto(int ParticipantId, decimal Amount, string Currency = "DKK");
+
 public record PaymentCallbackDto(string TransactionId, string Status, string? Data);
 
 [ApiController]
 [Route("api/[controller]")]
-public class PaymentsController : ControllerBase
+public class PaymentsController(InfosysDbContext db, IMockPaymentService paymentService) : ControllerBase
 {
-    private readonly InfosysDbContext _db;
-    private readonly IMockPaymentService _paymentService;
-
-    public PaymentsController(InfosysDbContext db, IMockPaymentService paymentService)
-    {
-        _db = db;
-        _paymentService = paymentService;
-    }
-
     [HttpPost("create")]
     [Authorize]
     public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequestDto request)
     {
-        var participant = await _db.Participants.FindAsync(request.ParticipantId);
-        if (participant == null) return NotFound("Participant not found");
+        var participant = await db.Participants.FindAsync(request.ParticipantId);
+        if (participant == null)
+            return NotFound("Participant not found");
 
-        var result = await _paymentService.ProcessPaymentAsync(new PaymentTransactionRequest(
-            request.ParticipantId,
-            request.Amount,
-            request.Currency
-        ));
+        var result = await paymentService.ProcessPaymentAsync(
+            new PaymentTransactionRequest(request.ParticipantId, request.Amount, request.Currency)
+        );
 
         var payment = new Payment
         {
@@ -46,21 +37,29 @@ public class PaymentsController : ControllerBase
             PaymentProvider = "fritid.dk",
             CreatedAt = DateTime.UtcNow,
             CompletedAt = result.Success ? DateTime.UtcNow : null,
-            CallbackData = result.Message
+            CallbackData = result.Message,
         };
 
-        _db.Payments.Add(payment);
-        await _db.SaveChangesAsync();
+        db.Payments.Add(payment);
+        await db.SaveChangesAsync();
 
-        return Ok(new { transactionId = result.TransactionId, status = payment.Status.ToString(), message = result.Message });
+        return Ok(
+            new
+            {
+                transactionId = result.TransactionId,
+                status = payment.Status.ToString(),
+                message = result.Message,
+            }
+        );
     }
 
     [HttpPost("callback")]
     [AllowAnonymous]
     public async Task<IActionResult> PaymentCallback([FromBody] PaymentCallbackDto callback)
     {
-        var payment = await _db.Payments.FirstOrDefaultAsync(p => p.TransactionId == callback.TransactionId);
-        if (payment == null) return NotFound("Payment transaction not found");
+        var payment = await db.Payments.FirstOrDefaultAsync(p => p.TransactionId == callback.TransactionId);
+        if (payment == null)
+            return NotFound("Payment transaction not found");
 
         payment.CallbackData = callback.Data;
         if (callback.Status.Equals("completed", StringComparison.OrdinalIgnoreCase))
@@ -73,7 +72,7 @@ public class PaymentsController : ControllerBase
             payment.Status = PaymentStatus.Failed;
         }
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
         return Ok(new { message = "Callback processed", status = payment.Status.ToString() });
     }
 
@@ -81,9 +80,17 @@ public class PaymentsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetStatus(string transactionId)
     {
-        var payment = await _db.Payments.FirstOrDefaultAsync(p => p.TransactionId == transactionId);
-        if (payment == null) return NotFound();
+        var payment = await db.Payments.FirstOrDefaultAsync(p => p.TransactionId == transactionId);
+        if (payment == null)
+            return NotFound();
 
-        return Ok(new { transactionId = payment.TransactionId, status = payment.Status.ToString(), amount = payment.Amount });
+        return Ok(
+            new
+            {
+                transactionId = payment.TransactionId,
+                status = payment.Status.ToString(),
+                amount = payment.Amount,
+            }
+        );
     }
 }

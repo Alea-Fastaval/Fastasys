@@ -8,6 +8,7 @@
     "ms-azuretools.vscode-docker",
     "esbenp.prettier-vscode",
     "redhat.vscode-yaml",
-    "github.vscode-github-actions"
+    "github.vscode-github-actions",
+    "csharpier.csharpier-vscode"
   ]
 }

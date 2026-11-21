@@ -41,35 +41,20 @@ public record UpdateUserRequestDto(
     List<int> RoleIds
 );
 
-public record CreateRoleRequestDto(
-    string Name,
-    string Description,
-    List<int> PrivilegeIds
-);
+public record CreateRoleRequestDto(string Name, string Description, List<int> PrivilegeIds);
 
-public record UpdateRoleRequestDto(
-    string Name,
-    string Description,
-    List<int> PrivilegeIds
-);
+public record UpdateRoleRequestDto(string Name, string Description, List<int> PrivilegeIds);
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController : ControllerBase
+public class UsersController(InfosysDbContext db) : ControllerBase
 {
-    private readonly InfosysDbContext _db;
-
-    public UsersController(InfosysDbContext db)
-    {
-        _db = db;
-    }
-
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAll([FromQuery] string? search, [FromQuery] int? roleId)
     {
-        var query = _db.Users
-            .Include(u => u.UserRoles)
+        var query = db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
@@ -79,10 +64,11 @@ public class UsersController : ControllerBase
         {
             var searchLower = search.ToLower();
             query = query.Where(u =>
-                u.Username.ToLower().Contains(searchLower) ||
-                u.Email.ToLower().Contains(searchLower) ||
-                u.FirstName.ToLower().Contains(searchLower) ||
-                u.LastName.ToLower().Contains(searchLower));
+                u.Username.ToLower().Contains(searchLower)
+                || u.Email.ToLower().Contains(searchLower)
+                || u.FirstName.ToLower().Contains(searchLower)
+                || u.LastName.ToLower().Contains(searchLower)
+            );
         }
 
         if (roleId.HasValue)
@@ -90,10 +76,7 @@ public class UsersController : ControllerBase
             query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == roleId.Value));
         }
 
-        var users = await query
-            .OrderByDescending(u => u.Id)
-            .Select(u => MapToUserDto(u))
-            .ToListAsync();
+        var users = await query.OrderByDescending(u => u.Id).Select(u => MapToUserDto(u)).ToListAsync();
 
         return Ok(users);
     }
@@ -101,14 +84,15 @@ public class UsersController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<UserDto>> GetById(int id)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
+        var user = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound(new { message = "User not found" });
+        if (user == null)
+            return NotFound(new { message = "User not found" });
 
         return Ok(MapToUserDto(user));
     }
@@ -121,7 +105,7 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = "Username and Password are required" });
         }
 
-        var existingUser = await _db.Users.AnyAsync(u => u.Username.ToLower() == dto.Username.ToLower());
+        var existingUser = await db.Users.AnyAsync(u => u.Username.ToLower() == dto.Username.ToLower());
         if (existingUser)
         {
             return BadRequest(new { message = "Username is already taken" });
@@ -135,27 +119,27 @@ public class UsersController : ControllerBase
             FirstName = dto.FirstName?.Trim() ?? string.Empty,
             LastName = dto.LastName?.Trim() ?? string.Empty,
             IsActive = dto.IsActive,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
 
         if (dto.RoleIds != null && dto.RoleIds.Any())
         {
             foreach (var rId in dto.RoleIds.Distinct())
             {
-                var roleExists = await _db.Roles.AnyAsync(r => r.Id == rId);
+                var roleExists = await db.Roles.AnyAsync(r => r.Id == rId);
                 if (roleExists)
                 {
-                    _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = rId });
+                    db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = rId });
                 }
             }
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
 
-        var createdUser = await _db.Users
-            .Include(u => u.UserRoles)
+        var createdUser = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
@@ -167,11 +151,10 @@ public class UsersController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<UserDto>> Update(int id, [FromBody] UpdateUserRequestDto dto)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == id);
+        var user = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound(new { message = "User not found" });
+        if (user == null)
+            return NotFound(new { message = "User not found" });
 
         user.Email = dto.Email?.Trim() ?? string.Empty;
         user.FirstName = dto.FirstName?.Trim() ?? string.Empty;
@@ -184,23 +167,23 @@ public class UsersController : ControllerBase
         }
 
         // Update Roles
-        _db.UserRoles.RemoveRange(user.UserRoles);
+        db.UserRoles.RemoveRange(user.UserRoles);
         if (dto.RoleIds != null && dto.RoleIds.Any())
         {
             foreach (var rId in dto.RoleIds.Distinct())
             {
-                var roleExists = await _db.Roles.AnyAsync(r => r.Id == rId);
+                var roleExists = await db.Roles.AnyAsync(r => r.Id == rId);
                 if (roleExists)
                 {
-                    _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = rId });
+                    db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = rId });
                 }
             }
         }
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        var updatedUser = await _db.Users
-            .Include(u => u.UserRoles)
+        var updatedUser = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
@@ -212,17 +195,18 @@ public class UsersController : ControllerBase
     [HttpPost("{id:int}/toggle-active")]
     public async Task<ActionResult<UserDto>> ToggleActive(int id)
     {
-        var user = await _db.Users
-            .Include(u => u.UserRoles)
+        var user = await db
+            .Users.Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePrivileges)
                         .ThenInclude(rp => rp.Privilege)
             .FirstOrDefaultAsync(u => u.Id == id);
 
-        if (user == null) return NotFound(new { message = "User not found" });
+        if (user == null)
+            return NotFound(new { message = "User not found" });
 
         user.IsActive = !user.IsActive;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         return Ok(MapToUserDto(user));
     }
@@ -230,8 +214,8 @@ public class UsersController : ControllerBase
     [HttpGet("privileges")]
     public async Task<ActionResult<IEnumerable<PrivilegeDto>>> GetPrivileges()
     {
-        var privileges = await _db.Privileges
-            .AsNoTracking()
+        var privileges = await db
+            .Privileges.AsNoTracking()
             .OrderBy(p => p.Name)
             .Select(p => new PrivilegeDto(p.Id, p.Name, p.Key))
             .ToListAsync();
@@ -242,18 +226,21 @@ public class UsersController : ControllerBase
     [HttpGet("roles")]
     public async Task<ActionResult<IEnumerable<RoleDto>>> GetRoles()
     {
-        var roles = await _db.Roles
-            .Include(r => r.RolePrivileges)
+        var roles = await db
+            .Roles.Include(r => r.RolePrivileges)
                 .ThenInclude(rp => rp.Privilege)
             .AsNoTracking()
             .ToListAsync();
 
-        var dtos = roles.Select(r => new RoleDto(
-            r.Id,
-            r.Name,
-            r.Description,
-            r.RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key)).ToList()
-        )).ToList();
+        var dtos = roles
+            .Select(r => new RoleDto(
+                r.Id,
+                r.Name,
+                r.Description,
+                r.RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key))
+                    .ToList()
+            ))
+            .ToList();
 
         return Ok(dtos);
     }
@@ -266,110 +253,121 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = "Role name is required" });
         }
 
-        var existing = await _db.Roles.AnyAsync(r => r.Name.ToLower() == dto.Name.ToLower());
+        var existing = await db.Roles.AnyAsync(r => r.Name.ToLower() == dto.Name.ToLower());
         if (existing)
         {
             return BadRequest(new { message = "A role with this name already exists" });
         }
 
-        var role = new Role
-        {
-            Name = dto.Name.Trim(),
-            Description = dto.Description?.Trim() ?? string.Empty
-        };
+        var role = new Role { Name = dto.Name.Trim(), Description = dto.Description?.Trim() ?? string.Empty };
 
-        _db.Roles.Add(role);
-        await _db.SaveChangesAsync();
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
 
         if (dto.PrivilegeIds != null && dto.PrivilegeIds.Any())
         {
             foreach (var pId in dto.PrivilegeIds.Distinct())
             {
-                if (await _db.Privileges.AnyAsync(p => p.Id == pId))
+                if (await db.Privileges.AnyAsync(p => p.Id == pId))
                 {
-                    _db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = pId });
+                    db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = pId });
                 }
             }
-            await _db.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
 
-        var createdRole = await _db.Roles
-            .Include(r => r.RolePrivileges)
+        var createdRole = await db
+            .Roles.Include(r => r.RolePrivileges)
                 .ThenInclude(rp => rp.Privilege)
             .FirstAsync(r => r.Id == role.Id);
 
-        return Ok(new RoleDto(
-            createdRole.Id,
-            createdRole.Name,
-            createdRole.Description,
-            createdRole.RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key)).ToList()
-        ));
+        return Ok(
+            new RoleDto(
+                createdRole.Id,
+                createdRole.Name,
+                createdRole.Description,
+                createdRole
+                    .RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key))
+                    .ToList()
+            )
+        );
     }
 
     [HttpPut("roles/{id:int}")]
     public async Task<ActionResult<RoleDto>> UpdateRole(int id, [FromBody] UpdateRoleRequestDto dto)
     {
-        var role = await _db.Roles
-            .Include(r => r.RolePrivileges)
-            .FirstOrDefaultAsync(r => r.Id == id);
+        var role = await db.Roles.Include(r => r.RolePrivileges).FirstOrDefaultAsync(r => r.Id == id);
 
-        if (role == null) return NotFound(new { message = "Role not found" });
+        if (role == null)
+            return NotFound(new { message = "Role not found" });
 
         role.Name = dto.Name.Trim();
         role.Description = dto.Description?.Trim() ?? string.Empty;
 
-        _db.RolePrivileges.RemoveRange(role.RolePrivileges);
+        db.RolePrivileges.RemoveRange(role.RolePrivileges);
         if (dto.PrivilegeIds != null && dto.PrivilegeIds.Any())
         {
             foreach (var pId in dto.PrivilegeIds.Distinct())
             {
-                if (await _db.Privileges.AnyAsync(p => p.Id == pId))
+                if (await db.Privileges.AnyAsync(p => p.Id == pId))
                 {
-                    _db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = pId });
+                    db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = pId });
                 }
             }
         }
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-        var updatedRole = await _db.Roles
-            .Include(r => r.RolePrivileges)
+        var updatedRole = await db
+            .Roles.Include(r => r.RolePrivileges)
                 .ThenInclude(rp => rp.Privilege)
             .FirstAsync(r => r.Id == id);
 
-        return Ok(new RoleDto(
-            updatedRole.Id,
-            updatedRole.Name,
-            updatedRole.Description,
-            updatedRole.RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key)).ToList()
-        ));
+        return Ok(
+            new RoleDto(
+                updatedRole.Id,
+                updatedRole.Name,
+                updatedRole.Description,
+                updatedRole
+                    .RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key))
+                    .ToList()
+            )
+        );
     }
 
     [HttpDelete("roles/{id:int}")]
     public async Task<IActionResult> DeleteRole(int id)
     {
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Id == id);
-        if (role == null) return NotFound(new { message = "Role not found" });
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.Id == id);
+        if (role == null)
+            return NotFound(new { message = "Role not found" });
 
         if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Cannot delete the system Admin role" });
         }
 
-        _db.Roles.Remove(role);
-        await _db.SaveChangesAsync();
+        db.Roles.Remove(role);
+        await db.SaveChangesAsync();
 
         return Ok(new { message = "Role deleted successfully" });
     }
 
     private static UserDto MapToUserDto(User u)
     {
-        var roles = u.UserRoles.Select(ur => new RoleDto(
-            ur.Role.Id,
-            ur.Role.Name,
-            ur.Role.Description,
-            ur.Role.RolePrivileges.Select(rp => new PrivilegeDto(rp.Privilege.Id, rp.Privilege.Name, rp.Privilege.Key)).ToList()
-        )).ToList();
+        var roles = u
+            .UserRoles.Select(ur => new RoleDto(
+                ur.Role.Id,
+                ur.Role.Name,
+                ur.Role.Description,
+                ur.Role.RolePrivileges.Select(rp => new PrivilegeDto(
+                        rp.Privilege.Id,
+                        rp.Privilege.Name,
+                        rp.Privilege.Key
+                    ))
+                    .ToList()
+            ))
+            .ToList();
 
         return new UserDto(
             u.Id,

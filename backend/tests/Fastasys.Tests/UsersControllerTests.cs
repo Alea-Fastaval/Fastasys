@@ -1,9 +1,7 @@
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
-using Fastasys.ApiService.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 namespace Fastasys.Tests;
 
