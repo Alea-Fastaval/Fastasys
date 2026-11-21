@@ -90,6 +90,14 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
         return Ok(rooms);
     }
 
+    [HttpGet("details/{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> GetRoomDetails(int id)
+    {
+        var room = db.Rooms.Where(x => x.Id == id).Include(r => r.Schedules);
+        return Ok(room);
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto dto)

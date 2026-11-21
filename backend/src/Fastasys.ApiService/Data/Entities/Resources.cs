@@ -6,8 +6,9 @@ public class Room
     public string Name { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public int Capacity { get; set; }
+    public bool IsSleepingRoom { get; set; }
     public string Description { get; set; } = string.Empty;
-
+    public bool CanBook { get; set; }
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 }
 
