@@ -74,7 +74,7 @@ export class ActivityDetailComponent implements OnInit {
   // The "Tilmeldinger" tables, one per schedule
   public readonly signups = signal<ScheduleSignups[]>([]);
   // Placing participants by dragging needs the right to edit activities (Infosys: Activity-admin, Infonaut, admin)
-  public readonly mayPlace = inject(AuthService).hasPrivilege('activities_edit');
+  public readonly mayPlace = inject(AuthService).hasPrivilege('activity_edit');
   public readonly dragging = signal<DragItem | null>(null);
   public readonly hoveredRunId = signal<number | null>(null);
   // "scheduleId-participantId" of a drop that was refused, for the red flash

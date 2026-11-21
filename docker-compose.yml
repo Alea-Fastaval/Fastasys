@@ -53,6 +53,8 @@ services:
         condition: service_started
     ports:
       - "4200:80"
+    depends_on:
+      - api
 
 volumes:
   postgres-data:

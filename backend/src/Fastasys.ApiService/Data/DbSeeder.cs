@@ -20,23 +20,66 @@ public static class DbSeeder
         }
 
         var requiredPrivileges = new[]
-        {
-            ("View Users", "users_view"),
-            ("Edit/Create Users", "users_edit"),
-            ("View Boardgames", "boardgames_view"),
-            ("Edit/Create Boardgames", "boardgames_edit"),
-            ("View Participants", "participants_view"),
-            ("Edit/Create Participants", "participants_edit"),
-            ("View Activities", "activities_view"),
-            ("Edit/Create Activities", "activities_edit"),
-            ("View Hero Force", "hero_force_view"),
-            ("Edit/Create Hero Force", "hero_force_edit"),
+        { // for x_edit, its both adding more x's and updating existing x's
+            ("Assign Entrance to Participant", "entrance_participant_edit"),
+            ("Assign Food to Participant", "food_participant_edit"),
+            ("Assign Hero Force to Participant", "hero_force_participant_edit"),
+            ("Assign Run to Participant", "run_participant_edit"),
+            ("Assign Payment to Participant","payment_participant_edit"),
+            ("Assign Sleeping to participant","sleeping_participant_edit"),
+            ("Assign Wear to Participant", "wear_participant_edit"),
+            ("Distribute Boardgame", "boardgame_distribute_edit"),
+            ("Distribute Food", "food_distribute_edit"),
+            ("Distribute Wear", "wear_distribute_edit"),
+            ("Edit Budget and accounting", "accounting_edit"),
+            ("Edit Roles and privileges", "role_edit"),
+            ("Assign Roles and privileges", "role_user_edit"),
+            ("Edit Activity", "activity_edit"),
+            ("Edit Boardgame", "boardgame_edit"),
+            ("Edit Entrance", "entrance_edit"),
+            ("Edit Food marketplace", "food_marketplace_edit"),
+            ("Edit Food", "food_edit"),
+            ("Edit Hero Force", "hero_force_edit"),
+            ("Edit Name Tag Template", "tag_template_edit"),
+            ("Edit Participant", "participant_edit"),
+            ("Edit Room", "room_edit"),
+            ("Edit Run", "run_edit"),
+            ("Edit Signup Form", "signup_form_edit"),
+            ("Edit User", "user_edit"),
+            ("Edit Wear", "wear_edit"),
+            ("Reset Entrance Assignments", "entrance_assignment_reset_edit"),
+            ("Reset Food Distribution", "food_distribute_reset_edit"),
+            ("Send email to participant","send_participant_email_edit"),
+            ("Send notification to participant","send_participant_notification_edit"),
+            ("Start run", "run_start_edit"),
+            ("View Activity", "activity_view"),
+            ("View Boardgames", "boardgame_view"),
+            ("View Budget and Accounting", "accounting_view"),
+            ("View Checkin Statistics", "checkin_stats_view"),
+            ("View Entrance", "entrance_view"),
+            ("View Food marketplace", "food_marketplace_view"),
+            ("View Food Statistics", "food_stats_view"),
             ("View Food", "food_view"),
-            ("Edit/Create Food", "food_edit"),
+            ("View Game Votes", "vote_list_view"),
+            ("View Hero Force Assignments", "hero_force_participant_list_view"),
+            ("View Hero Force", "hero_force_view"),
+            ("View Participant", "participant_view"),
+            ("View Payments For Participant","payment_participant_view"),
+            ("View Roles and privileges", "role_view"),
+            ("View Room Assignments","room_assignment_view"),
+            ("View Room", "room_view"),
+            ("View Run", "run_view"),
+            ("View Signup Statistics", "signup_stats_view"),
+            ("View sleeping assignments","sleeping_assignment_view"),
+            ("View System Log", "syslog_view"),
+            ("View Users", "users_view"),
+            ("View wear for Participant", "wear_participant_view"),
             ("View Wear", "wear_view"),
-            ("Edit/Create Wear", "wear_edit"),
-            ("View Rooms", "rooms_view"),
-            ("Edit/Create Rooms", "rooms_edit")
+            ("View activity leader list", "activity_leader_list_view"),
+            ("View karma list", "karma_list_view"),
+            ("View name tag for Participant", "nametag_participant_view"),
+            ("View Participant schedule", "participant_schedule_view"),
+            ("View full wear list", "wear_list_view"),
         };
 
         foreach (var (name, key) in requiredPrivileges)
@@ -52,35 +95,26 @@ public static class DbSeeder
             if (!db.RolePrivileges.Any(rp => rp.RoleId == adminRole.Id && rp.PrivilegeId == priv.Id))
             {
                 db.RolePrivileges.Add(new RolePrivilege { RoleId = adminRole.Id, PrivilegeId = priv.Id });
+                db.SaveChanges();
             }
         }
 
-        // Seed Organizer Role
-        var organizerRole = db.Roles.FirstOrDefault(r => r.Name == "Organizer");
-        if (organizerRole == null)
-        {
-            organizerRole = new Role
-            {
-                Name = "Organizer",
-                Description = "Event Organizer with view & manage rights for convention operations"
-            };
-            db.Roles.Add(organizerRole);
-            db.SaveChanges();
+        // Default Roles with default privileges
 
-            // Give view rights to Organizer
-            var viewKeys = new[] { "users_view", "boardgames_view", "participants_view", "activities_view", "hero_force_view", "food_view", "wear_view", "rooms_view" };
-            foreach (var vKey in viewKeys)
-            {
-                var p = db.Privileges.FirstOrDefault(pr => pr.Key == vKey);
-                if (p != null)
-                {
-                    db.RolePrivileges.Add(new RolePrivilege { RoleId = organizerRole.Id, PrivilegeId = p.Id });
-                }
-            }
-        }
-        db.SaveChanges();
+        SeedRole(db, "Infonaut", "Member of the Info", []);
+        SeedRole(db, "Infoboss", "Manager of the Info", []);
+        SeedRole(db, "Food distribution", "Food distribution role", []);
+        SeedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
+        SeedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
+        SeedRole(db, "Signup", "Sign up", []);
+        SeedRole(db, "Hero Force", "Hero Force management", []);
+        SeedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
+        SeedRole(db, "Boardgame jury", "Jury member for boardgames", []);
+        SeedRole(db, "Scenario jury", "Jury member for scenarios", []);
+        SeedRole(db, "Full Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
+        SeedRole(db, "Accounting", "Accounting and budget", []);
 
-        // Default Admin User
+        // Default Admin User with the special admin role
         var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
         if (adminUser == null)
         {
@@ -256,5 +290,35 @@ public static class DbSeeder
 
             db.SaveChanges();
         }
+    }
+
+    // If there is already a role named `roleName` then do nothing.
+    // Else we create it, and populate it with the privileges found in privilegeKeys.
+    // the privileges found in privilegeKeys must already exist in the database.
+    private static void SeedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
+    {
+        var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
+        if (role == null)
+        {
+            role = new Role
+            {
+                Name = roleName,
+                Description = roleDescription
+            };
+            db.Roles.Add(role);
+            db.SaveChanges();
+
+            // Give rights/privileges to the role
+            foreach (var pKey in privilegeKeys)
+            {
+                var p = db.Privileges.First(pr => pr.Key == pKey);
+                if (p != null)
+                {
+                    db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = p.Id });
+                }
+            }
+        }
+        db.SaveChanges();
+
     }
 }

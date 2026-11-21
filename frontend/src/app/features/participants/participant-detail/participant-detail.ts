@@ -129,7 +129,7 @@ export class ParticipantDetailComponent {
   private readonly flashService = inject(ParticipantFlashService);
   // The seat editor (Aktiviteter "Ret/slet") also needs the right to edit activities. Infosys: Activity-admin,
   // Infonaut or admin.
-  private readonly mayEditSeats = inject(AuthService).hasPrivilege('activities_edit');
+  private readonly mayEditSeats = inject(AuthService).hasPrivilege('activity_edit');
 
   public readonly flash = signal(this.flashService.take());
   public readonly participant = signal<Participant | null>(null);

@@ -174,7 +174,7 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
-    // Only the seat editor link asks; it needs activities_edit
+    // Only the seat editor link asks; it needs activity_edit
     vi.spyOn(TestBed.inject(AuthService), 'hasPrivilege').mockReturnValue(mayEditActivities);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(ParticipantDetailComponent);

@@ -59,18 +59,18 @@ describe('AuthService', () => {
       firstName: '',
       lastName: '',
       roles: ['Infonaut'],
-      privileges: ['participants_view'],
+      privileges: ['participant_view'],
     };
 
     service.currentUser.set(null);
-    expect(service.hasPrivilege('participants_view')).toBe(false);
+    expect(service.hasPrivilege('participant_view')).toBe(false);
 
     service.currentUser.set(user);
-    expect(service.hasPrivilege('participants_view')).toBe(true);
-    expect(service.hasPrivilege('participants_edit')).toBe(false);
-    expect(service.hasPrivilege('participants_edit', 'participants_view')).toBe(true);
+    expect(service.hasPrivilege('participant_view')).toBe(true);
+    expect(service.hasPrivilege('participant_edit')).toBe(false);
+    expect(service.hasPrivilege('participant_edit', 'participant_view')).toBe(true);
 
     service.currentUser.set({ ...user, roles: ['Admin'], privileges: [] });
-    expect(service.hasPrivilege('participants_edit')).toBe(true);
+    expect(service.hasPrivilege('participant_edit')).toBe(true);
   });
 });

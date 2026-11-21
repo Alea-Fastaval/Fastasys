@@ -11,7 +11,7 @@ namespace Fastasys.Tests;
 
 // Infosys: the Read-only role may list, search and view participants (and sees only the personal info on the
 // participant page); the roles with ParticipantController/* may also create, change and delete them.
-// Fastasys maps that onto the participants_view / participants_edit privileges.
+// Fastasys maps that onto the participant_view / participant_edit privileges.
 public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestWebApplicationFactory _factory;
@@ -90,7 +90,7 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task UserWithoutParticipantPrivilege_IsForbidden()
     {
-        var client = await CreateClientWithPrivilegeAsync("activities_edit");
+        var client = await CreateClientWithPrivilegeAsync("activity_edit");
         var ct = TestContext.Current.CancellationToken;
 
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/participants", ct)).StatusCode);
@@ -102,7 +102,7 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task ViewPrivilege_CanSearch_ButNotSeeTheNotes()
     {
-        var viewer = await CreateClientWithPrivilegeAsync("participants_view");
+        var viewer = await CreateClientWithPrivilegeAsync("participant_view");
         var ct = TestContext.Current.CancellationToken;
 
         var search = await viewer.PostAsJsonAsync("/api/participants/search", new SearchParticipantsDto([new ParticipantSearchStepDto("a", null)], ["email"]), ct);
@@ -115,8 +115,8 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task ViewPrivilege_CanReadThePersonalInfo_ButNotWrite()
     {
-        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
-        var viewer = await CreateClientWithPrivilegeAsync("participants_view");
+        var editor = await CreateClientWithPrivilegeAsync("participant_edit");
+        var viewer = await CreateClientWithPrivilegeAsync("participant_view");
         var ct = TestContext.Current.CancellationToken;
         var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
@@ -147,13 +147,13 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     }
 
     [Theory]
-    [InlineData("activities_view")]
-    [InlineData("activities_edit")]
+    [InlineData("activity_view")]
+    [InlineData("activity_edit")]
     public async Task ViewPrivilege_WithActivities_SeesTheActivityBoxes_ButNotTheDetails(string activityPrivilege)
     {
         // Infosys's "Read-only activity" role: the boxes below the notes, read-only (agreed 2026-11-18)
-        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
-        var viewer = await CreateClientWithPrivilegesAsync("participants_view", activityPrivilege);
+        var editor = await CreateClientWithPrivilegeAsync("participant_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participant_view", activityPrivilege);
         var ct = TestContext.Current.CancellationToken;
         var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
@@ -176,8 +176,8 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     {
         // Infosys shows the IDkort box only to non-Read-only users and the template page to Infonaut and Admin; the
         // photos are personal data
-        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
-        var viewer = await CreateClientWithPrivilegesAsync("participants_view", "activities_view");
+        var editor = await CreateClientWithPrivilegeAsync("participant_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participant_view", "activity_view");
         var ct = TestContext.Current.CancellationToken;
         var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
@@ -205,7 +205,7 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     [Fact]
     public async Task EditPrivilege_CanCreateChangeAnnulAndDelete()
     {
-        var client = await CreateClientWithPrivilegeAsync("participants_edit");
+        var client = await CreateClientWithPrivilegeAsync("participant_edit");
         var ct = TestContext.Current.CancellationToken;
 
         var createResponse = await client.PostAsJsonAsync("/api/participants", NewParticipant(), ct);
@@ -250,15 +250,15 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     }
 
     // Infosys deltager/updateaktivitet: the ParticipantController roles, and in the method Activity-admin, Infonaut or
-    // admin. Fastasys asks for both participants_edit and activities_edit.
+    // admin. Fastasys asks for both participant_edit and activity_edit.
     [Theory]
-    [InlineData("participants_view,activities_edit")]
-    [InlineData("participants_edit")]
-    [InlineData("activities_edit")]
+    [InlineData("participant_view,activity_edit")]
+    [InlineData("participant_edit")]
+    [InlineData("activity_edit")]
     public async Task SeatEditor_NeedsTheRightToEditBothParticipantsAndActivities(string privileges)
     {
         var ct = TestContext.Current.CancellationToken;
-        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
+        var editor = await CreateClientWithPrivilegeAsync("participant_edit");
         var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
         var client = await CreateClientWithPrivilegesAsync(privileges.Split(','));
@@ -276,8 +276,8 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     public async Task SignupWishes_NeedOnlyTheRightToEditParticipants()
     {
         var ct = TestContext.Current.CancellationToken;
-        var editor = await CreateClientWithPrivilegeAsync("participants_edit");
-        var viewer = await CreateClientWithPrivilegesAsync("participants_view", "activities_edit");
+        var editor = await CreateClientWithPrivilegeAsync("participant_edit");
+        var viewer = await CreateClientWithPrivilegesAsync("participant_view", "activity_edit");
         var created = await (await editor.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
         var url = $"/api/participants/{created.Id}/signups";
@@ -298,7 +298,7 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
     public async Task SeatEditor_IsOpenToUsersWhoMayEditParticipantsAndActivities()
     {
         var ct = TestContext.Current.CancellationToken;
-        var client = await CreateClientWithPrivilegesAsync("participants_edit", "activities_edit");
+        var client = await CreateClientWithPrivilegesAsync("participant_edit", "activity_edit");
         var created = await (await client.PostAsJsonAsync("/api/participants", NewParticipant(), ct)).Content.ReadFromJsonAsync<ParticipantDto>(ct);
         Assert.NotNull(created);
 
