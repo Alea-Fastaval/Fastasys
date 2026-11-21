@@ -1,0 +1,280 @@
+using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
+using Microsoft.Extensions.Configuration;
+
+namespace Fastasys.Tests;
+
+// Pins the Infosys participant rules from entities/deltagere.php and framework/functions.php, with the changes
+// agreed on 2026-11-11.
+public class ParticipantRulesTests
+{
+    [Theory]
+    // Infosys Deltagere::getAge(con.start) < 18, in full years on the convention's first day (24 March 2027 here)
+    [InlineData("2009-03-25", true)]
+    [InlineData("2009-03-24", false)]
+    [InlineData("2009-03-23", false)]
+    [InlineData("2015-06-01", true)]
+    [InlineData("1990-01-01", false)]
+    public void IsUnder18_MeasuresTheAgeOnTheConventionsFirstDay(string birthDate, bool expected)
+    {
+        Assert.Equal(expected, ParticipantRules.IsUnder18(DateOnly.Parse(birthDate), new DateOnly(2027, 3, 24)));
+    }
+
+    [Fact]
+    public void IsUnder18_CountsALeapDayBirthdayFromTheFirstOfMarch()
+    {
+        // Born 29 February 2008: still 17 on 28 February 2026, 18 on 1 March 2026, like PHP's DateTime::diff
+        Assert.True(ParticipantRules.IsUnder18(new DateOnly(2008, 2, 29), new DateOnly(2026, 2, 28)));
+        Assert.False(ParticipantRules.IsUnder18(new DateOnly(2008, 2, 29), new DateOnly(2026, 3, 1)));
+    }
+
+    [Fact]
+    public void IsUnder18_MarksNobodyWithoutABirthDateOrAConventionStart()
+    {
+        Assert.False(ParticipantRules.IsUnder18(null, new DateOnly(2027, 3, 24)));
+        Assert.False(ParticipantRules.IsUnder18(new DateOnly(2015, 6, 1), null));
+    }
+
+    [Theory]
+    [InlineData("2027-03-24", "2027-03-24")]
+    [InlineData("", null)]
+    public void ConventionOptions_ReadTheDatesFromTheConfiguration(string configured, string? expected)
+    {
+        // An empty date means it isn't set
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Convention:Start"] = configured,
+                ["Convention:SignupEnd"] = configured,
+            })
+            .Build();
+
+        var options = configuration.GetSection(ConventionOptions.Section).Get<ConventionOptions>();
+
+        var date = expected == null ? (DateOnly?)null : DateOnly.Parse(expected);
+        Assert.Equal(date, options?.Start);
+        Assert.Equal(date, options?.SignupEnd);
+    }
+
+    [Theory]
+    // Signup end 1 February 2027; Denmark is UTC+1 then
+    [InlineData("2027-01-31T23:30:00Z", false)] // 00:30 on the end date: on time (Infosys said late; fixed 2026-11-18)
+    [InlineData("2027-02-01T22:59:00Z", false)] // 23:59 on the end date
+    [InlineData("2027-02-01T23:00:00Z", true)] // 00:00 the day after
+    [InlineData("2027-03-01T10:00:00Z", true)]
+    [InlineData("2026-12-01T10:00:00Z", false)]
+    public void IsLateSignup_IsLateFromTheDayAfterTheSignupEnd(string signedUpAt, bool expected)
+    {
+        var instant = DateTime.Parse(signedUpAt, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+
+        Assert.Equal(expected, ParticipantRules.IsLateSignup(instant, new DateOnly(2027, 2, 1)));
+    }
+
+    [Fact]
+    public void IsLateSignup_UsesDanishSummerTime()
+    {
+        // Denmark is UTC+2 in summer: midnight after 30 June is 22:00 UTC
+        var end = new DateOnly(2027, 6, 30);
+
+        Assert.False(ParticipantRules.IsLateSignup(new DateTime(2027, 6, 30, 21, 59, 0, DateTimeKind.Utc), end));
+        Assert.True(ParticipantRules.IsLateSignup(new DateTime(2027, 6, 30, 22, 0, 0, DateTimeKind.Utc), end));
+    }
+
+    [Fact]
+    public void IsLateSignup_IsNeverLateWithoutASignupEnd()
+    {
+        Assert.False(ParticipantRules.IsLateSignup(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc), null));
+    }
+
+    [Theory]
+    [InlineData(new int[0], 1)]
+    [InlineData(new[] { 1, 2, 3 }, 4)]
+    [InlineData(new[] { 1, 3, 4 }, 2)]
+    [InlineData(new[] { 2, 3 }, 1)]
+    [InlineData(new[] { 5, 1, 3, 2 }, 4)]
+    [InlineData(new[] { 1, 1, 2 }, 3)]
+    public void LowestFreeId_ReusesTheLowestGap(int[] used, int expected)
+    {
+        Assert.Equal(expected, ParticipantRules.LowestFreeId(used));
+    }
+
+    [Theory]
+    // No ids yet, or only ids that aren't participant ids
+    [InlineData(new int[0], 1)]
+    [InlineData(new[] { 0, -5 }, 1)]
+    // A gap far below the highest id
+    [InlineData(new[] { 1, 1000 }, 2)]
+    // Every id up to the highest is taken: the next one
+    [InlineData(new[] { 3, 1, 2 }, 4)]
+    public void LowestFreeId_SearchesNoFurtherThanTheHighestUsedId(int[] used, int expected)
+    {
+        Assert.Equal(expected, ParticipantRules.LowestFreeId(used));
+    }
+
+    [Fact]
+    public void LowestFreeId_HasNoInfonautRangeAndNoUpperLimit()
+    {
+        // Infosys gave ids 900-929 only to Infonauts and searched 1-5000; both were dropped on 2026-11-11
+        var upTo899 = Enumerable.Range(1, 899);
+        Assert.Equal(900, ParticipantRules.LowestFreeId(upTo899));
+        Assert.Equal(5001, ParticipantRules.LowestFreeId(Enumerable.Range(1, 5000)));
+    }
+
+    [Theory]
+    [InlineData("004512345678", "12345678")]
+    [InlineData("+dk12345678", "12345678")]
+    [InlineData("  12345678  ", "12345678")]
+    [InlineData("tlf 004512345678", "tlf 12345678")]
+    [InlineData("+46701234567", "+46701234567")]
+    [InlineData("0045 1234 5678", "0045 1234 5678")]
+    [InlineData("1234", "1234")]
+    [InlineData(null, "")]
+    public void NormalizePhone_RemovesADanishPrefixInFrontOfEightDigits(string? input, string expected)
+    {
+        Assert.Equal(expected, ParticipantRules.NormalizePhone(input));
+    }
+
+    [Fact]
+    public void NormalizePhone_AlsoRemovesPlus45()
+    {
+        // Infosys left "+45" in place (its pattern looks for "+dk"); fixed on 2026-11-11
+        Assert.Equal("12345678", ParticipantRules.NormalizePhone("+4512345678"));
+    }
+
+    [Fact]
+    public void NormalizeEmail_Trims()
+    {
+        Assert.Equal("someone@example.invalid", ParticipantRules.NormalizeEmail("  someone@example.invalid "));
+    }
+
+    // Infosys's widget could also save "none" ("Ingen"); since 2026-11-21 nobody can be given no pronouns
+    [Theory]
+    [InlineData("none", false)]
+    [InlineData("ask", true)]
+    [InlineData("ns", true)]
+    [InlineData("nsno", true)]
+    [InlineData("fsmo", true)]
+    [InlineData("nsns", false)]
+    [InlineData("xx", false)]
+    [InlineData("nsxx", false)]
+    [InlineData("n", false)]
+    [InlineData("nsnofs", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsValidPronouns_AcceptsWhatThePronounWidgetCanSave(string? pronouns, bool expected)
+    {
+        Assert.Equal(expected, ParticipantRules.IsValidPronouns(pronouns));
+    }
+
+    [Fact]
+    public void IdFromBarcode_ReadsTheIdFromAnEan8WithTheCurrentYear()
+    {
+        var code = ParticipantRules.Ean8ForParticipant(1234, 2027);
+
+        // Weights 3,1,3,1,3,1,3 on 2701234 give 35, so the check digit is 5
+        Assert.Equal("27012345", code);
+        Assert.Equal(1234, ParticipantRules.IdFromBarcode(code, 27));
+    }
+
+    [Fact]
+    public void IdFromBarcode_GivesSevenDigitsForAnEan8FromAnotherYear()
+    {
+        // Infosys EAN8ToNumber: when the year doesn't match, the first seven digits are the "id"
+        Assert.Equal(2701234, ParticipantRules.IdFromBarcode("27012345", 26));
+    }
+
+    [Theory]
+    [InlineData("27012344")]
+    [InlineData("2701234")]
+    [InlineData("270123450")]
+    [InlineData("2701234x")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void IdFromBarcode_IgnoresWhatIsNotABarcode(string? input)
+    {
+        Assert.Null(ParticipantRules.IdFromBarcode(input, 27));
+    }
+
+    [Fact]
+    public void IdFromBarcode_ReadsAnEan13()
+    {
+        // Infosys numberToEAN13 doesn't count the first digit: odd positions 1-11 weigh 3 (2 and 4 give 18),
+        // even positions 2-10 weigh 1 (1 and 3 give 4), so 000000001234 gets check digit 8
+        Assert.Equal(1234, ParticipantRules.IdFromBarcode("0000000012348", 27));
+        Assert.Null(ParticipantRules.IdFromBarcode("0000000012345", 27));
+    }
+
+    // Infosys Deltagere::isBusyBetween: a period is busy when it starts inside a busy period, ends inside one, or
+    // covers one. Busy 10:00-14:00.
+    [Theory]
+    [InlineData(10, 14, true)]
+    [InlineData(11, 12, true)]
+    [InlineData(8, 11, true)]
+    [InlineData(13, 16, true)]
+    [InlineData(9, 15, true)]
+    [InlineData(8, 10, false)]
+    [InlineData(14, 16, false)]
+    [InlineData(15, 18, false)]
+    public void IsBusyBetween_WhenThePeriodOverlapsABusyOne(int startHour, int endHour, bool expected)
+    {
+        var day = new DateTime(2027, 3, 24, 0, 0, 0, DateTimeKind.Utc);
+        var busy = new[] { (day.AddHours(10), day.AddHours(14)) };
+
+        Assert.Equal(expected, ParticipantRules.IsBusyBetween(busy, day.AddHours(startHour), day.AddHours(endHour)));
+    }
+
+    [Fact]
+    public void IsBusyBetween_IsNeverTrueWithoutBusyPeriods()
+    {
+        var day = new DateTime(2027, 3, 24, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.False(ParticipantRules.IsBusyBetween([], day, day.AddHours(4)));
+    }
+
+    // Infosys Deltagere alder: full years to today
+    [Theory]
+    [InlineData("2000-03-24", "2027-03-24", 27)]
+    [InlineData("2000-03-25", "2027-03-24", 26)]
+    [InlineData("2004-02-29", "2027-02-28", 22)]
+    [InlineData("2004-02-29", "2027-03-01", 23)]
+    public void AgeOn_CountsFullYears(string born, string today, int expected)
+    {
+        Assert.Equal(expected, ParticipantRules.AgeOn(DateOnly.Parse(born), DateOnly.Parse(today)));
+    }
+
+    [Fact]
+    public void AgeOn_IsUnknownWithoutABirthDate()
+    {
+        Assert.Null(ParticipantRules.AgeOn(null, new DateOnly(2027, 3, 24)));
+    }
+
+    // Deltagere::getPronoun, in the participant's language. Pronouns not given yet ("none") are blank since 2026-11-21;
+    // Infosys showed "Ingen"/"None".
+    [Theory]
+    [InlineData("fsfo", PreferredLanguage.Danish, "Hun/Hende")]
+    [InlineData("fsfo", PreferredLanguage.English, "She/Her")]
+    [InlineData("nsno", PreferredLanguage.Danish, "De/Dem")]
+    [InlineData("msfo", PreferredLanguage.English, "He/Her")]
+    [InlineData("mo", PreferredLanguage.Danish, "Ham")]
+    [InlineData("ns", PreferredLanguage.English, "They")]
+    [InlineData("none", PreferredLanguage.Danish, "")]
+    [InlineData("none", PreferredLanguage.English, "")]
+    [InlineData("ask", PreferredLanguage.Danish, "Spørg mig")]
+    [InlineData("ask", PreferredLanguage.English, "Ask me")]
+    public void PronounText_IsTheWordsForTheCodes(string pronouns, PreferredLanguage language, string expected)
+    {
+        Assert.Equal(expected, ParticipantRules.PronounText(pronouns, language));
+    }
+
+    // Deltagere::getName: the nickname when there is one, otherwise the first and last name, trimmed
+    [Theory]
+    [InlineData("Testa", "Testesen", "", "Testa Testesen")]
+    [InlineData("Testa", "Testesen", "Testo", "Testo")]
+    [InlineData("Testa", "", "", "Testa")]
+    [InlineData("", "Testesen", "", "Testesen")]
+    public void DisplayName_IsTheNicknameOrTheFullName(string first, string last, string nickname, string expected)
+    {
+        Assert.Equal(expected, Participant.DisplayName(first, last, nickname));
+        Assert.Equal(expected, new Participant { FirstName = first, LastName = last, Nickname = nickname }.DisplayName());
+    }
+}

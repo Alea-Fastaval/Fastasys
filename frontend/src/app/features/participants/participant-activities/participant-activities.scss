@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.card-actions {
+  margin-bottom: 0.75rem;
+}
+
+// The table can be wider than the card on a phone; it scrolls instead of the page
+app-card {
+  overflow-x: auto;
+}
+
+.activity-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  th,
+  td {
+    padding: 0.35rem 1rem 0.35rem 0;
+    vertical-align: top;
+  }
+
+  .time,
+  .role,
+  .run {
+    white-space: nowrap;
+  }
+
+  // Like the links in the other tables (runs, activities, participants)
+  a {
+    color: inherit;
+  }
+}

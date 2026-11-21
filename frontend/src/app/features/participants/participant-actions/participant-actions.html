@@ -1,0 +1,8 @@
+<!-- Disabled buttons don't show a tooltip, so the span around each one carries it -->
+<div class="participant-actions">
+  @for (action of actions(); track action) {
+  <span class="action" [attr.data-action]="action" [title]="'participants.notPortedTitle' | translate">
+    <button mat-stroked-button type="button" disabled>{{ 'participants.actions.' + action | translate }}</button>
+  </span>
+  }
+</div>

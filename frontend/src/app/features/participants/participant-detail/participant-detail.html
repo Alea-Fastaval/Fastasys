@@ -1,0 +1,292 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/participants"><mat-icon>arrow_back</mat-icon> {{ 'nav.participants' | translate }}</a>
+    @if (participant(); as p) {
+    <span class="spacer"></span>
+    @if (p.previousId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.previousId]"
+      >{{ 'participants.showPrevious' | translate }}</a
+    >
+    } @if (p.nextId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.nextId]">{{ 'participants.showNext' | translate }}</a>
+    } }
+  </header>
+
+  <!-- Infosys's buttons above the page: Print spillerseddel, Check in, Send tilmeldings email and the payment mode. Not
+       ported yet; see ParticipantActionsComponent for how. -->
+  @if (participant(); as p) {
+  <app-participant-actions [participant]="p" />
+  } @if (flash(); as f) {
+  <p class="flash" [class.error]="f.type === 'error'">{{ 'participants.messages.' + f.key | translate }}</p>
+  } @if (errorKey(); as key) {
+  <p class="flash error">{{ 'participants.messages.' + key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  }
+
+  <ng-template #cell let-def let-p="participant">
+    <div class="field" [class.saved]="saved() === def.field" [class.failed]="failed() === def.field">
+      <dt>{{ def.label | translate }}:</dt>
+      @if (editor()?.field === def.field && editor(); as e) {
+      <dd class="editing">
+        <form class="inline-editor" (ngSubmit)="submitEdit(def)" (keydown.escape)="cancelEdit()">
+          @switch (def.kind) { @case ('yesNo') {
+          <select name="value" [(ngModel)]="e.value">
+            <option [ngValue]="true">{{ 'participants.yes' | translate }}</option>
+            <option [ngValue]="false">{{ 'participants.no' | translate }}</option>
+          </select>
+          } @case ('select') {
+          <select name="value" [(ngModel)]="e.value">
+            @for (option of def.options(); track option.value) {
+            <option [ngValue]="option.value">{{ option.label ?? (option.labelKey | translate) }}</option>
+            }
+          </select>
+          } @case ('date') {
+          <input type="date" name="value" [(ngModel)]="e.value" />
+          } @case ('number') {
+          <input type="number" name="value" [(ngModel)]="e.value" />
+          } @case ('optionalNumber') {
+          <input type="number" name="value" [(ngModel)]="e.value" />
+          } @case ('pronouns') {
+          <select name="first" [ngModel]="e.pronouns.first" (ngModelChange)="changeFirstPronoun($event)">
+            @if (!e.pronouns.first) {
+            <option value="" disabled></option>
+            } @for (code of pronounFirstChoices; track code) {
+            <option [value]="code" [disabled]="code === e.pronouns.second">
+              {{ pronounWord(code, p.preferredLanguage) }}
+            </option>
+            }
+          </select>
+          @if (hasSecondPronoun(e.pronouns)) {
+          <span>/</span>
+          <select name="second" [ngModel]="e.pronouns.second" (ngModelChange)="changeSecondPronoun($event)">
+            <option value=""></option>
+            @for (code of pronounCodes; track code) {
+            <option [value]="code" [disabled]="code === e.pronouns.first">
+              {{ pronounWord(code, p.preferredLanguage) }}
+            </option>
+            }
+          </select>
+          } } @default {
+          <input type="text" name="value" [(ngModel)]="e.value" />
+          } }
+          <button mat-stroked-button type="submit" [disabled]="!canSubmit(def, e)">
+            {{ 'participants.ok' | translate }}
+          </button>
+          <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
+        </form>
+      </dd>
+      } @else {
+      <dd
+        [class.editable]="p.canEdit"
+        [attr.tabindex]="p.canEdit ? 0 : null"
+        [attr.title]="p.canEdit ? ('participants.clickToEdit' | translate) : null"
+        (click)="startEdit(def, p)"
+        (keydown.enter)="startEdit(def, p)"
+      >
+        @switch (def.kind) { @case ('yesNo') { @if (def.field === 'isAnnulled') {
+        <!-- Infosys writes Annulleret with a capital and marks it red when it is ja -->
+        <span [class.annulled]="def.value(p)">{{ (def.value(p) ? 'common.yes' : 'common.no') | translate }}</span>
+        } @else { {{ (def.value(p) ? 'participants.yes' : 'participants.no') | translate }} } } @case ('date') { {{
+        formatBirthDate(p.birthDate) }} @if (p.isUnder18) {
+        <span class="under-18-tag">{{ 'participants.under18Tag' | translate }}</span>
+        } } @case ('select') { {{ selectedLabel(def, p) }} } @case ('pronouns') { {{ def.text(p) }} } @default { {{
+        def.value(p) }} } }
+      </dd>
+      }
+    </div>
+  </ng-template>
+
+  @if (participant(); as p) { @if (p.isUnder18) {
+  <!-- Under 18 on the convention's first day. Infosys meant to mark it (youngster.css, which is missing) and says it at
+       check-in in coral: "Deltageren er under 18 år." -->
+  <p class="under-18-banner">{{ 'participants.under18' | translate }}</p>
+  }
+  <app-card [title]="'participants.personalInfo' | translate">
+    <div class="card-actions">
+      @if (p.canEdit) {
+      <a mat-stroked-button [routerLink]="['/participants', p.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ (p.details?.isAnnulled ? 'participants.editDelete' : 'participants.edit') |
+        translate }}
+      </a>
+      }
+      <!-- Infosys's "Spillerseddel" link opens the same printable sheet as "Print spillerseddel" (see
+           ParticipantActionsComponent). Not ported yet. -->
+      <span class="not-ported-action" [title]="'participants.notPortedTitle' | translate">
+        <button mat-stroked-button type="button" class="character-sheet" disabled>
+          <mat-icon>print</mat-icon> {{ 'participants.actions.characterSheet' | translate }}
+        </button>
+      </span>
+    </div>
+
+    <dl class="field-list">
+      <div class="field">
+        <dt>{{ 'common.id' | translate }}:</dt>
+        <dd>{{ p.id }}</dd>
+      </div>
+      @for (def of personalFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+
+    @if (p.details; as d) {
+    <hr />
+    <dl class="field-list">
+      @for (def of organizerFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (shown of languageFields; track shown.label) {
+      <div class="field wide">
+        <dt>{{ shown.label | translate }}:</dt>
+        <dd>{{ shown.text(p, d) }}</dd>
+      </div>
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      <!-- Infosys: Ja when the participant has hero force signups (Heltestyrken, Tilmeldinger), otherwise Nej. Not the
+           Super Heltetjanser setting. It comes with the hero force. -->
+      <div class="field in-hero-force">
+        <dt>{{ 'participants.fields.inHeroForce' | translate }}:</dt>
+        @if (p.programme?.heroSignups; as signups) {
+        <dd>{{ (signups.length ? 'common.yes' : 'common.no') | translate }}</dd>
+        } @else {
+        <dd class="not-ported">{{ 'participants.notPortedShort' | translate }}</dd>
+        }
+      </div>
+      @for (def of preferenceFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (def of statusFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+      <div class="field">
+        <dt>{{ 'participants.fields.signedUpAt' | translate }}:</dt>
+        <!-- Infosys marks a late signup in white on red -->
+        <dd>
+          <span class="signed-up" [class.late-signup]="d.isLateSignup">{{ formatConventionDate(d.signedUpAt) }}</span>
+        </dd>
+      </div>
+      <div class="field">
+        <dt>{{ 'participants.fields.checkedInAt' | translate }}:</dt>
+        <dd>
+          {{ d.checkedInAt ? formatConventionDateTime(d.checkedInAt) : ('participants.notCheckedIn' | translate) }}
+        </dd>
+      </div>
+      <!-- Infosys checkin_balance: what the participant paid (or got back) at check-in, CheckInTotal - AmountPaid at
+           that time, 0 when nothing was owed, and "Ikke tjekket ind" before check-in. It needs a new column, which
+           comes with check-in (a schema change to approve then). -->
+      <div class="field checkin-balance">
+        <dt>{{ 'participants.fields.checkInBalance' | translate }}:</dt>
+        <dd class="not-ported">{{ 'participants.notPortedShort' | translate }}</dd>
+      </div>
+    </dl>
+    <hr />
+    <dl class="field-list">
+      @for (def of otherFields; track def.field) {
+      <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
+      }
+    </dl>
+    }
+  </app-card>
+
+  <!-- Infosys shows these boxes next to the personal info: Indgang/Mad, IDkort, Soveplads, Wear and Pris breakdown.
+       They come with the features they show: their data comes when entrance, food, ID cards, sleeping places, wear and
+       prices are ported. Infosys hides all but the Pris breakdown from its Read-only roles. -->
+  <div class="info-boxes">
+    @if (p.details; as d) {
+    <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
+    <app-participant-id-card
+      [idCard]="d.idCard"
+      [participantId]="p.id"
+      [templates]="options()?.idCardTemplates ?? []"
+      (changed)="refresh()"
+    />
+    <app-participant-sleeping [places]="d.sleepingPlaces" />
+    <app-participant-wear [orders]="d.wearOrders" />
+    }
+    <app-participant-price [price]="p.price" [amountPaid]="p.amountPaid" />
+  </div>
+
+  @if (p.details; as d) {
+  <div class="notes">
+    @for (note of visibleNotes(p); track note.field) {
+    <app-card [title]="note.label | translate">
+      <!-- The note is a box like a text field, so it is clear that clicking it lets you write -->
+      <div class="note" [class.saved]="saved() === note.field" [class.failed]="failed() === note.field">
+        @if (editor()?.field === note.field && editor(); as e) {
+        <form class="note-editor" (ngSubmit)="submitEdit(note)" (keydown.escape)="cancelEdit()">
+          <textarea
+            appFocusOnShow
+            name="value"
+            rows="6"
+            class="note-box"
+            [attr.aria-label]="note.label | translate"
+            [(ngModel)]="e.value"
+          ></textarea>
+          <div class="note-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="busy()">
+              {{ 'participants.ok' | translate }}
+            </button>
+            <button mat-button type="button" (click)="cancelEdit()">{{ 'participants.cancel' | translate }}</button>
+          </div>
+        </form>
+        } @else {
+        <div
+          class="note-box"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="note.label | translate"
+          [title]="'participants.clickToEdit' | translate"
+          (click)="startEdit(note, p)"
+          (keydown.enter)="startEdit(note, p)"
+        >
+          @if (note.value(p)) {
+          <span class="note-text">{{ note.value(p) }}</span>
+          } @else {
+          <span class="placeholder">{{ 'participants.notePlaceholder' | translate }}</span>
+          }
+        </div>
+        }
+      </div>
+    </app-card>
+    }
+  </div>
+  }
+
+  <!-- Infosys shows two rows of boxes after the notes: Aktiviteter with Heltestyrke, Opgaver next to it, and
+       Aktivitetstilmeldinger with Heltestyrken, Tilmeldinger. They are also shown, read-only, to users who may view
+       participants and activities (Infosys's "Read-only activity" role). Changes need the right to edit participants
+       and are refused for an activity-locked participant. The hero force boxes get their data when it is ported. -->
+  @if (p.programme; as g) {
+  <div class="activity-boxes">
+    <app-participant-activities [activities]="g.activities" [participantId]="p.id" [canEdit]="canEditSeats(p)" />
+    <app-participant-hero-tasks [tasks]="g.heroTasks" />
+    <app-participant-activity-signups
+      [signups]="g.activitySignups"
+      [participantId]="p.id"
+      [canEdit]="canEditSignups(p)"
+      (changed)="refresh()"
+    />
+    <app-participant-hero-signups [signups]="g.heroSignups" />
+  </div>
+  }
+
+  <!-- Infosys repeats "Vis forrige" and "Vis næste" at the bottom of the page -->
+  <footer class="page-footer">
+    @if (p.previousId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.previousId]"
+      >{{ 'participants.showPrevious' | translate }}</a
+    >
+    } @if (p.nextId) {
+    <a mat-stroked-button [routerLink]="['/participants', p.nextId]">{{ 'participants.showNext' | translate }}</a>
+    }
+  </footer>
+  }
+</div>

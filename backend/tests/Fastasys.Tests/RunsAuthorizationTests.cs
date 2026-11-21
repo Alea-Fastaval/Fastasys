@@ -10,7 +10,7 @@ namespace Fastasys.Tests;
 // Infosys: viewing a hold needs a role that grants the Groups controller; creating, editing, deleting and
 // placing participants also needs the role Activity-admin, Infonaut or admin. Creating, editing and deleting an
 // afvikling needs a role that grants those Activity controller methods.
-// Fastasys maps that onto the activities_view / activities_edit privileges.
+// Fastasys maps that onto the activity_view / activity_edit privileges.
 public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestHelper _testHelper = new(factory);
@@ -38,7 +38,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task UserWithoutActivityPrivilege_IsForbidden()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync("participants_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("participant_view");
         var ct = TestContext.Current.CancellationToken;
 
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/runs", ct)).StatusCode);
@@ -50,7 +50,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task ViewPrivilege_CanRead_ButNotWrite()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync("activities_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("activity_view");
         var ct = TestContext.Current.CancellationToken;
 
         var list = await client.GetAsync("/api/runs", ct);
@@ -94,7 +94,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task EditPrivilege_CanCreateScheduleAndRun_PlaceParticipants_ChangeRoom_AndDelete()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activities_edit", "activities_view"]);
+        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activity_edit", "activity_view"]);
         var ct = TestContext.Current.CancellationToken;
 
         // The test database is shared, so use a time nobody else books

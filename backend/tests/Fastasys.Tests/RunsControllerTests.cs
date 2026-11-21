@@ -267,8 +267,8 @@ public class RunsControllerTests
             seat =>
             {
                 Assert.Equal(player.Id, seat.ParticipantId);
-                // Infosys shows fornavn and efternavn, not the nickname
-                Assert.Equal("Anna Spiller", seat.ParticipantName);
+                // The chosen name (agreed 2026-11-21); Infosys shows fornavn and efternavn
+                Assert.Equal("Kaldenavn", seat.ParticipantName);
                 Assert.Equal(RunSeatRole.Player, seat.Role);
             });
     }

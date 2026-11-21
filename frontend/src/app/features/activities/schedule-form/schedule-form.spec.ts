@@ -236,6 +236,19 @@ describe('ScheduleFormComponent', () => {
     expect(flash.take()).toEqual({ type: 'error', key: 'scheduleDeleteHasRuns' });
   });
 
+  it('says why when participants have signed up for the schedule and it cannot be deleted', async () => {
+    const { component, flash } = await setup();
+    load();
+
+    component.confirmDelete();
+    deleteRequest().flush(
+      { message: 'Schedule has signups and cannot be deleted', reason: 'signups' },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(flash.take()).toEqual({ type: 'error', key: 'scheduleDeleteHasSignups' });
+  });
+
   it('shows the Infosys error when the delete fails for another reason', async () => {
     const { component, flash } = await setup();
     load();
