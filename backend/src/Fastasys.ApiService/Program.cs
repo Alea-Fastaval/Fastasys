@@ -65,6 +65,8 @@ builder.Services.AddAuthentication(options =>
 
 // Authorization Policies
 // There should be a binding between every Privilege in the DBseeder, and a policy name this builder
+// Every instance of "Authorize(Policy = x)" in the program, also need x to be in this list
+// The first parameter must be unique across the policy object
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ActivityView", "activities_view")
     .AddPolicy("ActivityManagement", "activities_edit")

@@ -313,7 +313,7 @@ public static class DbSeeder
             // Give rights/privileges to the role
             foreach (var pKey in privilegeKeys)
             {
-                var p = db.Privileges.FirstOrDefault(pr => pr.Key == pKey);
+                var p = db.Privileges.First(pr => pr.Key == pKey);
                 if (p != null)
                 {
                     db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = p.Id });
