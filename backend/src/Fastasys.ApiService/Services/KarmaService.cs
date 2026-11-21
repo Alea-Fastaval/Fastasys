@@ -20,12 +20,11 @@ public sealed class KarmaService(InfosysDbContext db)
             .SingleOrDefaultAsync(settings => settings.Id == ActivitySettings.SingletonId, ct)
             ?? new ActivitySettings();
         var signups = await db
-            .ParticipantSchedules.AsNoTracking()
+            .ScheduleSignups.AsNoTracking()
             .Where(signup =>
                 ids.Contains(signup.ParticipantId)
                 && !signup.Schedule.IsCancelled
                 && signup.Schedule.Activity.IsTimeExclusive
-                && (signup.Role == "Player" || signup.Role == "GameMaster")
             )
             .Select(signup => new
             {
@@ -56,12 +55,7 @@ public sealed class KarmaService(InfosysDbContext db)
             id => id,
             id =>
                 KarmaRules.Calculate(
-                    signupsByParticipant[id]
-                        .Select(signup => new KarmaSignup(
-                            signup.Priority,
-                            signup.Role == "GameMaster" ? RunSeatRole.GameMaster : RunSeatRole.Player,
-                            true
-                        )),
+                    signupsByParticipant[id].Select(signup => new KarmaSignup(signup.Priority, signup.Role, true)),
                     assignmentsByParticipant[id].Select(seat => new KarmaAssignment(seat.KarmaType, seat.Role, true)),
                     settings
                 )

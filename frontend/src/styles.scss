@@ -32,3 +32,20 @@ h6 {
   background: #fef3c7;
   color: #78350f;
 }
+
+// Printing (the ID cards): only the page itself, on white A4
+@page {
+  size: A4;
+  margin: 10mm 7mm;
+}
+
+@media print {
+  app-toolbar {
+    display: none !important;
+  }
+
+  .content {
+    background: #fff !important;
+    min-height: 0 !important;
+  }
+}

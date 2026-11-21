@@ -1,4 +1,5 @@
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Data;
@@ -12,12 +13,19 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<RolePrivilege> RolePrivileges => Set<RolePrivilege>();
 
     public DbSet<Participant> Participants => Set<Participant>();
+    public DbSet<ParticipantCategory> ParticipantCategories => Set<ParticipantCategory>();
+    public DbSet<OrganizerArea> OrganizerAreas => Set<OrganizerArea>();
+    public DbSet<Country> Countries => Set<Country>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivitySettings> ActivitySettings => Set<ActivitySettings>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
-    public DbSet<ParticipantSchedule> ParticipantSchedules => Set<ParticipantSchedule>();
+    public DbSet<ScheduleSignup> ScheduleSignups => Set<ScheduleSignup>();
     public DbSet<Run> Runs => Set<Run>();
     public DbSet<RunSeat> RunSeats => Set<RunSeat>();
+
+    public DbSet<IdCardTemplate> IdCardTemplates => Set<IdCardTemplate>();
+    public DbSet<IdCardTemplateItem> IdCardTemplateItems => Set<IdCardTemplateItem>();
+    public DbSet<ParticipantPhoto> ParticipantPhotos => Set<ParticipantPhoto>();
 
     public DbSet<Payment> Payments => Set<Payment>();
 
@@ -53,31 +61,76 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<ActivitySettings>().Property(settings => settings.Id).ValueGeneratedNever();
+        // A single row (ActivitySettings.SingletonId), seeded with the default karma points
+        modelBuilder.Entity<ActivitySettings>(settings =>
+        {
+            settings.Property(s => s.Id).ValueGeneratedNever();
+            settings.HasData(new ActivitySettings());
+        });
 
         // Composite Keys & Junction Tables (Provider agnostic)
         modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
 
         modelBuilder.Entity<RolePrivilege>().HasKey(rp => new { rp.RoleId, rp.PrivilegeId });
 
-        modelBuilder.Entity<ParticipantSchedule>(signup =>
+        // Infosys deltagere: brugerkategori_id, country and game_id have foreign keys without ON DELETE CASCADE;
+        // work_area has ON UPDATE CASCADE only
+        modelBuilder.Entity<Participant>(participant =>
         {
-            signup.HasKey(s => s.Id);
-            signup
-                .HasIndex(s => new
-                {
-                    s.ParticipantId,
-                    s.ScheduleId,
-                    s.Priority,
-                })
-                .IsUnique()
-                .AreNullsDistinct(false);
-            signup
-                .HasOne(s => s.Schedule)
-                .WithMany(s => s.ParticipantSchedules)
-                .HasForeignKey(s => s.ScheduleId)
+            participant.Property(p => p.PreferredLanguage).HasConversion<string>();
+            participant.PrimitiveCollection(p => p.ActivityLanguages).ElementType().HasConversion<string>();
+            participant.PrimitiveCollection(p => p.SleepingAreas).ElementType().HasConversion<string>();
+            participant.HasOne(p => p.Category)
+                .WithMany()
+                .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.Country)
+                .WithMany()
+                .HasForeignKey(p => p.CountryCode)
+                .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.OrganizerArea)
+                .WithMany()
+                .HasForeignKey(p => p.OrganizerAreaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            participant.HasOne(p => p.GameActivity)
+                .WithMany()
+                .HasForeignKey(p => p.GameActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // Infosys participantidtemplates cascades on template delete: the participant gets the category's template
+            participant.HasOne(p => p.IdCardTemplate)
+                .WithMany()
+                .HasForeignKey(p => p.IdCardTemplateId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // Infosys brugerkategorier_idtemplates cascades on template delete: the category has no template then
+        modelBuilder.Entity<ParticipantCategory>()
+            .HasOne(c => c.IdCardTemplate)
+            .WithMany()
+            .HasForeignKey(c => c.IdCardTemplateId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Infosys idtemplates_items cascades with its template
+        modelBuilder.Entity<IdCardTemplateItem>(item =>
+        {
+            item.HasOne(i => i.Template)
+                .WithMany(t => t.Items)
+                .HasForeignKey(i => i.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+            item.Property(i => i.Type).HasConversion<string>();
+            item.Property(i => i.DataSource).HasConversion<string>();
+        });
+
+        // Infosys participantphotoidentifiers cascades with the participant
+        modelBuilder.Entity<ParticipantPhoto>()
+            .HasOne(p => p.Participant)
+            .WithOne()
+            .HasForeignKey<ParticipantPhoto>(p => p.ParticipantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ParticipantCategory>().HasData(ParticipantLookupSeed.Categories);
+        modelBuilder.Entity<OrganizerArea>().HasData(ParticipantLookupSeed.OrganizerAreas);
+        modelBuilder.Entity<Country>().HasData(CountrySeed.All);
 
         modelBuilder.Entity<Activity>(activity =>
         {
@@ -120,6 +173,23 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
                 .OnDelete(DeleteBehavior.Restrict);
             seat.HasIndex(s => new { s.RunId, s.ParticipantId }).IsUnique();
             seat.Property(s => s.Role).HasConversion<string>();
+        });
+
+        // Infosys deltagere_tilmeldinger has the primary key (deltager_id, prioritet, afvikling_id) and foreign keys
+        // without ON DELETE CASCADE. Agreed on 2026-11-13: the key is participant + schedule + role instead; deleting a
+        // participant removes their wishes (Infosys's code does that), and a schedule with wishes can't be deleted.
+        modelBuilder.Entity<ScheduleSignup>(signup =>
+        {
+            signup.HasKey(s => new { s.ParticipantId, s.ScheduleId, s.Role });
+            signup.HasOne(s => s.Participant)
+                .WithMany(p => p.Signups)
+                .HasForeignKey(s => s.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            signup.HasOne(s => s.Schedule)
+                .WithMany(s => s.Signups)
+                .HasForeignKey(s => s.ScheduleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            signup.Property(s => s.Role).HasConversion<string>();
         });
 
         modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });

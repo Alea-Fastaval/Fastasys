@@ -4,212 +4,151 @@ using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Fastasys.ApiService.Controllers;
 
-public record ActivitySignupDto(
-    int Id,
+// The "Tilmeldinger" table under one schedule of the Infosys activity page (visaktivitet.phtml, .afviklingsbox-signups)
+public record ScheduleSignupsDto(int ScheduleId, IReadOnlyList<SignupPoolRowDto> Signups);
+
+// A row of the table. Infosys shows: an SL icon for a game master wish, the name (linked to the participant), Pri,
+// karma, age, a heart, a language flag and a note icon; hovering the row shows the language, age, wanted activities
+// and the note.
+// - Name is the chosen name (agreed 2026-11-21; Infosys shows fornavn and efternavn).
+// - Karma is not ported yet, so it is always null (like the runs' karma).
+// - Age is null when the birth date is unknown.
+// - Language is "dk", "uk" or null (see SignupRules.LanguageFlag); ActivityLanguages is what the hover shows.
+// - DesiredActivitiesReached is the heart: null for none, true for a filled one, false for an empty one.
+// - Note is the participant's "Andre kommentarer"; only users who may edit participants get it (null otherwise).
+// - IsOnTeam rows are hidden. IsBusy and IsLocked rows can't be dragged; IsDoubleBooked rows get a dashed border.
+public record SignupPoolRowDto(
     int ParticipantId,
-    int ScheduleId,
-    int ActivityId,
-    string ActivityTitle,
-    DateTime StartTime,
-    DateTime EndTime,
-    string Role,
-    int? Priority,
-    DateTime SignedUpAt,
-    bool IsCancelled
-);
+    string Name,
+    RunSeatRole Role,
+    int Priority,
+    int? Karma,
+    int? Age,
+    string? Language,
+    IReadOnlyList<ParticipantLanguage> ActivityLanguages,
+    int DesiredActivities,
+    bool? DesiredActivitiesReached,
+    string? Note,
+    bool IsOnTeam,
+    bool IsBusy,
+    bool IsLocked,
+    bool IsDoubleBooked);
 
-// Null role/priority makes omitted JSON fields invalid, rather than silently creating a first preference.
-public record ActivitySignupFieldsDto(int ScheduleId, RunSeatRole? Role, int? Priority);
-
-/// <summary>Admin-managed preferences (Infosys: deltagere_tilmeldinger), distinct from assigned run seats.</summary>
+// Infosys ActivityController::visAktivitet's signup tables (with ActivityModel::getDoubleBookings and
+// getDesiredActivityStats). Everyone who can see the activity page sees them, as in Infosys. Placing a participant on a
+// run by dragging uses the runs' seat endpoints (Infosys groups/scheduleparticipant).
 [ApiController]
-[Route("api/participants/{participantId:int}/activity-signups")]
+[Route("api/activities/{activityId:int}/signups")]
 [Authorize(Policy = "ActivityView")]
-public class ActivitySignupsController(InfosysDbContext db) : ControllerBase
+public class ActivitySignupsController : ControllerBase
 {
-    private const string DuplicateMessage = "Participant already has a signup for this schedule and priority";
+    private readonly InfosysDbContext _db;
+    private readonly IAuthorizationService _authorization;
 
+    public ActivitySignupsController(InfosysDbContext db, IAuthorizationService authorization)
+    {
+        _db = db;
+        _authorization = authorization;
+    }
+
+    // One table per schedule, in the activity page's order (start, then id)
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ActivitySignupDto>>> GetAll(int participantId)
+    public async Task<ActionResult<IReadOnlyList<ScheduleSignupsDto>>> Get(int activityId)
     {
-        if (!await db.Participants.AnyAsync(p => p.Id == participantId))
-            return NotFound(new { message = "Participant not found" });
+        var activity = await _db.Activities.AsNoTracking().FirstOrDefaultAsync(a => a.Id == activityId);
+        if (activity == null) return NotFound(new { message = "Activity not found" });
 
-        return Ok(await Signups(participantId).ToListAsync());
-    }
+        // The notes are for participant editors, as in the participant list
+        var mayReadNotes = (await _authorization.AuthorizeAsync(User, "ParticipantManagement")).Succeeded;
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<ActivitySignupDto>> Get(int participantId, int id)
-    {
-        var signup = await Signups(participantId, id).SingleOrDefaultAsync();
-        return signup == null ? NotFound(new { message = "Signup not found" }) : Ok(signup);
-    }
-
-    [HttpPost]
-    [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ActivitySignupDto>> Create(int participantId, [FromBody] ActivitySignupFieldsDto dto)
-    {
-        if (!await db.Participants.AnyAsync(p => p.Id == participantId))
-            return NotFound(new { message = "Participant not found" });
-
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, dto.ScheduleId);
-        var error = await ValidateAsync(dto);
-        if (error != null)
-            return BadRequest(new { message = error });
-        if (await IsDuplicateAsync(participantId, dto))
-            return Conflict(new { message = DuplicateMessage });
-
-        var signup = new ParticipantSchedule
-        {
-            ParticipantId = participantId,
-            ScheduleId = dto.ScheduleId,
-            Role = dto.Role!.Value.ToString(),
-            Priority = dto.Priority,
-        };
-        db.ParticipantSchedules.Add(signup);
-        var conflict = await SaveAsync();
-        if (conflict != null)
-            return conflict;
-
-        if (transaction != null)
-            await transaction.CommitAsync();
-
-        var result = await Signups(participantId, signup.Id).SingleAsync();
-        return CreatedAtAction(nameof(Get), new { participantId, id = signup.Id }, result);
-    }
-
-    [HttpPut("{id:int}")]
-    [Authorize(Policy = "ActivityManagement")]
-    public async Task<ActionResult<ActivitySignupDto>> Update(
-        int participantId,
-        int id,
-        [FromBody] ActivitySignupFieldsDto dto
-    )
-    {
-        var signup = await db.ParticipantSchedules.SingleOrDefaultAsync(s =>
-            s.ParticipantId == participantId && s.Id == id
-        );
-        if (signup == null)
-            return NotFound(new { message = "Signup not found" });
-
-        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, dto.ScheduleId);
-        var error = await ValidateAsync(dto);
-        if (error != null)
-            return BadRequest(new { message = error });
-        if (await IsDuplicateAsync(participantId, dto, id))
-            return Conflict(new { message = DuplicateMessage });
-
-        signup.ScheduleId = dto.ScheduleId;
-        signup.Role = dto.Role!.Value.ToString();
-        signup.Priority = dto.Priority;
-        var conflict = await SaveAsync();
-        if (conflict != null)
-            return conflict;
-
-        if (transaction != null)
-            await transaction.CommitAsync();
-        return Ok(await Signups(participantId, id).SingleAsync());
-    }
-
-    [HttpDelete("{id:int}")]
-    [Authorize(Policy = "ActivityManagement")]
-    public async Task<IActionResult> Delete(int participantId, int id)
-    {
-        var signup = await db.ParticipantSchedules.SingleOrDefaultAsync(s =>
-            s.ParticipantId == participantId && s.Id == id
-        );
-        if (signup == null)
-            return NotFound(new { message = "Signup not found" });
-
-        db.ParticipantSchedules.Remove(signup);
-        try
-        {
-            await db.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return NotFound(new { message = "Signup not found" });
-        }
-        return NoContent();
-    }
-
-    private async Task<string?> ValidateAsync(ActivitySignupFieldsDto dto)
-    {
-        if (dto.Role is null || !Enum.IsDefined(dto.Role.Value))
-            return "Role must be Player or GameMaster";
-        if (dto.Priority is null)
-            return "Priority is required";
-        if (dto.Priority < (dto.Role == RunSeatRole.GameMaster ? 0 : 1) || dto.Priority > 4)
-            return "Player priority must be 1–4; game-master priority must be 0–4";
-
-        var activity = await db
-            .Schedules.Where(s => s.Id == dto.ScheduleId)
-            .Select(s => new { s.Activity.GameMastersPerTeam, s.IsCancelled })
-            .SingleOrDefaultAsync();
-        if (activity == null)
-            return "Schedule not found";
-        if (activity.IsCancelled)
-            return "Schedule is cancelled";
-        if (dto.Role == RunSeatRole.GameMaster && activity.GameMastersPerTeam <= 0)
-            return "Activity does not use game masters";
-        return null;
-    }
-
-    private Task<bool> IsDuplicateAsync(int participantId, ActivitySignupFieldsDto dto, int? exceptId = null) =>
-        db.ParticipantSchedules.AnyAsync(s =>
-            s.ParticipantId == participantId
-            && s.ScheduleId == dto.ScheduleId
-            && s.Priority == dto.Priority
-            && (exceptId == null || s.Id != exceptId)
-        );
-
-    private async Task<ActionResult?> SaveAsync()
-    {
-        try
-        {
-            await db.SaveChangesAsync();
-            return null;
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return NotFound(new { message = "Signup not found" });
-        }
-        catch (DbUpdateException ex)
-            when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            // The unique index also protects against two concurrent requests passing the initial check.
-            return Conflict(new { message = DuplicateMessage });
-        }
-        catch (DbUpdateException ex)
-            when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation })
-        {
-            return Conflict(new { message = "Participant or schedule was removed; reload before retrying" });
-        }
-    }
-
-    private IQueryable<ActivitySignupDto> Signups(int participantId, int? id = null) =>
-        db
-            .ParticipantSchedules.AsNoTracking()
-            .Where(s => s.ParticipantId == participantId && (id == null || s.Id == id))
-            .OrderBy(s => s.Schedule.StartTime)
-            .ThenBy(s => s.ScheduleId)
-            .ThenBy(s => s.Priority)
+        var schedules = await _db.Schedules
+            .AsNoTracking()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.StartTime)
             .ThenBy(s => s.Id)
-            .Select(s => new ActivitySignupDto(
-                s.Id,
-                s.ParticipantId,
-                s.ScheduleId,
-                s.Schedule.ActivityId,
-                s.Schedule.Activity.Title,
-                s.Schedule.StartTime,
-                s.Schedule.EndTime,
-                s.Role,
-                s.Priority,
-                s.SignedUpAt,
-                s.Schedule.IsCancelled
-            ));
+            .Select(s => new { s.Id, s.StartTime, s.EndTime })
+            .ToListAsync();
+        var scheduleIds = schedules.Select(s => s.Id).ToList();
+
+        var wishes = await _db.ScheduleSignups
+            .AsNoTracking()
+            .Where(w => scheduleIds.Contains(w.ScheduleId))
+            .Select(w => new { w.ScheduleId, w.ParticipantId, w.Role, w.Priority })
+            .ToListAsync();
+        var participantIds = wishes.Select(w => w.ParticipantId).Distinct().ToList();
+        var participants = await _db.Participants
+            .AsNoTracking()
+            .Where(p => participantIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id);
+
+        // Seats on the activity's runs (on-team), all player seats (the heart) and all wishes with their times
+        // (double bookings)
+        var activitySeats = await _db.RunSeats
+            .AsNoTracking()
+            .Where(s => s.Run.Schedule.ActivityId == activityId)
+            .Select(s => new { s.ParticipantId, s.Run.ScheduleId, s.Role })
+            .ToListAsync();
+        var playerSeats = (await _db.RunSeats
+                .AsNoTracking()
+                .Where(s => participantIds.Contains(s.ParticipantId) && s.Role == RunSeatRole.Player)
+                .Select(s => s.ParticipantId)
+                .ToListAsync())
+            .CountBy(id => id)
+            .ToDictionary(c => c.Key, c => c.Value);
+        var allWishes = await _db.ScheduleSignups
+            .AsNoTracking()
+            .Where(w => participantIds.Contains(w.ParticipantId))
+            .Select(w => new { w.ParticipantId, w.ScheduleId, w.Role, w.Schedule.StartTime, w.Schedule.EndTime })
+            .ToListAsync();
+        var spots = await ParticipantSpots.LoadManyAsync(_db, participants.Values.ToList());
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Europe/Copenhagen"));
+
+        bool IsDoubleBooked(int participantId, int scheduleId, DateTime start, DateTime end) =>
+            allWishes.Any(w => w.ParticipantId == participantId && w.ScheduleId == scheduleId && w.Role == RunSeatRole.GameMaster)
+            && allWishes.Any(w => w.ParticipantId == participantId && w.ScheduleId != scheduleId
+                && SignupRules.OverlapsForDoubleBooking(start, end, w.StartTime, w.EndTime));
+
+        return Ok(schedules.Select(schedule => new ScheduleSignupsDto(
+            schedule.Id,
+            wishes
+                .Where(w => w.ScheduleId == schedule.Id)
+                // Infosys Afviklinger::getSignupByType: game masters first, then by priority
+                .OrderBy(w => w.Role == RunSeatRole.GameMaster ? 0 : 1)
+                .ThenBy(w => w.Priority)
+                .ThenBy(w => w.ParticipantId)
+                .Select(w =>
+                {
+                    var p = participants[w.ParticipantId];
+                    var isOnTeam = SignupRules.IsOnTeam(
+                        activitySeats.Any(s => s.ParticipantId == p.Id && s.ScheduleId == schedule.Id),
+                        w.Role,
+                        activitySeats.Any(s => s.ParticipantId == p.Id && s.Role == RunSeatRole.Player),
+                        activity.IsReplayable);
+                    var isBusy = activity.IsTimeExclusive && !isOnTeam
+                        && ParticipantRules.IsBusyBetween(ParticipantSpots.BusyPeriods(spots[p.Id]), schedule.StartTime, schedule.EndTime);
+                    var note = mayReadNotes && !string.IsNullOrWhiteSpace(p.CommentNote) ? p.CommentNote.Trim() : null;
+
+                    return new SignupPoolRowDto(
+                        p.Id,
+                        p.DisplayName(),
+                        w.Role,
+                        w.Priority,
+                        Karma: null,
+                        ParticipantRules.AgeOn(p.BirthDate, today),
+                        SignupRules.LanguageFlag(p.ActivityLanguages),
+                        p.ActivityLanguages,
+                        p.DesiredActivities,
+                        SignupRules.DesiredActivitiesReached(p.DesiredActivities, playerSeats.GetValueOrDefault(p.Id)),
+                        note,
+                        isOnTeam,
+                        isBusy,
+                        p.IsActivityLocked,
+                        IsDoubleBooked(p.Id, schedule.Id, schedule.StartTime, schedule.EndTime));
+                })
+                .ToList()))
+            .ToList());
+    }
 }

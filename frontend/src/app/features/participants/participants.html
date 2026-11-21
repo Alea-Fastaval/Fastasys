@@ -1,69 +1,160 @@
 <div class="page-container">
   <header class="page-header">
-    <div>
-      <h1>{{ 'participants.title' | translate }}</h1>
-      <p>{{ 'participants.subtitle' | translate }}</p>
+    <h1>
+      {{ (searchLabel() === null ? 'participants.allParticipants' : 'participants.list.searchTitle') | translate }}
+    </h1>
+    <div class="actions">
+      <button mat-stroked-button type="button" class="open-search" (click)="toggleSearch()">
+        <mat-icon>search</mat-icon> {{ 'participants.list.search' | translate }}
+      </button>
+      <a mat-stroked-button routerLink="/participants/new"
+        ><mat-icon>person_add</mat-icon> {{ 'participants.createTitle' | translate }}</a
+      >
+      @if (mayEditIdCards) {
+      <a mat-stroked-button class="id-card-templates" routerLink="/id-card-templates"
+        ><mat-icon>badge</mat-icon> {{ 'idCardTemplates.title' | translate }}</a
+      >
+      }
     </div>
   </header>
 
-  <div class="toolbar">
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>{{ 'participants.searchPlaceholder' | translate }}</mat-label>
-      <input matInput [(ngModel)]="searchQuery" (keyup.enter)="loadParticipants()" placeholder="e.g. John Doe" />
-      <mat-icon matSuffix (click)="loadParticipants()">search</mat-icon>
-    </mat-form-field>
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'participants.messages.' + flash.key | translate }}</p>
+  } @if (unknownQueryValues(); as values) {
+  <p class="flash error unknown-query">{{ 'common.unknownQueryValues' | translate: { values } }}</p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'participants.messages.listFailed' | translate }}</p>
+  } @if (showSearch()) {
+  <app-participant-search-form
+    [categories]="categories()"
+    [organizerAreas]="organizerAreas()"
+    (searched)="search($event)"
+  />
+  }
+
+  <p class="list-helpers">
+    <button type="button" class="link more-columns" (click)="showColumns.set(!showColumns())">
+      <mat-icon>add</mat-icon> {{ 'participants.list.moreColumns' | translate }}
+    </button>
+    <button type="button" class="link reset-columns" (click)="resetColumns()">
+      <mat-icon>close</mat-icon> {{ 'participants.list.resetColumns' | translate }}
+    </button>
+    @if (searchLabel() !== null) {
+    <span class="reset-search">
+      {{ 'participants.list.searchLabel' | translate }}@if (searchLabel()) {: <strong>{{ searchLabel() }}</strong>}
+      <button
+        type="button"
+        class="link"
+        [attr.aria-label]="'participants.list.resetSearch' | translate"
+        [title]="'participants.list.resetSearch' | translate"
+        (click)="resetSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    </span>
+    }
+  </p>
+
+  @if (showColumns()) {
+  <div class="available-columns">
+    @for (c of availableColumns(); track c.column) {
+    <button type="button" class="addable-column" [class.active]="isShown(c.column)" (click)="toggleColumn(c.column)">
+      {{ c.label }}
+    </button>
+    }
+  </div>
+  }
+
+  <div class="table-controls">
+    <label>
+      {{ 'participants.list.show' | translate }}
+      <select name="pageSize" [ngModel]="pageSize()" (ngModelChange)="setPageSize($event)">
+        @for (size of pageSizes; track size) {
+        <option [ngValue]="size">{{ size === 0 ? ('participants.list.all' | translate) : size }}</option>
+        }
+      </select>
+      {{ 'participants.list.entries' | translate }}
+    </label>
+    <label>
+      {{ 'participants.list.filter' | translate }}
+      <input type="text" name="filter" [ngModel]="filter() ?? ''" (ngModelChange)="setFilter($event)" />
+    </label>
   </div>
 
-  <table mat-table [dataSource]="participants()" class="mat-elevation-z2 full-table">
-    <ng-container matColumnDef="id">
-      <th mat-header-cell *matHeaderCellDef>{{ 'common.id' | translate }}</th>
-      <td mat-cell *matCellDef="let p">{{ p.id }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef>{{ 'common.name' | translate }}</th>
-      <td mat-cell *matCellDef="let p">
-        <strong>{{ p.firstName }} {{ p.lastName }}</strong>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="email">
-      <th mat-header-cell *matHeaderCellDef>{{ 'common.email' | translate }}</th>
-      <td mat-cell *matCellDef="let p">{{ p.email }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="barcode">
-      <th mat-header-cell *matHeaderCellDef>{{ 'participants.barcode' | translate }}</th>
-      <td mat-cell *matCellDef="let p">
-        <code>{{ p.barcode }}</code>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>{{ 'common.status' | translate }}</th>
-      <td mat-cell *matCellDef="let p">
-        <app-badge [variant]="p.isCheckedIn ? 'success' : 'danger'">
-          {{ (p.isCheckedIn ? 'participants.checkedIn' : 'participants.notCheckedIn') | translate }}
-        </app-badge>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>{{ 'common.actions' | translate }}</th>
-      <td mat-cell *matCellDef="let p">
-        @if (!p.isCheckedIn) {
-        <button mat-flat-button color="accent" (click)="checkIn(p.id)">
-          <mat-icon>how_to_reg</mat-icon> {{ 'participants.checkIn' | translate }}
-        </button>
-        } @else {
-        <span class="checked-time">
-          {{ 'participants.checkedInAt' | translate }} {{ p.checkedInAt | date: 'shortTime' }}
-        </span>
+  <table
+    class="participants-table"
+    matSort
+    matSortDisableClear
+    [matSortActive]="sortKey() ?? ''"
+    [matSortDirection]="sortDirection() ?? ''"
+    (matSortChange)="sortBy($event)"
+  >
+    <thead>
+      <tr>
+        <th mat-sort-header="id" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ 'participants.columns.id' | translate }}
+        </th>
+        <th mat-sort-header="name" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ 'participants.columns.name' | translate }}
+        </th>
+        @for (column of columns(); track column) {
+        <th [mat-sort-header]="column" [sortActionDescription]="'participants.list.sortAction' | translate">
+          {{ columnLabel(column) | translate }}
+        </th>
         }
-      </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </tr>
+    </thead>
+    <tbody>
+      @if (rows() === null && !failed()) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.processing' | translate }}</td>
+      </tr>
+      } @else if (rows()?.length === 0) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.emptyTable' | translate }}</td>
+      </tr>
+      } @else if (filtered().length === 0) {
+      <tr>
+        <td class="empty" [attr.colspan]="columns().length + 2">{{ 'participants.list.zeroRecords' | translate }}</td>
+      </tr>
+      } @for (row of visibleRows(); track row.id) {
+      <tr>
+        <td>
+          <a [routerLink]="['/participants', row.id]">{{ row.id }}</a>
+        </td>
+        <td>
+          <a [routerLink]="['/participants', row.id]">{{ row.name }}</a>
+        </td>
+        @for (column of columns(); track column) {
+        <td>{{ text(row, column) }}</td>
+        }
+      </tr>
+      }
+    </tbody>
   </table>
+
+  @if (rows(); as all) {
+  <div class="table-footer">
+    <span class="info">
+      {{ 'participants.list.info' | translate: { start: '' + firstShown(), end: '' + lastShown(), total: '' +
+      filtered().length } }} @if (filtered().length !== all.length) { {{ 'participants.list.infoFiltered' | translate: {
+      max: '' + all.length } }} }
+    </span>
+    <span class="pager">
+      <button mat-button type="button" [disabled]="page() === 0" (click)="goTo(0)">
+        {{ 'participants.list.first' | translate }}
+      </button>
+      <button mat-button type="button" [disabled]="page() === 0" (click)="goTo(page() - 1)">
+        {{ 'participants.list.previous' | translate }}
+      </button>
+      <span class="page-number">{{ page() + 1 }} / {{ pageCount() }}</span>
+      <button mat-button type="button" [disabled]="page() >= pageCount() - 1" (click)="goTo(page() + 1)">
+        {{ 'participants.list.next' | translate }}
+      </button>
+      <button mat-button type="button" [disabled]="page() >= pageCount() - 1" (click)="goTo(pageCount() - 1)">
+        {{ 'participants.list.last' | translate }}
+      </button>
+    </span>
+  </div>
+  }
 </div>

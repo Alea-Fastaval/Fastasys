@@ -105,7 +105,6 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
     public const int HighestAllowedAge = 200;
     public const int MaxSignupsLimit = 1000;
     private const string ScheduleHasRunsMessage = "Schedule has runs and cannot be deleted";
-    private const string ScheduleHasSignupsMessage = "Schedule has signups and cannot be deleted";
     private readonly KarmaService _karma = karma;
 
     [HttpGet]
@@ -363,9 +362,11 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
             return Conflict(new { message = ScheduleHasRunsMessage });
         }
 
-        if (await db.ParticipantSchedules.AnyAsync(s => s.ScheduleId == scheduleId))
+        // Infosys's foreign key from deltagere_tilmeldinger refuses it too (agreed 2026-11-13). The reason tells the
+        // page which message to show.
+        if (await db.ScheduleSignups.AnyAsync(s => s.ScheduleId == scheduleId))
         {
-            return Conflict(new { message = ScheduleHasSignupsMessage });
+            return Conflict(new { message = "Schedule has signups and cannot be deleted", reason = "signups" });
         }
 
         db.Schedules.Remove(schedule);
@@ -375,8 +376,8 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
         }
         catch (DbUpdateException)
         {
-            // A run or signup was added concurrently; both foreign keys restrict schedule deletion.
-            return Conflict(new { message = "Schedule has runs or signups and cannot be deleted" });
+            // A run or a signup was added to the schedule at the same time (both are RESTRICT)
+            return Conflict(new { message = ScheduleHasRunsMessage });
         }
 
         logger.LogInformation(

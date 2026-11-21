@@ -1,56 +1,19 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
-using Fastasys.ApiService.Services;
+using Fastasys.Tests.testHelpers;
 
 namespace Fastasys.Tests;
 
 // Infosys: viewing a hold needs a role that grants the Groups controller; creating, editing, deleting and
 // placing participants also needs the role Activity-admin, Infonaut or admin. Creating, editing and deleting an
 // afvikling needs a role that grants those Activity controller methods.
-// Fastasys maps that onto the activities_view / activities_edit privileges.
+// Fastasys maps that onto the activity_view / activity_edit privileges.
 public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
-    private async Task<HttpClient> CreateClientWithPrivilegeAsync(string privilegeKey)
-    {
-        var suffix = Guid.NewGuid().ToString("N");
-        const string password = "test-password";
-
-        using (var scope = factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<InfosysDbContext>();
-            var role = new Role { Name = $"role-{suffix}" };
-            role.RolePrivileges.Add(
-                new RolePrivilege
-                {
-                    Privilege = new Privilege { Name = privilegeKey, Key = privilegeKey },
-                }
-            );
-            var user = new User
-            {
-                Username = $"user-{suffix}",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                Email = $"{suffix}@example.invalid",
-                IsActive = true,
-            };
-            user.UserRoles.Add(new UserRole { Role = role });
-            db.Users.Add(user);
-            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-        }
-
-        using var loginScope = factory.Services.CreateScope();
-        var auth = await loginScope
-            .ServiceProvider.GetRequiredService<IAuthService>()
-            .LoginAsync(new LoginDto($"user-{suffix}", password));
-        Assert.NotNull(auth);
-
-        var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
-        return client;
-    }
+    private readonly TestHelper _testHelper = new(factory);
 
     private async Task<T> AddAsync<T>(T entity)
         where T : class
@@ -85,7 +48,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task UserWithoutActivityPrivilege_IsForbidden()
     {
-        var client = await CreateClientWithPrivilegeAsync("participants_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("participant_view");
         var ct = TestContext.Current.CancellationToken;
 
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/runs", ct)).StatusCode);
@@ -97,7 +60,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task ViewPrivilege_CanRead_ButNotWrite()
     {
-        var client = await CreateClientWithPrivilegeAsync("activities_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("activity_view");
         var ct = TestContext.Current.CancellationToken;
 
         var list = await client.GetAsync("/api/runs", ct);
@@ -151,7 +114,7 @@ public class RunsAuthorizationTests(TestWebApplicationFactory factory) : IClassF
     [Fact]
     public async Task EditPrivilege_CanCreateScheduleAndRun_PlaceParticipants_ChangeRoom_AndDelete()
     {
-        var client = await CreateClientWithPrivilegeAsync("activities_edit");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activity_edit", "activity_view"]);
         var ct = TestContext.Current.CancellationToken;
 
         // The test database is shared, so use a time nobody else books

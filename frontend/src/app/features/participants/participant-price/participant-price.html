@@ -1,0 +1,68 @@
+<app-card [title]="'participants.price.title' | translate">
+  @if (price; as p) {
+  <table class="price-breakdown">
+    <tbody>
+      <tr class="original-price">
+        <td>{{ 'participants.price.originalPrice' | translate }}</td>
+        <td class="amount">{{ priceText(p.originalPrice) }}</td>
+      </tr>
+      <tr class="divider">
+        <td colspan="2"><hr /></td>
+      </tr>
+      <tr class="entry">
+        <td>{{ 'participants.price.entry' | translate }}</td>
+        <td class="amount">{{ priceText(p.entry) }}</td>
+      </tr>
+      <tr class="food">
+        <td>{{ 'participants.price.food' | translate }}</td>
+        <td class="amount">{{ priceText(p.food) }}</td>
+      </tr>
+      <tr class="wear">
+        <td>{{ 'participants.price.wear' | translate }}</td>
+        <td class="amount">{{ priceText(p.wear) }}</td>
+      </tr>
+      <tr class="activities">
+        <td>{{ 'participants.price.activities' | translate }}</td>
+        <td class="amount">{{ priceText(p.signedUpActivities) }}</td>
+      </tr>
+      <tr class="other">
+        <td>{{ 'participants.price.other' | translate }}</td>
+        <td class="amount">{{ priceText(p.other) }}</td>
+      </tr>
+      <tr class="alea underline">
+        <td>{{ 'participants.price.alea' | translate }}</td>
+        <td class="amount">{{ priceText(p.alea) }}</td>
+      </tr>
+      <tr class="signup-total">
+        <td>{{ 'participants.price.signupTotal' | translate }}</td>
+        <td class="amount">{{ priceText(p.signupTotal) }}</td>
+      </tr>
+      <tr class="amount-paid">
+        <td>{{ 'participants.price.amountPaid' | translate }}</td>
+        <td class="amount">{{ priceText(amountPaid) }}</td>
+      </tr>
+      <tr class="signup-difference underline difference">
+        <td>{{ 'participants.price.signupDifference' | translate }}</td>
+        <td class="amount">{{ priceText(differences(p).signup) }}</td>
+      </tr>
+      <tr class="divider">
+        <td colspan="2"><hr /></td>
+      </tr>
+      <tr class="unassigned-activities">
+        <td>{{ 'participants.price.unassignedActivities' | translate }}</td>
+        <td class="amount">{{ priceText(differences(p).unassignedActivities) }}</td>
+      </tr>
+      <tr class="check-in-total">
+        <td>{{ 'participants.price.checkInTotal' | translate }}</td>
+        <td class="amount">{{ priceText(p.checkInTotal) }}</td>
+      </tr>
+      <tr class="check-in-difference underline difference">
+        <td>{{ 'participants.price.checkInDifference' | translate: checkInLabelParams(p) }}</td>
+        <td class="amount">{{ priceText(differences(p).checkIn) }}</td>
+      </tr>
+    </tbody>
+  </table>
+  } @else {
+  <p class="not-ported">{{ 'participants.price.notPorted' | translate }}</p>
+  }
+</app-card>

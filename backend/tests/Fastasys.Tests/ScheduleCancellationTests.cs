@@ -30,7 +30,7 @@ public class ScheduleCancellationTests
         Participant Other,
         Schedule Schedule,
         Run Run,
-        ParticipantSchedule Signup,
+        ScheduleSignup Signup,
         Room Room,
         Room Spare
     );
@@ -69,10 +69,11 @@ public class ScheduleCancellationTests
                 Role = RunSeatRole.Player,
             }
         );
-        var signup = new ParticipantSchedule
+        var signup = new ScheduleSignup
         {
             Participant = p,
             Schedule = schedule,
+            Role = RunSeatRole.Player,
             Priority = 1,
         };
         db.AddRange(run, signup, other, spare);
@@ -100,24 +101,24 @@ public class ScheduleCancellationTests
         otherRun.Seats.Add(new RunSeat { Participant = s.Participant, SeatNumber = 1 });
         db.AddRange(
             otherRun,
-            new ParticipantSchedule
+            new ScheduleSignup
             {
                 Participant = s.Participant,
                 Schedule = otherOccurrence,
+                Role = RunSeatRole.Player,
                 Priority = 2,
             },
-            new ParticipantSchedule
+            new ScheduleSignup
             {
                 Participant = s.Participant,
                 Schedule = s.Schedule,
                 Priority = 0,
-                Role = "GameMaster",
+                Role = RunSeatRole.GameMaster,
             }
         );
         await db.SaveChangesAsync(Ct);
         var karma = new KarmaService(db);
         Assert.Equal(0, (await karma.CalculateAsync([s.Participant.Id], Ct))[s.Participant.Id]); // -12 -7 -1 +20
-        var timestamp = s.Signup.SignedUpAt;
         var before = DateTimeOffset.UtcNow;
 
         var cancelled = ScheduleValue(
@@ -128,9 +129,9 @@ public class ScheduleCancellationTests
         Assert.NotNull(cancelled.CancelledAt);
         Assert.InRange(cancelled.CancelledAt.Value, before, DateTimeOffset.UtcNow);
         Assert.Equal(9, Assert.Single(Assert.Single(cancelled.Runs).Seats).Karma);
-        Assert.Equal(3, db.ParticipantSchedules.Count());
+        Assert.Equal(3, db.ScheduleSignups.Count());
         Assert.Equal(2, db.RunSeats.Count());
-        Assert.Equal(timestamp, s.Signup.SignedUpAt);
+        Assert.Equal(1, db.ScheduleSignups.AsNoTracking().Single(w => w.ScheduleId == s.Schedule.Id && w.Role == RunSeatRole.Player).Priority);
         Assert.False(otherOccurrence.IsCancelled);
         var again = ScheduleValue(
             await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true))
@@ -150,29 +151,22 @@ public class ScheduleCancellationTests
         var updatedAt = s.Schedule.Activity.UpdatedAt;
         ScheduleValue(await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(false)));
         Assert.Equal(updatedAt, s.Schedule.Activity.UpdatedAt);
-        Assert.Equal(3, db.ParticipantSchedules.Count());
+        Assert.Equal(3, db.ScheduleSignups.Count());
         Assert.Equal(2, db.RunSeats.Count());
     }
 
     [Fact]
-    public async Task CancelledOccurrence_RejectsNewPreferencesRunsAndSeats_ButAllowsExplicitRemoval()
+    public async Task CancelledOccurrence_RejectsNewRunsAndSeats_ButAllowsExplicitRemoval()
     {
         using var db = CreateDb();
         var s = await SeedAsync(db);
         ScheduleValue(await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true)));
-        var signups = new ActivitySignupsController(db);
-        Assert.IsType<BadRequestObjectResult>(
-            (await signups.Create(s.Other.Id, new(s.Schedule.Id, RunSeatRole.Player, 1))).Result
-        );
-        Assert.IsType<BadRequestObjectResult>(
-            (await signups.Update(s.Participant.Id, s.Signup.Id, new(s.Schedule.Id, RunSeatRole.Player, 2))).Result
-        );
         Assert.IsType<ConflictObjectResult>((await Runs(db).Create(new(s.Schedule.Id))).Result);
         Assert.IsType<ConflictObjectResult>(
             (await Runs(db).CreateSeat(s.Run.Id, new(s.Other.Id, RunSeatRole.Player))).Result
         );
         Assert.Single(db.RunSeats);
-        Assert.Single(db.ParticipantSchedules);
+        Assert.Single(db.ScheduleSignups);
         var list = Assert.IsAssignableFrom<IEnumerable<RunSummaryDto>>(
             Assert.IsType<OkObjectResult>((await Runs(db).GetAll()).Result).Value
         );
@@ -180,13 +174,9 @@ public class ScheduleCancellationTests
         Assert.True(run.IsCancelled);
         Assert.False(run.NeedsPlayers);
         Assert.False(run.NeedsGameMasters);
-        var signup = Assert.IsType<ActivitySignupDto>(
-            Assert.IsType<OkObjectResult>((await signups.Get(s.Participant.Id, s.Signup.Id)).Result).Value
-        );
-        Assert.True(signup.IsCancelled);
 
         Assert.IsType<OkObjectResult>((await Runs(db).DeleteSeat(s.Run.Id, s.Participant.Id)).Result);
-        Assert.Single(db.ParticipantSchedules);
+        Assert.Single(db.ScheduleSignups);
         Assert.Empty(db.RunSeats);
     }
 
@@ -214,7 +204,7 @@ public class ScheduleCancellationTests
         );
         Assert.True(s.Schedule.IsCancelled);
         Assert.Equal(cancelledAt, s.Schedule.CancelledAt);
-        Assert.Single(db.ParticipantSchedules);
+        Assert.Single(db.ScheduleSignups);
         Assert.Single(db.RunSeats);
         Assert.IsType<OkObjectResult>((await Runs(db).Update(created.Id, new(s.Spare.Id))).Result);
         Assert.False(
@@ -271,12 +261,11 @@ public class ScheduleCancellationTests
     }
 
     [Fact]
-    public async Task CancelledDropInWithUnknownSignupRole_HasZeroKarma()
+    public async Task CancelledDropIn_HasZeroKarma()
     {
         using var db = CreateDb();
         var s = await SeedAsync(db);
         s.Schedule.Activity.IsTimeExclusive = false;
-        s.Signup.Role = "LegacyObserver";
         await db.SaveChangesAsync(Ct);
         ScheduleValue(await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true)));
         var totals = await new KarmaService(db).CalculateAsync([s.Participant.Id], Ct);

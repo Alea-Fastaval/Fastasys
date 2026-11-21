@@ -78,7 +78,7 @@
             <mat-icon>people</mat-icon>
             <span>{{ 'nav.users' | translate }}</span>
           </a>
-          @if (authService.hasAnyPrivilege('activities_edit')) {
+          @if (authService.hasPrivilege('activity_edit')) {
           <a mat-menu-item routerLink="/management/activity-settings">
             <mat-icon>tune</mat-icon>
             <span>{{ 'activitySettings.title' | translate }}</span>
@@ -93,6 +93,10 @@
     </div>
   </nav>
   <span class="spacer"></span>
+
+  @if (authService.hasPrivilege('participant_view', 'participant_edit')) {
+  <app-participant-quick-search />
+  }
 
   <!-- Language Switcher Dropdown next to Logout -->
   <div class="menu-hover-wrapper" (mouseenter)="openMenu(langTrigger)" (mouseleave)="closeMenu(langTrigger)">

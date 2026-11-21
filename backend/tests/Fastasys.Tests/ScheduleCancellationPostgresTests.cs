@@ -16,7 +16,8 @@ namespace Fastasys.Tests;
 public class ScheduleCancellationPostgresTests
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
-    private const string PreviousMigration = "20261104205249_AddRuns";
+    // The migration before the karma settings and schedule cancellation
+    private const string PreviousMigration = "20261121115314_WidenNickname";
 
     [PostgresFact]
     public async Task MigrationPreservesRecords_AndCancellationSerializesWithNewAllocations()
@@ -146,14 +147,16 @@ public class ScheduleCancellationPostgresTests
                 """
             )
             .SingleAsync(Ct);
-        var signup = new ParticipantSchedule
-        {
-            ParticipantId = participant.Id,
-            ScheduleId = scheduleId,
-            Priority = 1,
-            // Exercise precision beyond PostgreSQL's microseconds on every platform.
-            SignedUpAt = new DateTime(2026, 11, 1, 12, 0, 0, DateTimeKind.Utc).AddTicks(1_234_567),
-        };
+        // The signup and run tables are unchanged by the migration, so the current model can write them
+        db.ScheduleSignups.Add(
+            new ScheduleSignup
+            {
+                ParticipantId = participant.Id,
+                ScheduleId = scheduleId,
+                Role = RunSeatRole.Player,
+                Priority = 1,
+            }
+        );
         var run = new Run
         {
             ScheduleId = scheduleId,
@@ -161,37 +164,20 @@ public class ScheduleCancellationPostgresTests
             Number = 1,
         };
         run.Seats.Add(new RunSeat { ParticipantId = participant.Id, SeatNumber = 1 });
-        // Seed the original signup schema, before generated IDs and priorities are introduced.
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            INSERT INTO participant_schedules ("ParticipantId", "ScheduleId", "Role", "SignedUpAt")
-            VALUES ({signup.ParticipantId}, {signup.ScheduleId}, {signup.Role}, {signup.SignedUpAt})
-            """,
-            Ct
-        );
         db.Add(run);
         await db.SaveChangesAsync(Ct);
-        // Compare the stored timestamp across migration, not DateTime's finer in-memory precision.
-        var timestamp = await db
-            .ParticipantSchedules.AsNoTracking()
-            .Where(s => s.ParticipantId == participant.Id && s.ScheduleId == scheduleId)
-            .Select(s => s.SignedUpAt)
-            .SingleAsync(Ct);
 
         await migrator.MigrateAsync(cancellationToken: Ct);
         var schedule = await db.Schedules.AsNoTracking().SingleAsync(Ct);
         Assert.False(schedule.IsCancelled);
         Assert.Null(schedule.CancelledAt);
         Assert.False(db.Database.HasPendingModelChanges());
-        signup = await db.ParticipantSchedules.AsNoTracking().SingleAsync(Ct);
-        Assert.Null(signup.Priority);
-        Assert.Equal(timestamp, signup.SignedUpAt);
-        var ranked = await new ActivitySignupsController(db).Update(
-            participant.Id,
-            signup.Id,
-            new(scheduleId, RunSeatRole.Player, 1)
-        );
-        Assert.IsType<OkObjectResult>(ranked.Result);
+        var defaults = await db.ActivitySettings.AsNoTracking().SingleAsync(Ct);
+        Assert.Equal(ActivitySettings.SingletonId, defaults.Id);
+        Assert.Equal(7, defaults.SmallKarma);
+        Assert.Equal(0, defaults.MediumKarma);
+        Assert.Equal(10, defaults.BigKarma);
+        Assert.Equal(1, (await db.ScheduleSignups.AsNoTracking().SingleAsync(Ct)).Priority);
 
         async Task<ScheduleDto> Change(bool cancelled)
         {
@@ -206,16 +192,15 @@ public class ScheduleCancellationPostgresTests
 
         Assert.True((await Change(true)).IsCancelled);
         Assert.Equal(0, (await new KarmaService(db).CalculateAsync([participant.Id], Ct))[participant.Id]);
-        var preserved = await db.ParticipantSchedules.AsNoTracking().SingleAsync(Ct);
-        Assert.Equal(signup.Id, preserved.Id);
-        Assert.Equal(timestamp, preserved.SignedUpAt);
+        var preserved = await db.ScheduleSignups.AsNoTracking().SingleAsync(Ct);
+        Assert.Equal(participant.Id, preserved.ParticipantId);
         Assert.Equal(1, preserved.Priority);
         Assert.Single(await db.RunSeats.AsNoTracking().ToListAsync(Ct));
         Assert.False((await Change(false)).IsCancelled);
         Assert.Equal(-2, (await new KarmaService(db).CalculateAsync([participant.Id], Ct))[participant.Id]);
 
         // Hold cancellation uncommitted. Each API write must wait on the same row before checking state.
-        for (var operation = 0; operation < 3; operation++)
+        for (var operation = 1; operation < 3; operation++)
         {
             await Change(false);
             await using var cancelling = new InfosysDbContext(options);
@@ -233,13 +218,6 @@ public class ScheduleCancellationPostgresTests
             );
             async Task<IActionResult> Write()
             {
-                if (operation == 0)
-                    return (
-                        await new ActivitySignupsController(allocating).Create(
-                            other.Id,
-                            new(scheduleId, RunSeatRole.Player, 1)
-                        )
-                    ).Result!;
                 var controller = new RunsController(
                     allocating,
                     NullLogger<RunsController>.Instance,
@@ -254,11 +232,8 @@ public class ScheduleCancellationPostgresTests
             Assert.False(write.IsCompleted);
             await transaction.CommitAsync(Ct);
             var result = await write.WaitAsync(TimeSpan.FromSeconds(10), Ct);
-            if (operation == 0)
-                Assert.IsType<BadRequestObjectResult>(result);
-            else
-                Assert.IsType<ConflictObjectResult>(result);
-            Assert.Equal(1, await db.ParticipantSchedules.CountAsync(Ct));
+            Assert.IsType<ConflictObjectResult>(result);
+            Assert.Equal(1, await db.ScheduleSignups.CountAsync(Ct));
             Assert.Equal(1, await db.Runs.CountAsync(Ct));
             Assert.Equal(1, await db.RunSeats.CountAsync(Ct));
         }

@@ -79,48 +79,27 @@ public class KarmaServiceTests
         var exclusive = NewSchedule("Scenario");
         var dropIn = NewSchedule("Drop-in", KarmaType.Small, false);
         db.AddRange(p, other, empty);
-        db.ParticipantSchedules.AddRange(
-            new ParticipantSchedule
+        db.ScheduleSignups.AddRange(
+            new ScheduleSignup
             {
                 Participant = p,
                 Schedule = exclusive,
-                Role = "Player",
+                Role = RunSeatRole.Player,
                 Priority = 1,
             },
-            new ParticipantSchedule
+            new ScheduleSignup
             {
                 Participant = p,
                 Schedule = exclusive,
-                Role = "GameMaster",
+                Role = RunSeatRole.GameMaster,
                 Priority = 0,
             },
-            new ParticipantSchedule
-            {
-                Participant = p,
-                Schedule = exclusive,
-                Role = "Player",
-                Priority = null,
-            },
-            new ParticipantSchedule
-            {
-                Participant = p,
-                Schedule = exclusive,
-                Role = "1",
-                Priority = 2,
-            },
-            new ParticipantSchedule
+            new ScheduleSignup
             {
                 Participant = p,
                 Schedule = dropIn,
-                Role = "Player",
+                Role = RunSeatRole.Player,
                 Priority = 1,
-            },
-            new ParticipantSchedule
-            {
-                Participant = p,
-                Schedule = dropIn,
-                Role = "LegacyObserver",
-                Priority = null,
             }
         );
         AddSeat(db, p, exclusive, 1);
@@ -148,10 +127,11 @@ public class KarmaServiceTests
         using var db = CreateDb();
         var p = new Participant();
         var schedule = NewSchedule("Scenario");
-        var signup = new ParticipantSchedule
+        var signup = new ScheduleSignup
         {
             Participant = p,
             Schedule = schedule,
+            Role = RunSeatRole.Player,
             Priority = 1,
         };
         db.Add(signup);
@@ -181,7 +161,7 @@ public class KarmaServiceTests
         db.RunSeats.Remove(Assert.Single(run.Seats));
         await db.SaveChangesAsync(Ct);
         Assert.Equal(-1, await Total());
-        db.ParticipantSchedules.Remove(signup);
+        db.ScheduleSignups.Remove(signup);
         await db.SaveChangesAsync(Ct);
         Assert.Equal(0, await Total());
     }
@@ -193,10 +173,11 @@ public class KarmaServiceTests
         var p = new Participant { FirstName = "Anna" };
         var schedule = NewSchedule("Scenario");
         db.Add(
-            new ParticipantSchedule
+            new ScheduleSignup
             {
                 Participant = p,
                 Schedule = schedule,
+                Role = RunSeatRole.Player,
                 Priority = 1,
             }
         );

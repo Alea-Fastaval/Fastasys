@@ -15,13 +15,6 @@ export class AuthService {
   public currentUser = signal<UserInfo | null>(this.getStoredUser());
   public isAuthenticated = signal<boolean>(!!this.getToken());
 
-  public hasAnyPrivilege(...privileges: string[]): boolean {
-    const user = this.currentUser();
-    return (
-      !!user && (user.roles.includes('Admin') || privileges.some(privilege => user.privileges.includes(privilege)))
-    );
-  }
-
   public login(credentials: { username: string; password: string }): Observable<AuthResponse> {
     return this.http.post<AuthResponse>('/api/auth/login', credentials).pipe(
       tap(res => {
@@ -42,6 +35,14 @@ export class AuthService {
     }
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
+  }
+
+  // Whether the user has one of the privileges. The Admin role may do everything, as in the API's policies. This
+  // only decides what the page offers; the API checks every request.
+  public hasPrivilege(...keys: string[]): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    return user.roles.includes('Admin') || keys.some(key => user.privileges.includes(key));
   }
 
   public getToken(): string | null {

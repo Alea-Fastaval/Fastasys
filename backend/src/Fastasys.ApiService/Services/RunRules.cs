@@ -52,13 +52,17 @@ public static class RunRules
         {
             if (booking.RoomId != roomId) continue;
 
-            var overlaps = (booking.Start >= start && booking.Start < end)
-                || (booking.End > start && booking.End <= end)
-                || (booking.Start < start && booking.End > end);
-
-            if (overlaps && (isRoomExclusive || booking.IsRoomExclusive)) return true;
+            if (Overlaps(booking.Start, booking.End, start, end) && (isRoomExclusive || booking.IsRoomExclusive)) return true;
         }
 
         return false;
     }
+
+    // The overlap test Infosys writes out in Lokaler::isOccupiedBetween (a = the booking, b = the new period) and in
+    // Deltagere::isBusyBetween (a = the new period, b = a busy one): a starts inside b, ends inside b, or covers b.
+    // Periods that only touch don't overlap.
+    public static bool Overlaps(DateTime aStart, DateTime aEnd, DateTime bStart, DateTime bEnd) =>
+        (aStart >= bStart && aStart < bEnd)
+        || (aEnd > bStart && aEnd <= bEnd)
+        || (aStart < bStart && aEnd > bEnd);
 }

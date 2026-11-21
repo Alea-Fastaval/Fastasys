@@ -38,6 +38,7 @@ public class UsersControllerTests
         using var db = CreateDbContext();
         var controller = new UsersController(db);
 
+
         var adminRole = await db.Roles.FirstAsync(r => r.Name == "Admin", TestContext.Current.CancellationToken);
 
         var createDto = new CreateUserRequestDto(
@@ -47,7 +48,7 @@ public class UsersControllerTests
             FirstName: "New",
             LastName: "User",
             IsActive: true,
-            RoleIds: new List<int> { adminRole.Id }
+            RoleIds: [adminRole.Id]
         );
 
         var actionResult = await controller.Create(createDto);
@@ -128,11 +129,13 @@ public class UsersControllerTests
 
         var actionResult = await controller.GetPrivileges();
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var privileges = Assert.IsAssignableFrom<IEnumerable<PrivilegeDto>>(okResult.Value);
+        var privileges = Assert.IsType<IEnumerable<PrivilegeDto>>(okResult.Value, exactMatch: false);
+
+        Console.WriteLine(privileges);
 
         Assert.NotEmpty(privileges);
         Assert.Contains(privileges, p => p.Key == "users_view");
-        Assert.Contains(privileges, p => p.Key == "boardgames_edit");
+        Assert.Contains(privileges, p => p.Key == "boardgame_view");
     }
 
     [Fact]

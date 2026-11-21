@@ -43,9 +43,9 @@ public class ActivitySettingsTests(TestWebApplicationFactory factory) : IClassFi
 
     [Theory]
     [InlineData(null, false, HttpStatusCode.Unauthorized)]
-    [InlineData("activities_view", false, HttpStatusCode.Forbidden)]
-    [InlineData("participant_management", false, HttpStatusCode.Forbidden)]
-    [InlineData("activities_edit", false, HttpStatusCode.OK)]
+    [InlineData("activity_view", false, HttpStatusCode.Forbidden)]
+    [InlineData("participant_view", false, HttpStatusCode.Forbidden)]
+    [InlineData("activity_edit", false, HttpStatusCode.OK)]
     [InlineData("unrelated", true, HttpStatusCode.OK)]
     public async Task SettingsRequireActivityEditAccess(string? privilege, bool admin, HttpStatusCode expected)
     {
@@ -66,7 +66,7 @@ public class ActivitySettingsTests(TestWebApplicationFactory factory) : IClassFi
     [Fact]
     public async Task SettingsPersist_RejectInvalidValues_AndImmediatelyAffectPlanningScores()
     {
-        using var client = await ClientAsync("activities_edit");
+        using var client = await ClientAsync("activity_edit");
         var defaults = await client.GetFromJsonAsync<ActivitySettingsDto>(Url, Ct);
         Assert.Equal(
             new ActivitySettingsDto

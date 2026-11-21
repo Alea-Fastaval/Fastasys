@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using Fastasys.ApiService.helpers;
 
 using Scalar.AspNetCore;
 
@@ -17,8 +18,14 @@ if (builder.Environment.IsEnvironment("Testing"))
 
 builder.Services.AddHealthChecks();
 
-builder.Services.AddDbContext<InfosysDbContext>(options =>
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AmountPaidLogInterceptor>();
+
+builder.Services.AddDbContext<InfosysDbContext>((services, options) =>
 {
+    // Logs every saved change to a participant's amount paid
+    options.AddInterceptors(services.GetRequiredService<AmountPaidLogInterceptor>());
+
     if (builder.Environment.IsEnvironment("Testing"))
     {
         options.UseInMemoryDatabase("InfosysDbFallback");
@@ -33,6 +40,9 @@ builder.Services.AddDbContext<InfosysDbContext>(options =>
 
     options.UseNpgsql(connectionString);
 });
+
+// The convention's dates (Infosys con.*)
+builder.Services.Configure<ConventionOptions>(builder.Configuration.GetSection(ConventionOptions.Section));
 
 // Register custom services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -64,27 +74,22 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Authorization Policies
-const string AdminRole = "Admin";
-const string PrivilegeClaim = "privilege";
-
+// There should be a binding between every Privilege in the DBseeder, and a policy name this builder
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("ParticipantManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "participant_management")))
-    .AddPolicy("ActivityView", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activities_view") || context.User.HasClaim(PrivilegeClaim, "activities_edit")))
-    .AddPolicy("ActivityManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "activities_edit")))
-    .AddPolicy("HeroForceManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "hero_force_management")))
-    .AddPolicy("ShopManagement", policy =>
-    policy.RequireAssertion(context => context.User.IsInRole(AdminRole) || context.User.HasClaim(PrivilegeClaim, "shop_management")));
+    // Infosys: the Read-only role may view and search participants; Infonaut, Participant admin and the other
+    // roles with ParticipantController/* may also change them
+    .AddPolicy("ParticipantView", "participant_view", "participant_edit")
+    .AddPolicy("ParticipantManagement", "participant_edit")
+    .AddPolicy("ActivityView", "activity_view", "activity_edit")
+    .AddPolicy("ActivityManagement", "activity_edit")
+    .AddPolicy("HeroForceManagement", "hero_force_management")
+    .AddPolicy("ShopManagement", "shop_management");
 
 // Add Controllers, EndpointsApiExplorer & SwaggerGen documentation metadata
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Fastasys.ApiService.Controllers.ParticipantsController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddProblemDetails();
-
 
 builder.Services.AddOpenApi(options =>
 {

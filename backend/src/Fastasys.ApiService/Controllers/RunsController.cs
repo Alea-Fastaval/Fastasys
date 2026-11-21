@@ -366,13 +366,14 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
         var players = run.Seats.Count(s => s.Role == RunSeatRole.Player);
         var gameMasters = run.Seats.Count(s => s.Role == RunSeatRole.GameMaster);
 
-        // Infosys Hold::getPladser orders by pladsnummer and shows "fornavn efternavn"
+        // Infosys Hold::getPladser orders by pladsnummer. Infosys shows "fornavn efternavn"; Fastasys shows the
+        // chosen name (agreed 2026-11-21).
         var seats = run
             .Seats.OrderBy(s => s.SeatNumber)
             .Select(s => new RunSeatDto(
                 s.SeatNumber,
                 s.ParticipantId,
-                s.Participant.LegalName(),
+                s.Participant.DisplayName(),
                 karma[s.ParticipantId],
                 s.Role
             ))
