@@ -14,8 +14,8 @@ export interface SignupPoolRow {
   name: string;
   role: RunSeatRole;
   priority: number;
-  // Not ported yet: always null
-  karma: number | null;
+  // The participant's current karma, as on the runs
+  karma: number;
   // null when the birth date is unknown
   age: number | null;
   language: 'dk' | 'uk' | null;

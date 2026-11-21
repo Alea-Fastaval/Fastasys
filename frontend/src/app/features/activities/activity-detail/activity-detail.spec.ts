@@ -385,7 +385,7 @@ describe('ActivityDetailComponent', () => {
     name: 'Anna Spiller',
     role: 'Player',
     priority: 1,
-    karma: null,
+    karma: 0,
     age: 23,
     language: null,
     activityLanguages: ['Danish'],
