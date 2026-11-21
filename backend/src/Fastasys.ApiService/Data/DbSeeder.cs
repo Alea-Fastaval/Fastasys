@@ -101,18 +101,18 @@ public static class DbSeeder
 
         // Default Roles with default privileges
 
-        seedRole(db, "Infonaut", "Member of the Info", []);
-        seedRole(db, "Infoboss", "Manager of the Info", []);
-        seedRole(db, "Food distribution", "Food distribution role", []);
-        seedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
-        seedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
-        seedRole(db, "Signup", "Sign up", []);
-        seedRole(db, "Hero Force", "Hero Force management", []);
-        seedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
-        seedRole(db, "Boardgame jury", "Jury member for boardgames", []);
-        seedRole(db, "Scenario jury", "Jury member for scenarios", []);
-        seedRole(db, "Full Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
-        seedRole(db, "Accounting", "Accounting and budget", []);
+        SeedRole(db, "Infonaut", "Member of the Info", []);
+        SeedRole(db, "Infoboss", "Manager of the Info", []);
+        SeedRole(db, "Food distribution", "Food distribution role", []);
+        SeedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
+        SeedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
+        SeedRole(db, "Signup", "Sign up", []);
+        SeedRole(db, "Hero Force", "Hero Force management", []);
+        SeedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
+        SeedRole(db, "Boardgame jury", "Jury member for boardgames", []);
+        SeedRole(db, "Scenario jury", "Jury member for scenarios", []);
+        SeedRole(db, "Full Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
+        SeedRole(db, "Accounting", "Accounting and budget", []);
 
         // Default Admin User with the special admin role
         var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
@@ -297,7 +297,10 @@ public static class DbSeeder
         }
     }
 
-    private static void seedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
+    // If there is already a role named `roleName` then do nothing.
+    // Else we create it, and populate it with the privileges found in privilegeKeys.
+    // the privileges found in privilegeKeys must already exist in the database.
+    private static void SeedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
     {
         var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
         if (role == null)
@@ -313,7 +316,7 @@ public static class DbSeeder
             // Give rights/privileges to the role
             foreach (var pKey in privilegeKeys)
             {
-                var p = db.Privileges.FirstOrDefault(pr => pr.Key == pKey);
+                var p = db.Privileges.First(pr => pr.Key == pKey);
                 if (p != null)
                 {
                     db.RolePrivileges.Add(new RolePrivilege { RoleId = role.Id, PrivilegeId = p.Id });
