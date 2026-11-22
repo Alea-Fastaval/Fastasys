@@ -23,5 +23,6 @@
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }
-  }
+  },
+  "FSharp.suggestGitignore": false
 }
