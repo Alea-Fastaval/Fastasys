@@ -33,14 +33,14 @@
     "@angular/cli": "22.2.2",
     "@angular/compiler-cli": "22.2.6",
     "@eslint/js": "10.0.1",
-    "@vitest/coverage-v8": "5.1.0",
+    "@vitest/coverage-v8": "5.1.1",
     "angular-eslint": "22.6.0",
     "eslint": "10.14.0",
     "jsdom": "31.0.0",
     "prettier": "3.9.8",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
-    "vitest": "5.1.0"
+    "vitest": "5.1.1"
   },
   "engines": {
     "node": ">=26 <27",
