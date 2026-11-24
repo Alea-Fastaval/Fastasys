@@ -24,6 +24,14 @@ h5,
 h6 {
   margin: 0;
 }
+.cancelled-label {
+  display: inline-block;
+  margin: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: #fef3c7;
+  color: #78350f;
+}
 
 // Printing (the ID cards): only the page itself, on white A4
 @page {

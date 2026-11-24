@@ -57,6 +57,7 @@ export class ScheduleFormComponent implements OnInit {
   public readonly notFound = signal(false);
   public readonly busy = signal(false);
   public readonly confirmingDelete = signal(false);
+  public readonly isCancelled = signal(false);
 
   public activityId = '';
   public scheduleId = '';
@@ -71,6 +72,7 @@ export class ScheduleFormComponent implements OnInit {
     }).subscribe({
       next: ({ activity, schedule }) => {
         this.activityTitle.set(activity.title);
+        this.isCancelled.set(schedule.isCancelled);
         this.form.set(toScheduleForm(schedule));
         this.loadRooms();
       },

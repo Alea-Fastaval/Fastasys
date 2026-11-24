@@ -9,6 +9,7 @@ import { CommunicationsComponent } from './features/communications/communication
 import { HeroForceComponent } from './features/hero-force/hero-force';
 import { LoginComponent } from './features/login/login';
 import { ParticipantsComponent } from './features/participants/participants';
+import { ActivitySettingsComponent } from './features/management/activity-settings/activity-settings';
 import { ParticipantDetailComponent } from './features/participants/participant-detail/participant-detail';
 import { ParticipantFormComponent } from './features/participants/participant-form/participant-form';
 import { ParticipantSeatsComponent } from './features/participants/participant-seats/participant-seats';
@@ -32,6 +33,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'participants', component: ParticipantsComponent, canActivate: [authGuard] },
+  { path: 'management/activity-settings', component: ActivitySettingsComponent, canActivate: [authGuard] },
   { path: 'participants/new', component: ParticipantFormComponent, canActivate: [authGuard] },
   { path: 'participants/:id', component: ParticipantDetailComponent, canActivate: [authGuard] },
   { path: 'participants/:id/edit', component: ParticipantFormComponent, canActivate: [authGuard] },

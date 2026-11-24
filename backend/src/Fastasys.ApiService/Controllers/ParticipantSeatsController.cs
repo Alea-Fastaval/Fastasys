@@ -77,6 +77,7 @@ public class ParticipantSeatsController : ControllerBase
 {
     // Infosys: "Deltagerens aktiviteter kan ikke ændres." The reason tells it apart from a seat taken at the same time.
     private static readonly object Locked = new { message = "The participant's activities are locked", reason = "locked" };
+    private static readonly object Cancelled = new { message = "Schedule is cancelled", reason = "cancelled" };
 
     private readonly InfosysDbContext _db;
     private readonly ILogger<ParticipantSeatsController> _logger;
@@ -214,6 +215,8 @@ public class ParticipantSeatsController : ControllerBase
     // - A run without room for the role is skipped, and the rest of the list is still saved. The result names the
     //   skipped runs and says whether anything was saved, so the page can say so. Infosys skipped them without telling
     //   anyone and always said "Deltageren blev opdateret." (fixed 2026-11-21).
+    // - A cancelled schedule (not in Infosys) gets no new seats and no role changes, like the runs' own seat
+    //   endpoint; the whole list is refused. Seats already on it are kept or removed as listed (agreed 2026-11-21).
     // Infosys only greys out busy schedules in the select; it doesn't check them when saving, and neither does this.
     [HttpPut]
     public async Task<ActionResult<UpdateParticipantSeatsResultDto>> Update(int participantId, [FromBody] UpdateParticipantSeatsDto dto)
@@ -231,6 +234,9 @@ public class ParticipantSeatsController : ControllerBase
         if (participant.IsActivityLocked) return Conflict(Locked);
 
         var runIds = choices.Select(c => c.RunId).ToList();
+        // Cancelling a schedule takes the same lock, so it can't happen between the check below and the save
+        var scheduleIds = await _db.Runs.Where(r => runIds.Contains(r.Id)).Select(r => r.ScheduleId).ToListAsync();
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleIds);
         var runs = await _db.Runs
             .Include(r => r.Schedule).ThenInclude(s => s.Activity)
             .Include(r => r.Seats)
@@ -239,6 +245,12 @@ public class ParticipantSeatsController : ControllerBase
         if (runs.Count != runIds.Count) return BadRequest(new { message = "Unknown run" });
 
         var currentSeats = await _db.RunSeats.Where(s => s.ParticipantId == participantId).ToListAsync();
+        if (choices.Any(c => runs.Single(r => r.Id == c.RunId).Schedule.CancelledAt != null
+            && currentSeats.SingleOrDefault(s => s.RunId == c.RunId)?.Role != c.Role))
+        {
+            return Conflict(Cancelled);
+        }
+
         var removedSeats = currentSeats.Where(s => !runIds.Contains(s.RunId)).ToList();
         _db.RunSeats.RemoveRange(removedSeats);
         var isChanged = removedSeats.Count > 0;
@@ -287,6 +299,8 @@ public class ParticipantSeatsController : ControllerBase
             // Another seat was taken at the same time (primary key run + seat number, unique run + participant)
             return Conflict(new { message = "Could not update the participant's seats" });
         }
+
+        if (transaction != null) await transaction.CommitAsync();
 
         if (isChanged)
         {

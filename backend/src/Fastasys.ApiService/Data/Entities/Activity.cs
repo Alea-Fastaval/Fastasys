@@ -128,6 +128,10 @@ public class Schedule
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 
+    // When the schedule was cancelled; null means it isn't. This is the only cancellation state (no separate flag to
+    // keep in sync), so queries filter on CancelledAt == null / != null.
+    public DateTimeOffset? CancelledAt { get; set; }
+
     // Meeting room; null means none (Infosys shows "Mødested: spørg venligst i informationen.")
     public int? RoomId { get; set; }
     public virtual Room? Room { get; set; }

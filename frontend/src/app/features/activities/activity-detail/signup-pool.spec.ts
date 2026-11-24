@@ -7,7 +7,7 @@ const row = (overrides: Partial<SignupPoolRow>): SignupPoolRow => ({
   name: 'Anna',
   role: 'Player',
   priority: 1,
-  karma: null,
+  karma: 0,
   age: null,
   language: null,
   activityLanguages: [],

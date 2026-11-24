@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -61,6 +61,8 @@ export class ActivityDetailComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
   private readonly translation = inject(TranslationService);
+  private readonly auth = inject(AuthService);
+  public readonly canManage = computed(() => this.auth.hasPrivilege('activity_edit'));
 
   public readonly flash = inject(ActivityFlashService).take();
   public readonly activity = signal<Activity | null>(null);
@@ -138,6 +140,7 @@ export class ActivityDetailComponent implements OnInit {
 
   // Infosys "Tilføj hold": the server picks the next number and the first free room
   public createRun(schedule: ActivitySchedule): void {
+    if (schedule.isCancelled) return;
     const dto: CreateRunDto = { scheduleId: schedule.id };
     this.busy.set(true);
     this.http.post<Run>('/api/runs', dto).subscribe({
@@ -147,6 +150,32 @@ export class ActivityDetailComponent implements OnInit {
       },
       error: () => this.show('error', 'runs.messages.createFailed'),
     });
+  }
+
+  public setCancellation(schedule: ActivitySchedule): void {
+    if (!this.canManage() || this.busy()) return;
+    const isCancelled = !schedule.isCancelled;
+    const confirmKey = isCancelled ? 'activities.cancelScheduleConfirm' : 'activities.restoreScheduleConfirm';
+    if (!confirm(this.translation.translate(confirmKey))) return;
+    this.busy.set(true);
+    this.http
+      .put<ActivitySchedule>(`/api/activities/${this.activityId}/schedules/${schedule.id}/cancellation`, {
+        isCancelled,
+      })
+      .subscribe({
+        next: () => {
+          this.message.set({
+            type: 'success',
+            key: isCancelled ? 'activities.messages.scheduleCancelled' : 'activities.messages.scheduleRestored',
+          });
+          this.loadSchedules();
+        },
+        error: () =>
+          this.show(
+            'error',
+            isCancelled ? 'activities.messages.scheduleCancelFailed' : 'activities.messages.scheduleRestoreFailed',
+          ),
+      });
   }
 
   // Infosys "Slet hold" deletes an empty run straight away; with participants it asks first and then removes
@@ -284,14 +313,15 @@ export class ActivityDetailComponent implements OnInit {
   }
 
   private loadSchedules(): void {
+    this.busy.set(true);
     this.http.get<ActivitySchedule[]>(`/api/activities/${this.activityId}/schedules`).subscribe({
       next: schedules => {
         this.schedules.set(schedules);
         this.busy.set(false);
       },
-      error: err => {
-        this.busy.set(false);
-        console.error('Failed to load schedules:', err);
+      error: () => {
+        this.schedules.set([]);
+        this.show('error', 'activities.messages.scheduleLoadFailed');
       },
     });
     // The tables change with the runs (who is on a team)

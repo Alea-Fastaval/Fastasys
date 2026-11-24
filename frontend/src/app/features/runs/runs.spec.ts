@@ -21,6 +21,7 @@ const summary = (id: number, activityType: ActivityType, activityTitle: string, 
   roomName: 'Lokale 1',
   needsPlayers: true,
   needsGameMasters: false,
+  isCancelled: false,
 });
 
 const scenario = summary(3, 'Scenario', 'Testscenarie');
@@ -50,6 +51,7 @@ const sortable: RunSummary[] = [
     roomName: 'Lokale 10',
     needsPlayers: false,
     needsGameMasters: true,
+    isCancelled: false,
   },
   {
     ...summary(2, 'BoardGame', 'Brætspil', 1),
@@ -58,6 +60,7 @@ const sortable: RunSummary[] = [
     roomName: 'Lokale 2',
     needsPlayers: true,
     needsGameMasters: false,
+    isCancelled: false,
   },
   {
     ...summary(3, 'Scenario', 'Zombier', 3),
@@ -66,6 +69,7 @@ const sortable: RunSummary[] = [
     roomName: 'Aula',
     needsPlayers: true,
     needsGameMasters: true,
+    isCancelled: false,
   },
   {
     ...summary(4, 'BoardGame', 'Brætspil', 1),
@@ -74,6 +78,7 @@ const sortable: RunSummary[] = [
     roomName: 'Lokale 2',
     needsPlayers: false,
     needsGameMasters: false,
+    isCancelled: false,
   },
 ];
 

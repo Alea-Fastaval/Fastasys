@@ -18,6 +18,8 @@ const schedule: ActivitySchedule = {
   roomId: 6,
   roomName: 'Andet lokale',
   runs: [],
+  isCancelled: false,
+  cancelledAt: null,
 };
 
 const rooms: Room[] = [

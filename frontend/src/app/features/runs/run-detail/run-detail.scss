@@ -62,6 +62,18 @@
   }
 }
 
+.seats-table .karma {
+  width: 3rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
 .add-participant {
   display: flex;
   flex-wrap: wrap;

@@ -14,7 +14,7 @@ public record ScheduleSignupsDto(int ScheduleId, IReadOnlyList<SignupPoolRowDto>
 // karma, age, a heart, a language flag and a note icon; hovering the row shows the language, age, wanted activities
 // and the note.
 // - Name is the chosen name (agreed 2026-11-21; Infosys shows fornavn and efternavn).
-// - Karma is not ported yet, so it is always null (like the runs' karma).
+// - Karma is the participant's current total, the same as the runs show (KarmaService).
 // - Age is null when the birth date is unknown.
 // - Language is "dk", "uk" or null (see SignupRules.LanguageFlag); ActivityLanguages is what the hover shows.
 // - DesiredActivitiesReached is the heart: null for none, true for a filled one, false for an empty one.
@@ -25,7 +25,7 @@ public record SignupPoolRowDto(
     string Name,
     RunSeatRole Role,
     int Priority,
-    int? Karma,
+    int Karma,
     int? Age,
     string? Language,
     IReadOnlyList<ParticipantLanguage> ActivityLanguages,
@@ -47,11 +47,13 @@ public class ActivitySignupsController : ControllerBase
 {
     private readonly InfosysDbContext _db;
     private readonly IAuthorizationService _authorization;
+    private readonly KarmaService _karma;
 
-    public ActivitySignupsController(InfosysDbContext db, IAuthorizationService authorization)
+    public ActivitySignupsController(InfosysDbContext db, IAuthorizationService authorization, KarmaService karma)
     {
         _db = db;
         _authorization = authorization;
+        _karma = karma;
     }
 
     // One table per schedule, in the activity page's order (start, then id)
@@ -104,6 +106,7 @@ public class ActivitySignupsController : ControllerBase
             .Select(w => new { w.ParticipantId, w.ScheduleId, w.Role, w.Schedule.StartTime, w.Schedule.EndTime })
             .ToListAsync();
         var spots = await ParticipantSpots.LoadManyAsync(_db, participants.Values.ToList());
+        var karma = await _karma.CalculateAsync(participantIds);
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Europe/Copenhagen"));
 
         bool IsDoubleBooked(int participantId, int scheduleId, DateTime start, DateTime end) =>
@@ -136,7 +139,7 @@ public class ActivitySignupsController : ControllerBase
                         p.DisplayName(),
                         w.Role,
                         w.Priority,
-                        Karma: null,
+                        karma[p.Id],
                         ParticipantRules.AgeOn(p.BirthDate, today),
                         SignupRules.LanguageFlag(p.ActivityLanguages),
                         p.ActivityLanguages,

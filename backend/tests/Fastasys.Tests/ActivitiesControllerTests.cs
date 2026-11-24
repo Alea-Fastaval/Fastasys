@@ -1,3 +1,4 @@
+using Fastasys.ApiService.Services;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
@@ -21,7 +22,7 @@ public class ActivitiesControllerTests
     }
 
     private static ActivitiesController CreateController(InfosysDbContext db) =>
-        new(db, NullLogger<ActivitiesController>.Instance);
+        new(db, NullLogger<ActivitiesController>.Instance, new KarmaService(db));
 
     private static T ValidDto<T>() where T : ActivityFieldsDto, new() => new T
     {

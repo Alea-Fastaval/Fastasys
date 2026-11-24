@@ -17,6 +17,7 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<OrganizerArea> OrganizerAreas => Set<OrganizerArea>();
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<ActivitySettings> ActivitySettings => Set<ActivitySettings>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ScheduleSignup> ScheduleSignups => Set<ScheduleSignup>();
     public DbSet<Run> Runs => Set<Run>();
@@ -59,6 +60,13 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // A single row (ActivitySettings.SingletonId), seeded with the default karma points
+        modelBuilder.Entity<ActivitySettings>(settings =>
+        {
+            settings.Property(s => s.Id).ValueGeneratedNever();
+            settings.HasData(new ActivitySettings());
+        });
 
         // Composite Keys & Junction Tables (Provider agnostic)
         modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
