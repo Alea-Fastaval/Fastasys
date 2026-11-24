@@ -17,7 +17,7 @@ namespace Fastasys.ApiService.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -130,6 +130,34 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("activities");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ActivitySettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BigKarma")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MediumKarma")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SmallKarma")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("activity_settings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BigKarma = 10,
+                            MediumKarma = 0,
+                            SmallKarma = 7
+                        });
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Boardgame", b =>
@@ -2861,8 +2889,14 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("boolean");
 
                     b.Property<int?>("RoomId")
                         .HasColumnType("integer");

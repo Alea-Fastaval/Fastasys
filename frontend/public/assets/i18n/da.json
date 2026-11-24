@@ -11,7 +11,6 @@
     "rooms": "Lokaler & Rum",
     "boardgames": "Brætspiludlån",
     "communications": "Kommunikation",
-    "userManagement": "Brugerstyring",
     "users": "Brugere",
     "roles": "Roller & Rettigheder",
     "login": "Log ind",
@@ -19,7 +18,8 @@
     "logout": "Log ud",
     "language": "Sprog",
     "english": "English",
-    "danish": "Dansk"
+    "danish": "Dansk",
+    "management": "Administration"
   },
   "common": {
     "id": "ID",
@@ -568,8 +568,19 @@
       "scheduleDeleted": "Afviklingen blev slettet.",
       "scheduleDeleteFailed": "Afviklingen kunne ikke slettes.",
       "scheduleDeleteHasRuns": "Afviklingen kunne ikke slettes, fordi den har hold. Slet holdene først.",
-      "scheduleDeleteHasSignups": "Afviklingen kunne ikke slettes, fordi der er deltagere tilmeldt den."
+      "scheduleDeleteHasSignups": "Afviklingen kunne ikke slettes, fordi der er deltagere tilmeldt den.",
+      "scheduleLoadFailed": "Afviklinger og aktuel karma kunne ikke hentes. Genindlæs siden for at prøve igen.",
+      "scheduleCancelled": "Afviklingen er aflyst. Karma er opdateret.",
+      "scheduleRestored": "Afviklingen er genaktiveret. Karma er opdateret.",
+      "scheduleCancelFailed": "Kunne ikke aflyse afviklingen. Genindlæs og prøv igen.",
+      "scheduleRestoreFailed": "Kunne ikke genaktivere afviklingen. Et bevaret hold kan have et optaget lokale; gennemgå lokale og tidspunkt, og prøv igen.",
+      "cancelledHelp": "Afviklingen er aflyst. Ønsker og pladser er bevaret og medregnes ikke i karma."
     },
+    "cancelSchedule": "Aflys afvikling",
+    "restoreSchedule": "Genaktivér afvikling",
+    "cancelScheduleConfirm": "Aflys afviklingen? Ønsker, hold og pladser bevares og medregnes ikke i karma. Lokalerne bliver ledige.",
+    "restoreScheduleConfirm": "Genaktivér afviklingen? Bevarede ønsker og pladser tæller med igen, hvis lokalerne stadig er ledige.",
+    "cancelled": "Aflyst",
     "signups": {
       "title": "Tilmeldinger",
       "gameMaster": "Spilleder",
@@ -781,5 +792,16 @@
     "signupTitle": "Fastaval Tilmelding",
     "signupSubtitle": "Tilmeld dig Fastaval 2026",
     "submitSignup": "Indsend tilmelding"
+  },
+  "activitySettings": {
+    "title": "Aktivitetsindstillinger",
+    "karma": "Karma",
+    "description": "Point pr. tildelt spillerplads, op til ti pladser pr. aktivitetsstørrelse. Ændringer gælder også eksisterende hold.",
+    "loading": "Henter indstillinger…",
+    "retry": "Prøv igen",
+    "loadFailed": "Aktivitetsindstillingerne kunne ikke hentes.",
+    "saveFailed": "Kunne ikke gemme aktivitetsindstillingerne. Prøv igen.",
+    "saved": "Aktivitetsindstillingerne er gemt.",
+    "forbidden": "Du har ikke adgang til at ændre aktivitetsindstillinger."
   }
 }

@@ -53,12 +53,12 @@ export class RunDetailComponent implements OnInit {
 
   // Infosys only offers the roles the team has room for (aktivitet/getholdneeds)
   public canAdd(run: Run, role: RunSeatRole): boolean {
-    return role === 'Player' ? run.canUsePlayers : run.needsGameMasters;
+    return !run.isCancelled && (role === 'Player' ? run.canUsePlayers : run.needsGameMasters);
   }
 
   public create(): void {
     const run = this.run();
-    if (!run || this.participantId === null || this.role === null) return;
+    if (!run || run.isCancelled || this.participantId === null || this.role === null) return;
 
     const dto: CreateRunSeatDto = { participantId: this.participantId, role: this.role };
     this.busy.set(true);

@@ -148,7 +148,10 @@
           <mat-label>{{ 'activities.fields.karmaType' | translate }}</mat-label>
           <mat-select name="karmaType" [(ngModel)]="f.karmaType">
             @for (karmaType of karmaTypes; track karmaType) {
-            <mat-option [value]="karmaType">{{ 'activities.karmaTypes.' + karmaType | translate }}</mat-option>
+            <mat-option [value]="karmaType">
+              {{ 'activities.karmaTypes.' + karmaType | translate }} @if (karmaPoints(); as points) { ({{
+              points[karmaType] }}) }
+            </mat-option>
             }
           </mat-select>
         </mat-form-field>

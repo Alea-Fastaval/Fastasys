@@ -1,0 +1,20 @@
+.page-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+.karma-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.error {
+  color: #b91c1c;
+}
+@media (max-width: 600px) {
+  .karma-values {
+    grid-template-columns: 1fr;
+  }
+}

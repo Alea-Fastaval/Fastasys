@@ -19,6 +19,7 @@ const run: Run = {
   roomName: 'Lokale 1',
   needsPlayers: true,
   needsGameMasters: true,
+  isCancelled: false,
   canUsePlayers: true,
   seats: [],
 };

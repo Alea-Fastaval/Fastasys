@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -81,7 +82,9 @@ public record ScheduleDto(
     DateTime EndTime,
     int? RoomId,
     string? RoomName,
-    IReadOnlyList<RunDto> Runs
+    IReadOnlyList<RunDto> Runs,
+    bool IsCancelled,
+    DateTimeOffset? CancelledAt
 );
 
 // Infosys aktivitet/opretafvikling: start, slut and mødelokale. Times are instants; they are stored in UTC.
@@ -90,15 +93,19 @@ public record CreateScheduleDto(DateTimeOffset? StartTime, DateTimeOffset? EndTi
 // Infosys aktivitet/editafvikling: the same fields as creating
 public record UpdateScheduleDto(DateTimeOffset? StartTime, DateTimeOffset? EndTime, int? RoomId);
 
+public record UpdateScheduleCancellationDto(bool? IsCancelled);
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Policy = "ActivityView")]
-public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesController> logger) : ControllerBase
+public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesController> logger, KarmaService karma)
+    : ControllerBase
 {
     public const int MaxTextLength = 256;
     public const int HighestAllowedAge = 200;
     public const int MaxSignupsLimit = 1000;
     private const string ScheduleHasRunsMessage = "Schedule has runs and cannot be deleted";
+    private readonly KarmaService _karma = karma;
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ActivitySummaryDto>>> GetAll()
@@ -197,7 +204,10 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
             .ThenBy(s => s.Id)
             .ToListAsync();
 
-        return Ok(schedules.Select(ToDto).ToList());
+        var karma = await _karma.CalculateAsync(
+            schedules.SelectMany(s => s.Runs).SelectMany(r => r.Seats).Select(s => s.ParticipantId)
+        );
+        return Ok(schedules.Select(s => ToDto(s, karma)).ToList());
     }
 
     // Infosys aktivitet/editafvikling/:id: shows the schedule in the edit form
@@ -207,7 +217,77 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
         var schedule = await SchedulesWithRuns().FirstOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
         if (schedule == null)
             return NotFound(new { message = "Schedule not found" });
-        return Ok(ToDto(schedule));
+        return Ok(await ToDtoAsync(schedule));
+    }
+
+    [HttpPut("{id:int}/schedules/{scheduleId:int}/cancellation")]
+    [Authorize(Policy = "ActivityManagement")]
+    public async Task<ActionResult<ScheduleDto>> SetCancellation(
+        int id,
+        int scheduleId,
+        [FromBody] UpdateScheduleCancellationDto dto
+    )
+    {
+        if (dto.IsCancelled == null)
+            return BadRequest(new { message = "IsCancelled is required" });
+        await using var transaction = await ScheduleWriteLock.AcquireAsync(db, scheduleId);
+        var schedule = await db
+            .Schedules.Include(s => s.Activity)
+            .SingleOrDefaultAsync(s => s.Id == scheduleId && s.ActivityId == id);
+        if (schedule == null)
+            return NotFound(new { message = "Schedule not found" });
+
+        if (schedule.IsCancelled != dto.IsCancelled.Value)
+        {
+            if (!dto.IsCancelled.Value)
+            {
+                await ScheduleWriteLock.AcquireRoomsAsync(db);
+                var bookings = await db
+                    .Runs.AsNoTracking()
+                    .Where(r => r.ScheduleId != scheduleId && !r.Schedule.IsCancelled)
+                    .Select(r => new RoomBooking(
+                        r.RoomId,
+                        r.Schedule.StartTime,
+                        r.Schedule.EndTime,
+                        r.Schedule.Activity.IsRoomExclusive
+                    ))
+                    .ToListAsync();
+                var rooms = await db
+                    .Runs.AsNoTracking()
+                    .Where(r => r.ScheduleId == scheduleId)
+                    .OrderBy(r => r.Id)
+                    .Select(r => r.RoomId)
+                    .ToListAsync();
+                foreach (var room in rooms)
+                {
+                    if (
+                        RunRules.IsRoomOccupied(
+                            room,
+                            schedule.StartTime,
+                            schedule.EndTime,
+                            schedule.Activity.IsRoomExclusive,
+                            bookings
+                        )
+                    )
+                        return Conflict(new { message = "Cannot restore schedule: a retained run's room is occupied" });
+                    bookings.Add(new(room, schedule.StartTime, schedule.EndTime, schedule.Activity.IsRoomExclusive));
+                }
+            }
+            schedule.IsCancelled = dto.IsCancelled.Value;
+            schedule.CancelledAt = schedule.IsCancelled ? DateTimeOffset.UtcNow : null;
+            schedule.Activity.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync();
+            logger.LogInformation(
+                "Schedule {ScheduleId} cancellation set to {IsCancelled} by user {UserId}",
+                scheduleId,
+                schedule.IsCancelled,
+                CurrentUserId()
+            );
+        }
+        if (transaction != null)
+            await transaction.CommitAsync();
+        var updated = await SchedulesWithRuns().SingleAsync(s => s.Id == scheduleId);
+        return Ok(await ToDtoAsync(updated));
     }
 
     // Infosys aktivitet/editafvikling/:id: ("Opdater"). The checks are the ones for creating a schedule; the
@@ -263,7 +343,7 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
         );
 
         var updated = await SchedulesWithRuns().FirstAsync(s => s.Id == scheduleId);
-        return Ok(ToDto(updated));
+        return Ok(await ToDtoAsync(updated));
     }
 
     // Infosys aktivitet/sletafvikling/:id:. The foreign keys on the runs make Infosys refuse to delete a schedule
@@ -363,7 +443,7 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
             .Include(s => s.Room)
             .FirstAsync(s => s.Id == schedule.Id);
 
-        return CreatedAtAction(nameof(GetSchedules), new { id }, ToDto(created));
+        return CreatedAtAction(nameof(GetSchedules), new { id }, await ToDtoAsync(created));
     }
 
     // Infosys only validates in the browser (number inputs with min/max); the same limits are enforced here.
@@ -424,7 +504,13 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
                     .ThenInclude(seat => seat.Participant)
             .AsSplitQuery();
 
-    private static ScheduleDto ToDto(Schedule s) =>
+    private async Task<ScheduleDto> ToDtoAsync(Schedule schedule) =>
+        ToDto(
+            schedule,
+            await _karma.CalculateAsync(schedule.Runs.SelectMany(r => r.Seats).Select(s => s.ParticipantId))
+        );
+
+    private static ScheduleDto ToDto(Schedule s, IReadOnlyDictionary<int, int> karma) =>
         new(
             s.Id,
             s.ActivityId,
@@ -432,7 +518,9 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
             s.EndTime,
             s.RoomId,
             s.Room?.Name,
-            s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s)).ToList()
+            s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s, karma)).ToList(),
+            s.IsCancelled,
+            s.CancelledAt
         );
 
     private static void Apply(Activity activity, ActivityFieldsDto dto)

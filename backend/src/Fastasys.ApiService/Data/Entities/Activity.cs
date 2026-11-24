@@ -127,6 +127,8 @@ public class Schedule
     // Stored in UTC
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
+    public bool IsCancelled { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
 
     // Meeting room; null means none (Infosys shows "Mødested: spørg venligst i informationen.")
     public int? RoomId { get; set; }
