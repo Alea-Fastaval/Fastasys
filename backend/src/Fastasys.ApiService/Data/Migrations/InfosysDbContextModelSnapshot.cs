@@ -3021,6 +3021,26 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("SignupPageElements");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsOpen")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("signup_settings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsOpen = false
+                        });
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.SignupSubmission", b =>
                 {
                     b.Property<int>("Id")

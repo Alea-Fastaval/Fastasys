@@ -83,6 +83,11 @@
             <mat-icon>tune</mat-icon>
             <span>{{ 'activitySettings.title' | translate }}</span>
           </a>
+          } @if (authService.hasPrivilege('signup_form_edit')) {
+          <a mat-menu-item routerLink="/management/signup-settings">
+            <mat-icon>how_to_reg</mat-icon>
+            <span>{{ 'signupSettings.title' | translate }}</span>
+          </a>
           }
           <a mat-menu-item routerLink="/user-management/roles">
             <mat-icon>security</mat-icon>

@@ -18,6 +18,7 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<ActivitySettings> ActivitySettings => Set<ActivitySettings>();
+    public DbSet<SignupSettings> SignupSettings => Set<SignupSettings>();
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ScheduleSignup> ScheduleSignups => Set<ScheduleSignup>();
     public DbSet<Run> Runs => Set<Run>();
@@ -66,6 +67,13 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
         {
             settings.Property(s => s.Id).ValueGeneratedNever();
             settings.HasData(new ActivitySettings());
+        });
+
+        // A single row (SignupSettings.SingletonId), seeded closed
+        modelBuilder.Entity<SignupSettings>(settings =>
+        {
+            settings.Property(s => s.Id).ValueGeneratedNever();
+            settings.HasData(new SignupSettings());
         });
 
         // Composite Keys & Junction Tables (Provider agnostic)

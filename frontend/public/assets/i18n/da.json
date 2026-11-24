@@ -803,5 +803,35 @@
     "saveFailed": "Kunne ikke gemme aktivitetsindstillingerne. Prøv igen.",
     "saved": "Aktivitetsindstillingerne er gemt.",
     "forbidden": "Du har ikke adgang til at ændre aktivitetsindstillinger."
+  },
+  "signupSettings": {
+    "title": "Tilmeldingsindstillinger",
+    "opening": "Åbning",
+    "description": "Tilmeldingen er kun åben, når den er slået til her, og åbningsdagen er begyndt. Efter sidste dag for almindelig tilmelding er der sen tilmelding, indtil tilmeldingen bliver slået fra.",
+    "switch": "Tilmeldingen er slået til",
+    "status": {
+      "open": "Tilmeldingen er åben.",
+      "openLate": "Tilmeldingen er åben. Det er sen tilmelding.",
+      "closedSwitchedOff": "Tilmeldingen er lukket, fordi den ikke er slået til.",
+      "closedNoStart": "Tilmeldingen er lukket, fordi åbningsdagen ikke er sat.",
+      "closedBeforeStart": "Tilmeldingen er lukket indtil {{date}} kl. 00:00.",
+      "juniorOpen": "Fastaval Junior-tilmeldingen er åben.",
+      "juniorClosed": "Fastaval Junior-tilmeldingen er lukket."
+    },
+    "dates": "Datoer",
+    "signupStart": "Tilmeldingen åbner",
+    "atMidnight": "{{date}} kl. 00:00",
+    "signupEnd": "Sidste dag for almindelig tilmelding",
+    "juniorSignupStart": "Fastaval Junior åbner",
+    "convention": "Fastaval",
+    "payByDay": "Sidste betalingsdag",
+    "notSet": "Ikke sat",
+    "datesHint": "Datoerne sættes i API'ets konfiguration (afsnittet Convention).",
+    "loading": "Henter indstillinger…",
+    "retry": "Prøv igen",
+    "loadFailed": "Tilmeldingsindstillingerne kunne ikke hentes.",
+    "updateFailed": "Kunne ikke gemme tilmeldingsindstillingerne. Prøv igen.",
+    "updated": "Tilmeldingsindstillingerne er gemt.",
+    "forbidden": "Du har ikke adgang til at ændre tilmeldingsindstillinger."
   }
 }

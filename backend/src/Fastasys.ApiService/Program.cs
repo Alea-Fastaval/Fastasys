@@ -44,6 +44,9 @@ builder.Services.AddDbContext<InfosysDbContext>((services, options) =>
 // The convention's dates (Infosys con.*)
 builder.Services.Configure<ConventionOptions>(builder.Configuration.GetSection(ConventionOptions.Section));
 
+// The clock, so tests can set the time (used by the signup's opening)
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Register custom services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<KarmaService>();
@@ -82,6 +85,8 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ParticipantManagement", "participant_edit")
     .AddPolicy("ActivityView", "activity_view", "activity_edit")
     .AddPolicy("ActivityManagement", "activity_edit")
+    // Opening the signup; later also editing the signup form (agreed 2026-11-24)
+    .AddPolicy("SignupManagement", "signup_form_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

@@ -10,4 +10,5 @@ export * from './resources.types';
 export * from './runs.types';
 export * from './shop.types';
 export * from './signup.types';
+export * from './signup-settings.types';
 export * from './users.types';

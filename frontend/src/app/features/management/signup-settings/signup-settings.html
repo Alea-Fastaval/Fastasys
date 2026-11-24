@@ -1,0 +1,52 @@
+<div class="page-container">
+  <h1>{{ 'signupSettings.title' | translate }}</h1>
+  @if (loading()) {
+  <p role="status">{{ 'signupSettings.loading' | translate }}</p>
+  } @if (error(); as error) {
+  <p class="error" role="alert">{{ 'signupSettings.' + error | translate }}</p>
+  @if (!loaded() && error !== 'forbidden') {
+  <button mat-button (click)="load()" [disabled]="loading()">{{ 'signupSettings.retry' | translate }}</button>
+  } } @if (settings(); as s) {
+  <app-card [title]="'signupSettings.opening' | translate">
+    <p class="signup-status" [class.open]="s.status.isSignupOpen">
+      {{ 'signupSettings.status.' + statusKey(s) | translate: { date: s.status.signupStart ?? '' } }}
+    </p>
+    <p class="junior-status">
+      {{ 'signupSettings.status.' + (s.status.isJuniorSignupOpen ? 'juniorOpen' : 'juniorClosed') | translate }}
+    </p>
+    <p>{{ 'signupSettings.description' | translate }}</p>
+    <form (ngSubmit)="submit()">
+      <mat-slide-toggle name="isOpen" [(ngModel)]="isOpen" [disabled]="busy()" (ngModelChange)="updated.set(false)">
+        {{ 'signupSettings.switch' | translate }}
+      </mat-slide-toggle>
+      <div class="form-actions">
+        <button mat-raised-button type="submit" [disabled]="!canSubmit()">{{ 'common.save' | translate }}</button>
+      </div>
+      @if (updated()) {
+      <p role="status">{{ 'signupSettings.updated' | translate }}</p>
+      }
+    </form>
+  </app-card>
+  <app-card [title]="'signupSettings.dates' | translate">
+    <dl class="dates">
+      <dt>{{ 'signupSettings.signupStart' | translate }}</dt>
+      <dd class="signup-start">
+        @if (s.status.signupStart) { {{ 'signupSettings.atMidnight' | translate: { date: s.status.signupStart } }} }
+        @else { {{ 'signupSettings.notSet' | translate }} }
+      </dd>
+      <dt>{{ 'signupSettings.signupEnd' | translate }}</dt>
+      <dd class="signup-end">{{ s.status.signupEnd ?? ('signupSettings.notSet' | translate) }}</dd>
+      <dt>{{ 'signupSettings.juniorSignupStart' | translate }}</dt>
+      <dd class="junior-start">{{ juniorStartText(s) ?? ('signupSettings.notSet' | translate) }}</dd>
+      <dt>{{ 'signupSettings.convention' | translate }}</dt>
+      <dd class="convention">
+        {{ s.status.conventionStart ?? ('signupSettings.notSet' | translate) }} – {{ s.status.conventionEnd ??
+        ('signupSettings.notSet' | translate) }}
+      </dd>
+      <dt>{{ 'signupSettings.payByDay' | translate }}</dt>
+      <dd class="pay-by-day">{{ s.status.payByDay ?? ('signupSettings.notSet' | translate) }}</dd>
+    </dl>
+    <p class="hint">{{ 'signupSettings.datesHint' | translate }}</p>
+  </app-card>
+  }
+</div>

@@ -803,5 +803,35 @@
     "saveFailed": "Could not save activity settings. Please try again.",
     "saved": "Activity settings saved.",
     "forbidden": "You do not have permission to manage activity settings."
+  },
+  "signupSettings": {
+    "title": "Signup settings",
+    "opening": "Opening",
+    "description": "The signup is only open when it is switched on here and the opening day has begun. After the last day of the regular signup it is a late signup until the signup is switched off.",
+    "switch": "The signup is switched on",
+    "status": {
+      "open": "The signup is open.",
+      "openLate": "The signup is open. It is a late signup.",
+      "closedSwitchedOff": "The signup is closed because it is not switched on.",
+      "closedNoStart": "The signup is closed because the opening day is not set.",
+      "closedBeforeStart": "The signup is closed until {{date}} at 00:00.",
+      "juniorOpen": "The Fastaval Junior signup is open.",
+      "juniorClosed": "The Fastaval Junior signup is closed."
+    },
+    "dates": "Dates",
+    "signupStart": "The signup opens",
+    "atMidnight": "{{date}} at 00:00",
+    "signupEnd": "Last day of the regular signup",
+    "juniorSignupStart": "Fastaval Junior opens",
+    "convention": "Fastaval",
+    "payByDay": "Last day of payment",
+    "notSet": "Not set",
+    "datesHint": "The dates are set in the API's configuration (the Convention section).",
+    "loading": "Loading settings…",
+    "retry": "Try again",
+    "loadFailed": "Could not load the signup settings.",
+    "updateFailed": "Could not save the signup settings. Please try again.",
+    "updated": "Signup settings saved.",
+    "forbidden": "You do not have permission to manage signup settings."
   }
 }

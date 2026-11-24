@@ -1,0 +1,41 @@
+.page-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+.signup-status {
+  font-weight: 600;
+  color: #b91c1c;
+}
+.signup-status.open {
+  color: #15803d;
+}
+.form-actions {
+  margin-top: 1rem;
+}
+.dates {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+.dates dt {
+  font-weight: 600;
+}
+.dates dd {
+  margin: 0;
+}
+.hint {
+  color: #555;
+  font-size: 0.875rem;
+}
+.error {
+  color: #b91c1c;
+}
+@media (max-width: 600px) {
+  .dates {
+    grid-template-columns: 1fr;
+  }
+}
