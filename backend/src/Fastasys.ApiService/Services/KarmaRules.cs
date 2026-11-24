@@ -34,6 +34,7 @@ public static class KarmaRules
         priority switch
         {
             0 => -7,
+            // The count-th value (count is 1-based); counts past the end of the table use the last value.
             1 => FirstPriorityPoints[Math.Min(count, FirstPriorityPoints.Length) - 1],
             2 => -Math.Min(count, 3),
             3 => -1,

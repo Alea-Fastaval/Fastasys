@@ -73,7 +73,7 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
                 ActivityType = r.Schedule.Activity.Type,
                 r.Schedule.StartTime,
                 r.Schedule.EndTime,
-                r.Schedule.IsCancelled,
+                IsCancelled = r.Schedule.CancelledAt != null,
                 r.RoomId,
                 RoomName = r.Room.Name,
                 r.Schedule.Activity.MinPlayersPerTeam,
@@ -121,7 +121,7 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
         var schedule = await db.Schedules.Include(s => s.Activity).FirstOrDefaultAsync(s => s.Id == dto.ScheduleId);
         if (schedule == null)
             return NotFound(new { message = "Could not find schedule" });
-        if (schedule.IsCancelled)
+        if (schedule.CancelledAt != null)
             return Conflict(new { message = "Schedule is cancelled" });
 
         await ScheduleWriteLock.AcquireRoomsAsync(db);
@@ -287,7 +287,7 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
             return NotFound(new { message = "Participant not found" });
         }
 
-        if (run.Schedule.IsCancelled)
+        if (run.Schedule.CancelledAt != null)
             return Conflict(new { message = "Schedule is cancelled" });
 
         var (isValid, error) = ValidateSeat(run, dto);
@@ -365,6 +365,7 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
         var activity = schedule.Activity;
         var players = run.Seats.Count(s => s.Role == RunSeatRole.Player);
         var gameMasters = run.Seats.Count(s => s.Role == RunSeatRole.GameMaster);
+        var isCancelled = schedule.CancelledAt != null;
 
         // Infosys Hold::getPladser orders by pladsnummer. Infosys shows "fornavn efternavn"; Fastasys shows the
         // chosen name (agreed 2026-11-21).
@@ -389,11 +390,11 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
             schedule.EndTime,
             run.RoomId,
             run.Room.Name,
-            !schedule.IsCancelled && RunRules.NeedsPlayers(players, activity.MinPlayersPerTeam),
-            !schedule.IsCancelled && RunRules.NeedsGameMasters(gameMasters, activity.GameMastersPerTeam),
-            !schedule.IsCancelled && RunRules.CanUsePlayers(players, activity.MaxPlayersPerTeam),
+            !isCancelled && RunRules.NeedsPlayers(players, activity.MinPlayersPerTeam),
+            !isCancelled && RunRules.NeedsGameMasters(gameMasters, activity.GameMastersPerTeam),
+            !isCancelled && RunRules.CanUsePlayers(players, activity.MaxPlayersPerTeam),
             seats,
-            schedule.IsCancelled
+            isCancelled
         );
     }
 
@@ -450,7 +451,7 @@ public class RunsController(InfosysDbContext db, ILogger<RunsController> logger,
     private async Task<List<RoomBooking>> LoadRoomBookingsAsync() =>
         await db
             .Runs.AsNoTracking()
-            .Where(r => !r.Schedule.IsCancelled)
+            .Where(r => r.Schedule.CancelledAt == null)
             .Select(r => new RoomBooking(
                 r.RoomId,
                 r.Schedule.StartTime,

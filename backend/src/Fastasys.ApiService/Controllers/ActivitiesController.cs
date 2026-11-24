@@ -237,14 +237,14 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
         if (schedule == null)
             return NotFound(new { message = "Schedule not found" });
 
-        if (schedule.IsCancelled != dto.IsCancelled.Value)
+        if ((schedule.CancelledAt != null) != dto.IsCancelled.Value)
         {
             if (!dto.IsCancelled.Value)
             {
                 await ScheduleWriteLock.AcquireRoomsAsync(db);
                 var bookings = await db
                     .Runs.AsNoTracking()
-                    .Where(r => r.ScheduleId != scheduleId && !r.Schedule.IsCancelled)
+                    .Where(r => r.ScheduleId != scheduleId && r.Schedule.CancelledAt == null)
                     .Select(r => new RoomBooking(
                         r.RoomId,
                         r.Schedule.StartTime,
@@ -273,14 +273,13 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
                     bookings.Add(new(room, schedule.StartTime, schedule.EndTime, schedule.Activity.IsRoomExclusive));
                 }
             }
-            schedule.IsCancelled = dto.IsCancelled.Value;
-            schedule.CancelledAt = schedule.IsCancelled ? DateTimeOffset.UtcNow : null;
+            schedule.CancelledAt = dto.IsCancelled.Value ? DateTimeOffset.UtcNow : null;
             schedule.Activity.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
             logger.LogInformation(
                 "Schedule {ScheduleId} cancellation set to {IsCancelled} by user {UserId}",
                 scheduleId,
-                schedule.IsCancelled,
+                dto.IsCancelled.Value,
                 CurrentUserId()
             );
         }
@@ -519,7 +518,7 @@ public class ActivitiesController(InfosysDbContext db, ILogger<ActivitiesControl
             s.RoomId,
             s.Room?.Name,
             s.Runs.OrderBy(r => r.Number).ThenBy(r => r.Id).Select(r => RunsController.ToDto(r, s, karma)).ToList(),
-            s.IsCancelled,
+            s.CancelledAt != null,
             s.CancelledAt
         );
 

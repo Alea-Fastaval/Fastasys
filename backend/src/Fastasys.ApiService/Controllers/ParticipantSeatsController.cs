@@ -245,7 +245,7 @@ public class ParticipantSeatsController : ControllerBase
         if (runs.Count != runIds.Count) return BadRequest(new { message = "Unknown run" });
 
         var currentSeats = await _db.RunSeats.Where(s => s.ParticipantId == participantId).ToListAsync();
-        if (choices.Any(c => runs.Single(r => r.Id == c.RunId).Schedule.IsCancelled
+        if (choices.Any(c => runs.Single(r => r.Id == c.RunId).Schedule.CancelledAt != null
             && currentSeats.SingleOrDefault(s => s.RunId == c.RunId)?.Role != c.Role))
         {
             return Conflict(Cancelled);
