@@ -23,7 +23,7 @@ public sealed class KarmaService(InfosysDbContext db)
             .ScheduleSignups.AsNoTracking()
             .Where(signup =>
                 ids.Contains(signup.ParticipantId)
-                && !signup.Schedule.IsCancelled
+                && signup.Schedule.CancelledAt == null
                 && signup.Schedule.Activity.IsTimeExclusive
             )
             .Select(signup => new
@@ -37,7 +37,7 @@ public sealed class KarmaService(InfosysDbContext db)
             .RunSeats.AsNoTracking()
             .Where(seat =>
                 ids.Contains(seat.ParticipantId)
-                && !seat.Run.Schedule.IsCancelled
+                && seat.Run.Schedule.CancelledAt == null
                 && seat.Run.Schedule.Activity.IsTimeExclusive
                 && seat.Role != RunSeatRole.GameMaster
             )

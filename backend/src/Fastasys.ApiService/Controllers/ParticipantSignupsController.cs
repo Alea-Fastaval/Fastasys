@@ -129,7 +129,7 @@ public class ParticipantSignupsController : ControllerBase
         await using var transaction = await ScheduleWriteLock.AcquireAsync(_db, scheduleIds);
         var schedules = await _db.Schedules
             .Where(s => scheduleIds.Contains(s.Id))
-            .Select(s => new { s.Id, s.Activity.GameMastersPerTeam, s.IsCancelled })
+            .Select(s => new { s.Id, s.Activity.GameMastersPerTeam, IsCancelled = s.CancelledAt != null })
             .ToDictionaryAsync(s => s.Id);
         if (schedules.Count != scheduleIds.Count) return BadRequest(new { message = "Unknown schedule" });
 
@@ -200,7 +200,7 @@ public class ParticipantSignupsController : ControllerBase
         if (moves)
         {
             if (!SignupRules.CanWish(dto.Role, target.Activity.GameMastersPerTeam)) return BadRequest(NoGameMasters);
-            if (target.IsCancelled) return Conflict(Cancelled);
+            if (target.CancelledAt != null) return Conflict(Cancelled);
             if (await _db.ScheduleSignups.AnyAsync(s => s.ParticipantId == participantId && s.ScheduleId == dto.ScheduleId && s.Role == dto.Role))
             {
                 return Conflict(AlreadySignedUp);

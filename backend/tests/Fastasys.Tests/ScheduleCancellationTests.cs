@@ -144,7 +144,7 @@ public class ScheduleCancellationTests
         Assert.Equal(3, db.ScheduleSignups.Count());
         Assert.Equal(2, db.RunSeats.Count());
         Assert.Equal(1, db.ScheduleSignups.AsNoTracking().Single(w => w.ScheduleId == s.Schedule.Id && w.Role == RunSeatRole.Player).Priority);
-        Assert.False(otherOccurrence.IsCancelled);
+        Assert.Null(otherOccurrence.CancelledAt);
         var again = ScheduleValue(
             await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(true))
         );
@@ -313,7 +313,7 @@ public class ScheduleCancellationTests
         Assert.IsType<ConflictObjectResult>(
             (await Activities(db).SetCancellation(s.Schedule.ActivityId, s.Schedule.Id, new(false))).Result
         );
-        Assert.True(s.Schedule.IsCancelled);
+        Assert.NotNull(s.Schedule.CancelledAt);
         Assert.Equal(cancelledAt, s.Schedule.CancelledAt);
         Assert.Single(db.ScheduleSignups);
         Assert.Single(db.RunSeats);
@@ -367,7 +367,6 @@ public class ScheduleCancellationTests
         Assert.IsType<NotFoundObjectResult>(
             (await controller.SetCancellation(s.Schedule.ActivityId, 999, new(true))).Result
         );
-        Assert.False(s.Schedule.IsCancelled);
         Assert.Null(s.Schedule.CancelledAt);
     }
 

@@ -19,6 +19,9 @@ public class ScheduleCancellationPostgresTests
     // The migration before the karma settings and schedule cancellation
     private const string PreviousMigration = "20261121115314_WidenNickname";
 
+    // The karma settings and schedule cancellation, with both IsCancelled and CancelledAt
+    private const string KarmaMigration = "20261121144130_AddKarmaSettingsAndScheduleCancellation";
+
     [PostgresFact]
     public async Task MigrationPreservesRecords_AndCancellationSerializesWithNewAllocations()
     {
@@ -116,6 +119,46 @@ public class ScheduleCancellationPostgresTests
         Assert.IsType<NotFoundObjectResult>((await request.WaitAsync(TimeSpan.FromSeconds(10), Ct)).Result);
     }
 
+    // Every query used IsCancelled, so when the flag is dropped a row whose two columns disagree keeps the state the
+    // flag gave it. A cancellation without a time gets the migration's time.
+    [PostgresFact]
+    public async Task RemovingIsCancelled_KeepsTheStateTheFlagGave()
+    {
+        await using var database = await PostgresTestDatabase.CreateAsync(Ct);
+        await using var db = new InfosysDbContext(database.Options);
+        var migrator = db.GetService<IMigrator>();
+        await migrator.MigrateAsync(KarmaMigration, Ct);
+        var activity = new Activity { Title = "Disagreeing columns" };
+        db.Add(activity);
+        await db.SaveChangesAsync(Ct);
+        var start = new DateTime(2027, 3, 24, 9, 0, 0, DateTimeKind.Utc);
+        var cancelledAt = new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO schedule ("ActivityId", "StartTime", "EndTime", "IsCancelled", "CancelledAt") VALUES
+                ({activity.Id}, {start}, {start.AddHours(1)}, true, {cancelledAt}),
+                ({activity.Id}, {start.AddHours(1)}, {start.AddHours(2)}, true, NULL),
+                ({activity.Id}, {start.AddHours(2)}, {start.AddHours(3)}, false, {cancelledAt}),
+                ({activity.Id}, {start.AddHours(3)}, {start.AddHours(4)}, false, NULL)
+            """,
+            Ct
+        );
+        var before = DateTimeOffset.UtcNow;
+
+        await migrator.MigrateAsync(cancellationToken: Ct);
+
+        var states = await db
+            .Schedules.AsNoTracking()
+            .OrderBy(s => s.StartTime)
+            .Select(s => s.CancelledAt)
+            .ToListAsync(Ct);
+        Assert.Equal(cancelledAt, states[0]);
+        Assert.NotNull(states[1]);
+        Assert.InRange(states[1]!.Value, before.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1));
+        Assert.Null(states[2]);
+        Assert.Null(states[3]);
+    }
+
     private static async Task VerifyAsync(DbContextOptions<InfosysDbContext> options)
     {
         await using var db = new InfosysDbContext(options);
@@ -169,7 +212,6 @@ public class ScheduleCancellationPostgresTests
 
         await migrator.MigrateAsync(cancellationToken: Ct);
         var schedule = await db.Schedules.AsNoTracking().SingleAsync(Ct);
-        Assert.False(schedule.IsCancelled);
         Assert.Null(schedule.CancelledAt);
         Assert.False(db.Database.HasPendingModelChanges());
         var defaults = await db.ActivitySettings.AsNoTracking().SingleAsync(Ct);
@@ -210,7 +252,7 @@ public class ScheduleCancellationPostgresTests
             var now = DateTimeOffset.UtcNow;
             await cancelling.Database.ExecuteSqlInterpolatedAsync(
                 $"""
-                UPDATE schedule SET "IsCancelled" = true, "CancelledAt" = {now} WHERE "Id" = {scheduleId}
+                UPDATE schedule SET "CancelledAt" = {now} WHERE "Id" = {scheduleId}
                 """,
                 Ct
             );
@@ -291,9 +333,24 @@ public class ScheduleCancellationPostgresTests
             await reserving.SaveChangesAsync(Ct);
         }
 
+        // Rolling back the IsCancelled removal rebuilds the flag from CancelledAt, so the karma migration's rollback
+        // still refuses; rolling forward again keeps the cancellation time
+        var cancelledAt = (await db.Schedules.AsNoTracking().SingleAsync(Ct)).CancelledAt;
+        Assert.NotNull(cancelledAt);
+        await migrator.MigrateAsync(KarmaMigration, Ct);
+        Assert.True(
+            await db
+                .Database.SqlQuery<bool>(
+                    $"""
+                    SELECT "IsCancelled" AS "Value" FROM schedule WHERE "Id" = {scheduleId}
+                    """
+                )
+                .SingleAsync(Ct)
+        );
         var refusal = await Assert.ThrowsAsync<PostgresException>(() => migrator.MigrateAsync(PreviousMigration, Ct));
         Assert.Contains("cancelled occurrences", refusal.MessageText);
-        Assert.True((await db.Schedules.AsNoTracking().SingleAsync(Ct)).IsCancelled);
+        await migrator.MigrateAsync(cancellationToken: Ct);
+        Assert.Equal(cancelledAt, (await db.Schedules.AsNoTracking().SingleAsync(Ct)).CancelledAt);
         await Change(false);
         await migrator.MigrateAsync(PreviousMigration, Ct);
         Assert.Equal(
@@ -307,7 +364,7 @@ public class ScheduleCancellationPostgresTests
                 .SingleAsync(Ct)
         );
         await migrator.MigrateAsync(cancellationToken: Ct);
-        Assert.False((await db.Schedules.AsNoTracking().SingleAsync(Ct)).IsCancelled);
+        Assert.Null((await db.Schedules.AsNoTracking().SingleAsync(Ct)).CancelledAt);
         Assert.Equal(1, await db.RunSeats.CountAsync(Ct));
     }
 

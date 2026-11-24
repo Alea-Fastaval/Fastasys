@@ -2895,9 +2895,6 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsCancelled")
-                        .HasColumnType("boolean");
-
                     b.Property<int?>("RoomId")
                         .HasColumnType("integer");
 
