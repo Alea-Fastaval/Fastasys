@@ -1,0 +1,47 @@
+.page-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.field-list {
+  margin: 0;
+
+  div {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  dt {
+    min-width: 12rem;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
+}

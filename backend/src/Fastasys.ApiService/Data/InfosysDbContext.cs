@@ -39,7 +39,8 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<ParticipantFood> ParticipantFoods => Set<ParticipantFood>();
     public DbSet<WearItem> WearItems => Set<WearItem>();
     public DbSet<ParticipantWear> ParticipantWears => Set<ParticipantWear>();
-    public DbSet<EntranceType> EntranceTypes => Set<EntranceType>();
+    public DbSet<TicketType> TicketTypes => Set<TicketType>();
+    public DbSet<ParticipantTicket> ParticipantTickets => Set<ParticipantTicket>();
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Sale> Sales => Set<Sale>();
@@ -198,6 +199,24 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
                 .HasForeignKey(s => s.ScheduleId)
                 .OnDelete(DeleteBehavior.Restrict);
             signup.Property(s => s.Role).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<TicketType>().Property(t => t.Kind).HasConversion<string>();
+
+        // Infosys deltagere_indgang has the primary key (deltager_id, indgang_id) and foreign keys without ON DELETE
+        // CASCADE. Deleting a participant removes their tickets (Infosys's code does that); a ticket type that
+        // participants have can't be deleted.
+        modelBuilder.Entity<ParticipantTicket>(ticket =>
+        {
+            ticket.HasKey(t => new { t.ParticipantId, t.TicketTypeId });
+            ticket.HasOne(t => t.Participant)
+                .WithMany(p => p.Tickets)
+                .HasForeignKey(t => t.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            ticket.HasOne(t => t.TicketType)
+                .WithMany()
+                .HasForeignKey(t => t.TicketTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });

@@ -2,6 +2,10 @@
   display: block;
 }
 
+.card-actions {
+  margin-bottom: 0.75rem;
+}
+
 .line {
   margin: 0 0 0.4rem;
 }
@@ -20,11 +24,7 @@
 }
 
 .not-ported {
-  margin: 0 0 0.4rem;
+  margin: 0.3rem 0 0;
   color: #6b7280;
   font-style: italic;
-}
-
-.meals .not-ported {
-  margin: 0.3rem 0 0;
 }

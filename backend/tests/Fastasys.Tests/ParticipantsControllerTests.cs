@@ -347,10 +347,10 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
-        // Wear, entrance, food, sleeping places and prices are not ported yet; the participant page shows that while
-        // these are null
+        // Wear, food, sleeping places and prices are not ported yet; the participant page shows that while these are
+        // null. The participant has no tickets.
         Assert.Null(participant.Details.WearOrders);
-        Assert.Null(participant.Details.Tickets);
+        Assert.Empty(participant.Details.Tickets);
         Assert.Null(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
         Assert.Null(participant.Price);
@@ -896,6 +896,114 @@ public class ParticipantsControllerTests
         var options = Ok(await CreateController(db).GetOptions());
 
         Assert.Equal(["B", "A"], options.IdCardTemplates.Select(t => t.Name));
+    }
+
+    private static TicketType Ticket(int id, string name, TicketKind kind, int day = 24, bool partout = false, bool digital = false) =>
+        new() { Id = id, Name = name, Price = 100, Day = new DateOnly(2027, 3, day), Kind = kind, IsAllConvention = partout, IsDigital = digital };
+
+    [Fact]
+    public async Task Get_FillsTheIndgangLinesFromTheTicketKinds_InTicketTypeIdOrder()
+    {
+        // Infosys visdeltager's Indgang/Mad box: deltagere_indgang in indgang id order. The kind decides the line
+        // (agreed 2026-11-24): entrance and sleeping have their own lines; Alea membership and the rest are "Andet".
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddAsync(db, 2);
+        db.TicketTypes.AddRange(
+            Ticket(7, "Ottofest", TicketKind.Other),
+            Ticket(3, "Overnatning - Enkelt", TicketKind.Sleeping, day: 25),
+            Ticket(5, "Alea medlemskab", TicketKind.AleaMembership),
+            Ticket(1, "Indgang - Partout", TicketKind.Entrance, partout: true, digital: true),
+            Ticket(9, "Indgang - Enkelt", TicketKind.Entrance, day: 26));
+        db.ParticipantTickets.AddRange(
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 7 },
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 3 },
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 5 },
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 1 },
+            new ParticipantTicket { ParticipantId = 2, TicketTypeId = 9 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var participant = Ok(await CreateController(db).Get(1));
+
+        Assert.Equal(
+            [
+                new ParticipantTicketDto(TicketLine.Entrance, true, new DateOnly(2027, 3, 24), true, "Indgang - Partout"),
+                new ParticipantTicketDto(TicketLine.Sleeping, false, new DateOnly(2027, 3, 25), false, "Overnatning - Enkelt"),
+                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), false, "Alea medlemskab"),
+                // The name is shown as it is; Infosys showed "Fest" for "Ottofest"
+                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), false, "Ottofest"),
+            ],
+            participant.Details!.Tickets);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsTickets()
+    {
+        // Infosys Deltagere::delete calls removeEntrance
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        db.TicketTypes.Add(Ticket(4, "Indgang - Partout", TicketKind.Entrance, partout: true));
+        db.ParticipantTickets.AddRange(
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 4 },
+            new ParticipantTicket { ParticipantId = 2, TicketTypeId = 4 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        Assert.IsType<OkObjectResult>(await CreateController(db).Delete(1));
+
+        Assert.Equal([2], db.ParticipantTickets.Select(t => t.ParticipantId));
+        Assert.Single(db.TicketTypes);
+    }
+
+    [Fact]
+    public async Task GetOptions_ListsTheTicketTypesInIdOrder()
+    {
+        // The search box's Indgang section (Infosys ParticipantModel::getAllIndgang)
+        using var db = CreateDbContext();
+        db.TicketTypes.AddRange(
+            Ticket(2, "Overnatning - Enkelt", TicketKind.Sleeping, day: 25),
+            Ticket(1, "Indgang - Partout", TicketKind.Entrance, partout: true));
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var options = Ok(await CreateController(db).GetOptions());
+
+        Assert.Equal(
+            [
+                new TicketTypeOptionDto(1, "Indgang - Partout", new DateOnly(2027, 3, 24), true),
+                new TicketTypeOptionDto(2, "Overnatning - Enkelt", new DateOnly(2027, 3, 25), false),
+            ],
+            options.TicketTypes);
+    }
+
+    [Fact]
+    public async Task Search_FindsParticipantsByTheirTickets()
+    {
+        // Infosys search box, Indgang section: "ja" has the ticket, "nej" hasn't
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddAsync(db, 2);
+        await AddAsync(db, 3);
+        db.TicketTypes.AddRange(Ticket(1, "Indgang - Partout", TicketKind.Entrance, partout: true), Ticket(2, "Ottofest", TicketKind.Other));
+        db.ParticipantTickets.AddRange(
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 1 },
+            new ParticipantTicket { ParticipantId = 1, TicketTypeId = 2 },
+            new ParticipantTicket { ParticipantId = 2, TicketTypeId = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        async Task<IEnumerable<int>> Find(SearchLogic logic, params TicketChoice[] choices) =>
+            Ok(await CreateController(db).Search(Search(new ParticipantSearchStepDto(null, new ParticipantCriteria { Tickets = choices }, logic))))
+                .Rows.Select(r => r.Id);
+
+        Assert.Equal([1, 2], await Find(SearchLogic.And, new TicketChoice(1, true)));
+        Assert.Equal([2], await Find(SearchLogic.And, new TicketChoice(1, true), new TicketChoice(2, false)));
+        Assert.Equal([3], await Find(SearchLogic.And, new TicketChoice(1, false), new TicketChoice(2, false)));
+        // With "Or" each row is an alternative
+        Assert.Equal([1, 3], await Find(SearchLogic.Or, new TicketChoice(2, true), new TicketChoice(1, false)));
+        // A type that doesn't exist (any more) is had by nobody
+        Assert.Empty(await Find(SearchLogic.And, new TicketChoice(99, true)));
+        Assert.Equal([1, 2, 3], await Find(SearchLogic.And, new TicketChoice(99, false)));
     }
 
     [Fact]

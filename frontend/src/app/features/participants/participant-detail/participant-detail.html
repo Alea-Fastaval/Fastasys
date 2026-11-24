@@ -201,7 +201,12 @@
        prices are ported. Infosys hides all but the Pris breakdown from its Read-only roles. -->
   <div class="info-boxes">
     @if (p.details; as d) {
-    <app-participant-entrance-food [tickets]="d.tickets" [meals]="d.meals" />
+    <app-participant-entrance-food
+      [tickets]="d.tickets"
+      [meals]="d.meals"
+      [participantId]="p.id"
+      [canEditTickets]="mayEditTickets"
+    />
     <app-participant-id-card
       [idCard]="d.idCard"
       [participantId]="p.id"

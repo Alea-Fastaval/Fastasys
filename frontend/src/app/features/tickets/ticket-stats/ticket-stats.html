@@ -1,0 +1,24 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/tickets"
+      ><mat-icon>arrow_back</mat-icon> {{ 'tickets.allTitle' | translate }}</a
+    >
+    <h1>{{ 'tickets.stats.heading' | translate }}</h1>
+  </header>
+
+  @if (failed()) {
+  <p class="flash error">{{ 'tickets.messages.loadFailed' | translate }}</p>
+  } @if (groups(); as list) {
+  <div class="groups">
+    @for (group of list; track group.name) {
+    <app-card [title]="heading(group)">
+      <ul class="days">
+        @for (day of group.days; track day.day) {
+        <li>{{ dayText(day.day) }} &mdash; <strong>{{ day.count }}</strong></li>
+        }
+      </ul>
+    </app-card>
+    }
+  </div>
+  }
+</div>

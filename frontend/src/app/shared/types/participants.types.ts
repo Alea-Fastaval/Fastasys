@@ -1,4 +1,5 @@
 import { RunSeatRole } from './runs.types';
+import { TicketChoice, TicketTypeOption } from './tickets.types';
 
 // Infosys deltagere.main_lang (da, en)
 export const PREFERRED_LANGUAGES = ['Danish', 'English'] as const;
@@ -59,6 +60,8 @@ export interface ParticipantCriteria {
   game?: string;
   checkedInAt?: string;
   notes?: string;
+  // The Indgang section: only the rows set to "ja" or "nej"
+  tickets?: TicketChoice[];
 }
 
 export interface QuickSearchStep {
@@ -184,8 +187,8 @@ export interface ParticipantDetails {
   sleepingNote: string | null;
   // The Wear box: null until wear is ported, then the participant's orders
   wearOrders: ParticipantWearOrder[] | null;
-  // The Indgang/Mad box: null until entrance and food are ported, then the participant's tickets and meals
-  tickets: ParticipantTicket[] | null;
+  // The Indgang/Mad box: the participant's tickets, and their meals (null until food is ported)
+  tickets: ParticipantTicket[];
   meals: ParticipantMeal[] | null;
   // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
   sleepingPlaces: ParticipantSleepingPlace[] | null;
@@ -279,10 +282,10 @@ export interface ParticipantTicket {
   line: TicketLine;
   // Shown as "Partout" instead of a day
   isAllConvention: boolean;
-  // UTC instant; the box shows its day in Copenhagen
-  start: string;
+  // "yyyy-mm-dd"; the box shows its short day name
+  day: string;
   isDigital: boolean;
-  // What the Andet line shows, e.g. "Fest"
+  // What the Andet line shows
   name: string;
 }
 
@@ -346,6 +349,8 @@ export interface ParticipantOptions {
   games: GameOption[];
   // The ID card templates for "Skabelon:", in id order
   idCardTemplates: IdCardTemplateOption[];
+  // The ticket types for the search box's Indgang section, in id order
+  ticketTypes: TicketTypeOption[];
 }
 
 export interface IdCardTemplateOption {

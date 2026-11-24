@@ -88,7 +88,13 @@ describe('the searches in the URL', () => {
     const steps = [
       { quick: 'anna' },
       {
-        criteria: { city: 'Aarhus', isNoShow: false, categoryId: 2, activityLanguages: ['Danish' as const] },
+        criteria: {
+          city: 'Aarhus',
+          isNoShow: false,
+          categoryId: 2,
+          activityLanguages: ['Danish' as const],
+          tickets: [{ ticketTypeId: 4, has: false }],
+        },
         logic: 'Or' as const,
         combination: 'Intersection' as const,
       },
@@ -105,6 +111,10 @@ describe('the searches in the URL', () => {
     '[{"criteria":{"password":"x"},"logic":"And","combination":"New"}]',
     '[{"criteria":{"categoryId":"2"},"logic":"And","combination":"New"}]',
     '[{"criteria":{"activityLanguages":["Klingon"]},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"tickets":{"4":true}},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"tickets":[{"ticketTypeId":"4","has":true}]},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"tickets":[{"ticketTypeId":4,"has":"ja"}]},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"tickets":[{"ticketTypeId":4,"has":true,"x":1}]},"logic":"And","combination":"New"}]',
   ])('refuses %s', value => {
     expect(() => parseSearch(value)).toThrow(UnknownQueryParamError);
   });

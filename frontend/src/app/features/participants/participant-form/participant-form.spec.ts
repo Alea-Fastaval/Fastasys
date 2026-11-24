@@ -16,6 +16,7 @@ const options: ParticipantOptions = {
   countries: [],
   games: [],
   idCardTemplates: [],
+  ticketTypes: [],
 };
 
 const existing: Participant = {
@@ -81,7 +82,7 @@ const existing: Participant = {
     juniorComment: null,
     sleepingNote: null,
     wearOrders: null,
-    tickets: null,
+    tickets: [],
     meals: null,
     sleepingPlaces: null,
     idCard: { photoUrl: null, templateId: null, templateName: null, defaultTemplateName: null },

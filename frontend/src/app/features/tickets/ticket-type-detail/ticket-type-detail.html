@@ -1,0 +1,58 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/tickets"
+      ><mat-icon>arrow_back</mat-icon> {{ 'tickets.allTitle' | translate }}</a
+    >
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'tickets.messages.' + flash.key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'tickets.messages.notFound' | translate }}</p>
+  } @if (type(); as t) {
+  <app-card [title]="('tickets.fields.name' | translate) + ': ' + t.name">
+    @if (mayEdit) {
+    <div class="card-actions">
+      <a mat-stroked-button [routerLink]="['/resources/tickets', t.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ 'tickets.editDelete' | translate }}
+      </a>
+    </div>
+    }
+
+    <dl class="field-list">
+      <div>
+        <dt>{{ 'tickets.fields.id' | translate }}:</dt>
+        <dd class="id">{{ t.id }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.name' | translate }}:</dt>
+        <dd class="name">{{ t.name }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.price' | translate }}:</dt>
+        <dd class="price">{{ priceText(t.price) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.day' | translate }}:</dt>
+        <dd class="day">{{ t.day }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.kind' | translate }}:</dt>
+        <dd class="kind">{{ 'tickets.kinds.' + t.kind | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.isAllConvention' | translate }}:</dt>
+        <dd class="all-convention">{{ (t.isAllConvention ? 'common.yes' : 'common.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.isDigital' | translate }}:</dt>
+        <dd class="digital">{{ (t.isDigital ? 'common.yes' : 'common.no') | translate }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'tickets.fields.soldCount' | translate }}:</dt>
+        <dd class="sold">{{ t.soldCount }}</dd>
+      </div>
+    </dl>
+  </app-card>
+  }
+</div>

@@ -1,0 +1,63 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+}
+
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+  }
+
+  // Infosys draws a line after the Id column
+  .id {
+    width: 1%;
+    border-right: 1px solid #9ca3af;
+  }
+
+  .count {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  a {
+    color: inherit;
+  }
+}

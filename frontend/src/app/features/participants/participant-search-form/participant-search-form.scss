@@ -31,6 +31,22 @@ app-card {
   gap: 0 1rem;
 }
 
+// Infosys's Indgang fieldset: one row per ticket type with a ja/nej select
+.tickets {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  margin: 0 0 1.25rem;
+
+  td {
+    padding: 0.15rem 0.5rem 0.15rem 0;
+    vertical-align: middle;
+  }
+
+  .ticket-choice {
+    width: 6rem;
+  }
+}
+
 hr {
   border: none;
   border-top: 1px solid #e5e7eb;

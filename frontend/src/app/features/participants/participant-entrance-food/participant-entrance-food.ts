@@ -1,9 +1,12 @@
 import { Component, Input, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { ParticipantMeal, ParticipantTicket, TicketLine } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { TranslationService } from '@shared/services';
-import { Weekday, toConventionTime } from '@shared/utils';
+import { Weekday, toConventionTime, weekdayOfDate } from '@shared/utils';
 
 // The translated words a line of tickets is made of
 export interface TicketTexts {
@@ -24,7 +27,7 @@ export function ticketLineText(tickets: ParticipantTicket[], line: TicketLine, t
 }
 
 function ticketShortText(ticket: ParticipantTicket, texts: TicketTexts): string {
-  const day = ticket.isAllConvention ? texts.partout : texts.shortDay(toConventionTime(ticket.start).weekday);
+  const day = ticket.isAllConvention ? texts.partout : texts.shortDay(weekdayOfDate(ticket.day));
   return ticket.isDigital ? `${day} ${texts.digital}` : day;
 }
 
@@ -38,14 +41,13 @@ export function mealText(meal: ParticipantMeal, shortDay: (weekday: Weekday) => 
 // tickets on the lines Indgang, Overnatning and Andet, and a list of their meals with whether each has been handed
 // out. Each line is shown even when it is empty, like Infosys does.
 //
-// Entrance and food are not ported yet, so the page passes null and the box says so. They may be ported one at a
-// time, so each half has its own message. When they are ported, the API fills details.tickets and details.meals
-// (see ParticipantTicketDto and ParticipantMealDto in ParticipantsController) and this box shows them as is.
-// Infosys's "Ret/slet" link goes to its Indgang/Mad/Wear edit page (deltager/updatemadwear); add it when that page
-// is ported.
+// Food is not ported yet, so the page passes null for the meals and the box says so. When it is, the API fills
+// details.meals (see ParticipantMealDto in ParticipantsController) and this box shows them as is.
+// Infosys's "Ret/slet" link goes to its Indgang/Mad/Wear edit page (deltager/updatemadwear); its Indgang part is
+// /participants/:id/tickets, shown to users who may change a participant's tickets.
 @Component({
   selector: 'app-participant-entrance-food',
-  imports: [Card, TranslatePipe],
+  imports: [RouterLink, MatButtonModule, MatIconModule, Card, TranslatePipe],
   templateUrl: './participant-entrance-food.html',
   styleUrl: './participant-entrance-food.scss',
 })
@@ -53,8 +55,10 @@ export class ParticipantEntranceFoodComponent {
   private readonly translationService = inject(TranslationService);
 
   // Decorator inputs, like Card's: the unit tests run Angular in JIT mode, which doesn't know signal inputs
-  @Input({ required: true }) public tickets: ParticipantTicket[] | null = null;
+  @Input({ required: true }) public tickets: ParticipantTicket[] = [];
   @Input({ required: true }) public meals: ParticipantMeal[] | null = null;
+  @Input({ required: true }) public participantId = 0;
+  @Input() public canEditTickets = false;
 
   public lineText(tickets: ParticipantTicket[], line: TicketLine): string {
     return ticketLineText(tickets, line, {

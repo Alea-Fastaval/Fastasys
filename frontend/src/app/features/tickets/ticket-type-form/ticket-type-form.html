@@ -1,0 +1,84 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/tickets"
+      ><mat-icon>arrow_back</mat-icon> {{ 'tickets.allTitle' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'tickets.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'tickets.deleteConfirmTitle' | translate">
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
+        {{ 'tickets.buttons.delete' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">{{ 'tickets.buttons.cancel' | translate }}</button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card [title]="(typeId() === null ? 'tickets.createTitle' : 'tickets.editTitle') | translate">
+    @if (errorKey(); as key) {
+    <p class="flash error">{{ 'tickets.messages.' + key | translate }}</p>
+    }
+
+    <form (ngSubmit)="submit()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'tickets.fields.name' | translate }}</mat-label>
+          <input matInput name="name" required [maxlength]="maxNameLength" [(ngModel)]="f.name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'tickets.fields.price' | translate }}</mat-label>
+          <input matInput type="number" name="price" required min="0" step="1" [(ngModel)]="f.price" />
+          <span matTextSuffix>DKK</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'tickets.fields.day' | translate }}</mat-label>
+          <input
+            matInput
+            type="date"
+            name="day"
+            required
+            [attr.min]="conventionStart()"
+            [attr.max]="conventionEnd()"
+            [(ngModel)]="f.day"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'tickets.fields.kind' | translate }}</mat-label>
+          <mat-select name="kind" required [(ngModel)]="f.kind">
+            @for (kind of kinds; track kind) {
+            <mat-option [value]="kind">{{ 'tickets.kinds.' + kind | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="checkboxes wide">
+          <mat-checkbox name="isAllConvention" [(ngModel)]="f.isAllConvention">
+            {{ 'tickets.fields.isAllConvention' | translate }}
+          </mat-checkbox>
+          <mat-checkbox name="isDigital" [(ngModel)]="f.isDigital">
+            {{ 'tickets.fields.isDigital' | translate }}
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="!canSubmit(f)">
+          {{ (typeId() === null ? 'tickets.buttons.create' : 'tickets.buttons.update') | translate }}
+        </button>
+        @if (typeId() !== null) {
+        <button mat-button type="button" (click)="cancel()">{{ 'tickets.buttons.cancel' | translate }}</button>
+        <button mat-button color="warn" type="button" (click)="askDelete()">
+          {{ 'tickets.buttons.delete' | translate }}
+        </button>
+        }
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

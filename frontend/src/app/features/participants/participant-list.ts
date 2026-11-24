@@ -286,6 +286,16 @@ function isStep(step: unknown): step is ParticipantSearchStep {
   );
 }
 
+// A row of the Indgang section: { ticketTypeId, has }
+function isTicketChoice(choice: unknown): boolean {
+  return (
+    isObject(choice) &&
+    Object.keys(choice).length === 2 &&
+    Number.isInteger(choice['ticketTypeId']) &&
+    typeof choice['has'] === 'boolean'
+  );
+}
+
 function isCriteria(criteria: unknown): criteria is ParticipantCriteria {
   if (!isObject(criteria)) return false;
   return Object.entries(criteria).every(([field, value]) => {
@@ -296,6 +306,7 @@ function isCriteria(criteria: unknown): criteria is ParticipantCriteria {
     if (field === 'activityLanguages') {
       return Array.isArray(value) && value.every(l => (PARTICIPANT_LANGUAGES as readonly unknown[]).includes(l));
     }
+    if (field === 'tickets') return Array.isArray(value) && value.every(isTicketChoice);
     return false;
   });
 }

@@ -110,6 +110,34 @@
       }
     </div>
 
+    @if (ticketTypes.length > 0) {
+    <fieldset class="tickets">
+      <legend>{{ 'participants.search.tickets' | translate }}</legend>
+      <table>
+        <tbody>
+          @for (type of ticketTypes; track type.id) {
+          <tr>
+            <td class="ticket-name">{{ ticketText(type) }}</td>
+            <td>
+              <!-- Infosys lists ja before nej here -->
+              <mat-select
+                class="ticket-choice"
+                [name]="'ticket' + type.id"
+                [aria-label]="ticketText(type)"
+                [(ngModel)]="form().tickets[type.id]"
+              >
+                <mat-option value="" />
+                <mat-option value="ja">{{ 'participants.yes' | translate }}</mat-option>
+                <mat-option value="nej">{{ 'participants.no' | translate }}</mat-option>
+              </mat-select>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </fieldset>
+    }
+
     <hr />
     <div class="logic">
       <mat-form-field appearance="outline">

@@ -22,6 +22,11 @@ import { FoodComponent } from './features/resources/food/food';
 import { RoomsComponent } from './features/resources/rooms/rooms';
 import { WearComponent } from './features/resources/wear/wear';
 import { ShopComponent } from './features/shop/shop';
+import { TicketTypesComponent } from './features/tickets/ticket-types/ticket-types';
+import { TicketTypeDetailComponent } from './features/tickets/ticket-type-detail/ticket-type-detail';
+import { TicketTypeFormComponent } from './features/tickets/ticket-type-form/ticket-type-form';
+import { TicketStatsComponent } from './features/tickets/ticket-stats/ticket-stats';
+import { ParticipantTicketsComponent } from './features/participants/participant-tickets/participant-tickets';
 import { SignupComponent } from './features/signup/signup';
 import { RunDetailComponent } from './features/runs/run-detail/run-detail';
 import { RunFormComponent } from './features/runs/run-form/run-form';
@@ -42,6 +47,7 @@ export const routes: Routes = [
   { path: 'participants/:id/activities', component: ParticipantSeatsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/signups', component: ParticipantSignupsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/photo', component: ParticipantPhotoComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/tickets', component: ParticipantTicketsComponent, canActivate: [authGuard] },
   { path: 'id-card-templates', component: IdCardTemplatesComponent, canActivate: [authGuard] },
   { path: 'id-cards', component: IdCardsPrintComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
@@ -57,6 +63,11 @@ export const routes: Routes = [
   { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },
   { path: 'resources/wear', component: WearComponent, canActivate: [authGuard] },
   { path: 'resources/rooms', component: RoomsComponent, canActivate: [authGuard] },
+  { path: 'resources/tickets', component: TicketTypesComponent, canActivate: [authGuard] },
+  { path: 'resources/tickets/new', component: TicketTypeFormComponent, canActivate: [authGuard] },
+  { path: 'resources/tickets/stats', component: TicketStatsComponent, canActivate: [authGuard] },
+  { path: 'resources/tickets/:id', component: TicketTypeDetailComponent, canActivate: [authGuard] },
+  { path: 'resources/tickets/:id/edit', component: TicketTypeFormComponent, canActivate: [authGuard] },
   { path: 'resources', redirectTo: 'resources/food', pathMatch: 'full' },
   { path: 'boardgames', component: BoardgamesComponent, canActivate: [authGuard] },
   { path: 'communications', component: CommunicationsComponent, canActivate: [authGuard] },

@@ -1,0 +1,51 @@
+<div class="page-container">
+  <header class="page-header">
+    <h1>{{ 'tickets.allTitle' | translate }}</h1>
+    <div class="header-actions">
+      <a mat-stroked-button routerLink="/resources/tickets/stats">
+        <mat-icon>bar_chart</mat-icon> {{ 'tickets.stats.title' | translate }}
+      </a>
+      @if (mayEdit) {
+      <a mat-raised-button color="primary" routerLink="/resources/tickets/new">
+        <mat-icon>add</mat-icon> {{ 'tickets.create' | translate }}
+      </a>
+      }
+    </div>
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'tickets.messages.' + flash.key | translate }}</p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'tickets.messages.loadFailed' | translate }}</p>
+  } @if (types(); as list) { @if (list.length === 0) {
+  <!-- Infosys's noResults page -->
+  <p class="flash error">{{ 'tickets.messages.notFound' | translate }}</p>
+  } @else {
+  <app-card>
+    <table class="ticket-table">
+      <thead>
+        <tr>
+          <th class="id">{{ 'tickets.fields.id' | translate }}</th>
+          <th>{{ 'tickets.fields.name' | translate }}</th>
+          <th class="count">{{ 'tickets.fields.price' | translate }}</th>
+          <th class="count">{{ 'tickets.fields.soldCount' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (type of list; track type.id) {
+        <tr>
+          <td class="id">
+            <a [routerLink]="['/resources/tickets', type.id]">{{ type.id }}</a>
+          </td>
+          <td>
+            <a [routerLink]="['/resources/tickets', type.id]">{{ typeText(type) }}</a>
+          </td>
+          <td class="count">{{ priceText(type.price) }}</td>
+          <td class="count">{{ type.soldCount }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </app-card>
+  } }
+</div>

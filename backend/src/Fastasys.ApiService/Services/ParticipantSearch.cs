@@ -37,9 +37,14 @@ public enum BirthDateRange
 }
 
 /// <summary>
+/// One row of the Infosys search box's Indgang section (indgang_search[ind_{id}]): "ja" (Has) finds the participants
+/// who have the ticket type, "nej" those who don't.
+/// </summary>
+public sealed record TicketChoice(int TicketTypeId, bool Has);
+
+/// <summary>
 /// The fields of the Infosys participant search box (ParticipantModel::searchParticipants). null or an empty text
-/// means the field is not used. The fields for removed columns and for features not ported yet (entrance, food)
-/// are left out.
+/// means the field is not used. The fields for removed columns and for features not ported yet (food) are left out.
 /// </summary>
 public sealed record ParticipantCriteria
 {
@@ -74,13 +79,16 @@ public sealed record ParticipantCriteria
     public string? Game { get; init; }
     public string? CheckedInAt { get; init; }
     public string? Notes { get; init; }
+
+    // The Indgang section: only the rows set to "ja" or "nej"
+    public IReadOnlyList<TicketChoice>? Tickets { get; init; }
 }
 
 /// <summary>
 /// The participant searches of Infosys: the quick search in the page header (IndexController::main and
 /// ParticipantModel::miniWildCardSearch) and the search box (ParticipantModel::searchParticipants), and how a search
 /// is combined with the previous result. The participants are searched in memory; the participants passed in must
-/// have their category, country and game loaded.
+/// have their category, country, game and tickets loaded.
 /// </summary>
 public static partial class ParticipantSearch
 {
@@ -253,6 +261,15 @@ public static partial class ParticipantSearch
         if (c.DesiredHeroTasks != null) yield return p => p.DesiredHeroTasks == c.DesiredHeroTasks;
         if (c.DesiredActivities != null) yield return p => p.DesiredActivities == c.DesiredActivities;
         if (c.OrganizerAreaId != null) yield return p => p.OrganizerAreaId == c.OrganizerAreaId;
+
+        // Indgang (ParticipantModel::handleExtraChoices): one condition per row, "ja" for having the ticket type and
+        // "nej" for not having it. A type that no longer exists is had by nobody, as in Infosys. With "Or", Infosys
+        // joined its "ja" rows to the rest with "and", like the other "Or" bug fixed on 2026-11-11; every row is an
+        // alternative here.
+        foreach (var choice in c.Tickets ?? [])
+        {
+            yield return p => p.Tickets.Any(t => t.TicketTypeId == choice.TicketTypeId) == choice.Has;
+        }
     }
 
     // The text fields Infosys compares with "=" when the value is a number and with LIKE '%value%' otherwise

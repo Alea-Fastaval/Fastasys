@@ -9,6 +9,7 @@
     "food": "Food & Catering",
     "wear": "Wear & Merchandise",
     "rooms": "Rooms & Locations",
+    "tickets": "Entrance",
     "boardgames": "Boardgames",
     "communications": "Comms",
     "users": "Users",
@@ -259,7 +260,8 @@
         "Union": "Add the search to the previous result",
         "Difference": "Subtract the previous result from this search"
       },
-      "submit": "Search"
+      "submit": "Search",
+      "tickets": "Entrance"
     },
     "fields": {
       "birthDate": "Birth date",
@@ -340,7 +342,6 @@
       "digital": "(Digital)",
       "received": "Handed out",
       "notReceived": "Not handed out",
-      "ticketsNotPorted": "Entrance has not been moved to Fastasys yet.",
       "mealsNotPorted": "Food has not been moved to Fastasys yet."
     },
     "sleeping": {
@@ -442,7 +443,8 @@
       "signupNotFound": "Cannot find the schedule",
       "signupNoGameMasters": "The activity has no game masters.",
       "signupUpdateFailed": "Could not update the participant.",
-      "signupDeleteFailed": "Could not delete the signup"
+      "signupDeleteFailed": "Could not delete the signup",
+      "ticketsUpdateFailed": "Could not update the participant."
     },
     "seats": {
       "title": "Update activities",
@@ -466,6 +468,11 @@
       "delete": "Delete",
       "confirmDelete": "Are you sure?",
       "sortTitle": "Sort by priority"
+    },
+    "tickets": {
+      "editTitle": "Edit entrance, food and wear",
+      "ticketType": "Ticket type",
+      "add": "Add"
     }
   },
   "activities": {
@@ -764,6 +771,55 @@
     "location": "Location",
     "stock": "Stock Level",
     "size": "Size"
+  },
+  "tickets": {
+    "allTitle": "All ticket types",
+    "create": "Create ticket type",
+    "createTitle": "Create ticket type",
+    "editTitle": "Update ticket type",
+    "editDelete": "Edit/delete",
+    "deleteConfirmTitle": "Delete ticket type?",
+    "fields": {
+      "id": "Id",
+      "name": "Type",
+      "price": "Price",
+      "day": "Start",
+      "kind": "Kind",
+      "isAllConvention": "All of Fastaval (partout)",
+      "isDigital": "Digital",
+      "soldCount": "Number sold"
+    },
+    "kinds": {
+      "Entrance": "Entrance",
+      "Sleeping": "Accommodation",
+      "AleaMembership": "Alea membership",
+      "Other": "Other"
+    },
+    "buttons": {
+      "create": "Create",
+      "update": "Update",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "stats": {
+      "title": "Statistics",
+      "heading": "Entrance statistics",
+      "entrancePartout": "Entrance, partout",
+      "sleepingPartout": "Accommodation, partout",
+      "entranceDay": "Entrance, single day",
+      "sleepingDay": "Accommodation, single day"
+    },
+    "messages": {
+      "created": "The ticket type was created.",
+      "createFailed": "The ticket type could not be created.",
+      "updated": "The ticket type was updated.",
+      "updateFailed": "Could not update the ticket type.",
+      "notUpdated": "The ticket type was not updated.",
+      "deleted": "The ticket type was deleted",
+      "deleteFailed": "Could not delete the ticket type",
+      "notFound": "Could not find a ticket type matching the criteria.",
+      "loadFailed": "Could not load the ticket types."
+    }
   },
   "boardgames": {
     "title": "Boardgame Lending Library",

@@ -87,6 +87,11 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ActivityManagement", "activity_edit")
     // Opening the signup; later also editing the signup form (agreed 2026-11-24)
     .AddPolicy("SignupManagement", "signup_form_edit")
+    // Infosys: the Indgang pages (EntranceController/*) are for superuser and Infonaut; any role with
+    // ParticipantController/* may change a participant's tickets. Fastasys uses its entrance privileges for them.
+    .AddPolicy("TicketTypeView", "entrance_view", "entrance_edit")
+    .AddPolicy("TicketTypeManagement", "entrance_edit")
+    .AddPolicy("ParticipantTicketManagement", "entrance_participant_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

@@ -148,6 +148,7 @@ public class Participant
     public string? SleepingNote { get; set; }
 
     public virtual ICollection<ScheduleSignup> Signups { get; set; } = new List<ScheduleSignup>();
+    public virtual ICollection<ParticipantTicket> Tickets { get; set; } = new List<ParticipantTicket>();
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<ParticipantFood> Foods { get; set; } = new List<ParticipantFood>();
     public virtual ICollection<ParticipantWear> Wears { get; set; } = new List<ParticipantWear>();

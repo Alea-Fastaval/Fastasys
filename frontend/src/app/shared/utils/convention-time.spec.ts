@@ -1,5 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { conventionLocalToIso, formatClock, toConventionLocalInput, toConventionTime } from './convention-time';
+import {
+  conventionLocalToIso,
+  formatClock,
+  toConventionLocalInput,
+  toConventionTime,
+  weekdayOfDate,
+} from './convention-time';
+
+describe('weekdayOfDate', () => {
+  it('gives the weekday of a calendar date, also across the clock change on 28 March 2027', () => {
+    expect(weekdayOfDate('2027-03-24')).toBe('Wednesday');
+    expect(weekdayOfDate('2027-03-28')).toBe('Sunday');
+    expect(weekdayOfDate('2027-03-29')).toBe('Monday');
+    expect(weekdayOfDate('2028-02-29')).toBe('Tuesday');
+  });
+});
 
 describe('toConventionTime', () => {
   it('reads an instant as Copenhagen winter time (UTC+1)', () => {

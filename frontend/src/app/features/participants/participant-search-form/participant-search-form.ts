@@ -1,4 +1,4 @@
-import { Component, Input, output, signal } from '@angular/core';
+import { Component, Input, inject, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -19,9 +19,12 @@ import {
   SEARCH_LOGICS,
   SearchCombination,
   SearchLogic,
+  TicketTypeOption,
 } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
+import { TranslationService } from '@shared/services';
+import { ticketSearchText, translatedShortDay } from '../../tickets/ticket-texts';
 
 // The Infosys ja/nej selects start empty, which means the field is not used
 export type YesNoChoice = '' | 'ja' | 'nej';
@@ -58,6 +61,8 @@ export interface SearchForm {
   game: string;
   checkedInAt: string;
   notes: string;
+  // The Indgang section, by ticket type id; a type that isn't here is not used
+  tickets: Record<number, YesNoChoice>;
   logic: SearchLogic;
   combination: SearchCombination;
 }
@@ -96,6 +101,7 @@ export function newSearchForm(): SearchForm {
     game: '',
     checkedInAt: '',
     notes: '',
+    tickets: {},
     logic: 'And',
     combination: 'New',
   };
@@ -141,11 +147,16 @@ export function toSearchStep(form: SearchForm): CriteriaSearchStep {
   for (const field of NUMBER_FIELDS) if (form[field] !== null) set[field] = form[field];
   if (form.activityLanguages.length > 0) criteria.activityLanguages = form.activityLanguages;
   if (criteria.birthDate !== undefined) criteria.birthDateRange = form.birthDateRange;
+  // The keys are ticket type ids, so they come in id order
+  const tickets = Object.entries(form.tickets)
+    .filter(([, choice]) => choice !== '')
+    .map(([id, choice]) => ({ ticketTypeId: Number(id), has: choice === 'ja' }));
+  if (tickets.length > 0) criteria.tickets = tickets;
   return { criteria, logic: form.logic, combination: form.combination };
 }
 
 // Infosys ParticipantController search box ("Søg" on the participant list). Its "Reset" button is left out: in
-// Infosys it searches instead of clearing the box (reported 2026-11-11). Indgang and Mad come with those features.
+// Infosys it searches instead of clearing the box (reported 2026-11-11). Mad comes with food.
 @Component({
   selector: 'app-participant-search-form',
   imports: [
@@ -167,7 +178,10 @@ export class ParticipantSearchFormComponent {
   @Input() public categories: ParticipantCategory[] = [];
   // Sorted by Danish name
   @Input() public organizerAreas: OrganizerArea[] = [];
+  // In id order (Infosys getAllIndgang)
+  @Input() public ticketTypes: TicketTypeOption[] = [];
   public readonly searched = output<CriteriaSearchStep>();
+  private readonly shortDay = translatedShortDay(inject(TranslationService));
 
   public readonly form = signal<SearchForm>(newSearchForm());
   public readonly birthDateRanges = BIRTH_DATE_RANGES;
@@ -208,6 +222,11 @@ export class ParticipantSearchFormComponent {
     const form = this.form();
     const others = form.activityLanguages.filter(l => l !== language);
     form.activityLanguages = checked ? [...others, language] : others;
+  }
+
+  // "Indgang - Enkelt Ons", or the name alone for a ticket for the whole convention
+  public ticketText(type: TicketTypeOption): string {
+    return ticketSearchText(type, this.shortDay);
   }
 
   public submit(): void {

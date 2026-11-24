@@ -40,6 +40,13 @@ export function toConventionTime(instant: string | number | Date): ConventionTim
   };
 }
 
+// The weekday of a calendar date ("2027-03-24"). A date has no time of day, so no time zone is involved.
+export function weekdayOfDate(date: string): Weekday {
+  const [year, month, day] = date.split('-').map(Number);
+  // getUTCDay counts from Sunday
+  return WEEKDAYS[(new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7];
+}
+
 // "HH:mm", like PHP date('H:i')
 export function formatClock(time: ConventionTime): string {
   return `${pad(time.hour)}:${pad(time.minute)}`;

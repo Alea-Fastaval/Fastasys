@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { describe, it, expect } from 'vitest';
 import { ParticipantMeal, ParticipantTicket } from '@shared/types';
 import { Weekday } from '@shared/utils';
@@ -10,15 +11,15 @@ import { ParticipantEntranceFoodComponent, TicketTexts, mealText, ticketLineText
 const ticket = (overrides: Partial<ParticipantTicket>): ParticipantTicket => ({
   line: 'Entrance',
   isAllConvention: false,
-  start: '2027-03-24T08:00:00Z',
+  day: '2027-03-24',
   isDigital: false,
   name: 'Indgang - Enkelt',
   ...overrides,
 });
 
 const partout = ticket({ isAllConvention: true, name: 'Indgang - Partout' });
-const thursday = ticket({ start: '2027-03-25T08:00:00Z', name: 'Dagsbillet torsdag' });
-const digitalSaturday = ticket({ start: '2027-03-27T08:00:00Z', isDigital: true, name: 'Indgang - Digital' });
+const thursday = ticket({ day: '2027-03-25', name: 'Dagsbillet torsdag' });
+const digitalSaturday = ticket({ day: '2027-03-27', isDigital: true, name: 'Indgang - Digital' });
 const sleepingWednesday = ticket({ line: 'Sleeping', name: 'Overnatning - Enkelt' });
 const party = ticket({ line: 'Other', name: 'Fest' });
 const bubbles = ticket({ line: 'Other', name: 'Champagne' });
@@ -63,11 +64,9 @@ describe('ticketLineText (a line of the Infosys Indgang/Mad box)', () => {
     expect(ticketLineText([party], 'Entrance', texts)).toBe('');
   });
 
-  it('takes the day in Copenhagen, not in UTC', () => {
-    // 23:30 UTC on Wednesday is 00:30 on Thursday in Copenhagen (UTC+1 until the clocks go forward)
-    expect(ticketLineText([ticket({ start: '2027-03-24T23:30:00Z' })], 'Entrance', texts)).toBe('Tor');
-    // After the clocks go forward on Sunday 28 March, Copenhagen is UTC+2: 22:30 UTC on Sunday is Monday there
-    expect(ticketLineText([ticket({ start: '2027-03-28T22:30:00Z' })], 'Entrance', texts)).toBe('Man');
+  it("takes the ticket's day as it is, also across the clock change", () => {
+    expect(ticketLineText([ticket({ day: '2027-03-28' })], 'Entrance', texts)).toBe('Søn');
+    expect(ticketLineText([ticket({ day: '2027-03-29' })], 'Entrance', texts)).toBe('Man');
   });
 });
 
@@ -79,14 +78,16 @@ describe('mealText (a meal in the Infosys Indgang/Mad box)', () => {
 });
 
 describe('ParticipantEntranceFoodComponent', () => {
-  const render = async (tickets: ParticipantTicket[] | null, meals: ParticipantMeal[] | null) => {
+  const render = async (tickets: ParticipantTicket[], meals: ParticipantMeal[] | null, canEditTickets = false) => {
     await TestBed.configureTestingModule({
       imports: [ParticipantEntranceFoodComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(ParticipantEntranceFoodComponent);
     fixture.componentRef.setInput('tickets', tickets);
     fixture.componentRef.setInput('meals', meals);
+    fixture.componentRef.setInput('participantId', 7);
+    fixture.componentRef.setInput('canEditTickets', canEditTickets);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
       .match('/assets/i18n/en.json')
@@ -97,16 +98,12 @@ describe('ParticipantEntranceFoodComponent', () => {
   const text = (element: HTMLElement, selector: string) =>
     element.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
 
-  it('says that entrance and food are not ported yet while there is no data', async () => {
-    const element = await render(null, null);
+  it('says that food is not ported yet while there are no meals', async () => {
+    const element = await render([], null);
 
-    expect(element.querySelector('.tickets-not-ported')?.textContent).toContain(
-      'participants.entranceFood.ticketsNotPorted',
-    );
     expect(element.querySelector('.meals-not-ported')?.textContent).toContain(
       'participants.entranceFood.mealsNotPorted',
     );
-    expect(element.querySelector('.line.entrance')).toBeNull();
     expect(element.querySelector('.meal-list')).toBeNull();
   });
 
@@ -119,9 +116,20 @@ describe('ParticipantEntranceFoodComponent', () => {
     );
     expect(text(element, '.line.sleeping')).toBe('participants.entranceFood.sleeping: common.weekdaysShort.Wednesday');
     expect(text(element, '.line.other')).toBe('participants.entranceFood.other: Fest');
-    expect(element.querySelector('.tickets-not-ported')).toBeNull();
     // Food may be ported on its own, so it can still say it is not ported
     expect(element.querySelector('.meals-not-ported')).not.toBeNull();
+  });
+
+  it('links "Ret/slet" to the ticket editor for users who may change tickets', async () => {
+    const element = await render([], [], true);
+
+    expect(element.querySelector('a.edit-tickets')?.getAttribute('href')).toBe('/participants/7/tickets');
+  });
+
+  it('has no "Ret/slet" link for other users', async () => {
+    const element = await render([], []);
+
+    expect(element.querySelector('a.edit-tickets')).toBeNull();
   });
 
   it('shows every line, also the empty ones, like Infosys', async () => {
@@ -137,7 +145,7 @@ describe('ParticipantEntranceFoodComponent', () => {
   });
 
   it('lists the meals with whether each has been handed out', async () => {
-    const element = await render(null, [dinner, breakfast]);
+    const element = await render([], [dinner, breakfast]);
 
     const lines = [...element.querySelectorAll('.meal-list li')].map(li => li.textContent?.replace(/\s+/g, ' ').trim());
     expect(lines).toEqual([
@@ -145,6 +153,5 @@ describe('ParticipantEntranceFoodComponent', () => {
       'common.weekdaysShort.Thursday Morgenmad — (participants.entranceFood.notReceived)',
     ]);
     expect(element.querySelector('.meals-not-ported')).toBeNull();
-    expect(element.querySelector('.tickets-not-ported')).not.toBeNull();
   });
 });

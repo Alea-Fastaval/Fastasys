@@ -46,6 +46,12 @@
             <mat-icon>meeting_room</mat-icon>
             <span>{{ 'nav.rooms' | translate }}</span>
           </a>
+          @if (authService.hasPrivilege('entrance_view', 'entrance_edit')) {
+          <a mat-menu-item routerLink="/resources/tickets">
+            <mat-icon>confirmation_number</mat-icon>
+            <span>{{ 'nav.tickets' | translate }}</span>
+          </a>
+          }
         </div>
       </mat-menu>
     </div>

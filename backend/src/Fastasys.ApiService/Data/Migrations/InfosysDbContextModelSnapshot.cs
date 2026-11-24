@@ -1733,29 +1733,6 @@ namespace Fastasys.ApiService.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.EntranceType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EntranceTypes");
-                });
-
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.FoodType", b =>
                 {
                     b.Property<int>("Id")
@@ -2612,6 +2589,21 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("participant_photos");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantTicket", b =>
+                {
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TicketTypeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ParticipantId", "TicketTypeId");
+
+                    b.HasIndex("TicketTypeId");
+
+                    b.ToTable("participant_tickets");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
                 {
                     b.Property<int>("ParticipantId")
@@ -3172,6 +3164,40 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("TicketMessages");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.TicketType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsAllConvention")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDigital")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ticket_types");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -3390,6 +3416,25 @@ namespace Fastasys.ApiService.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Participant");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantTicket", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithMany("Tickets")
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.TicketType", "TicketType")
+                        .WithMany()
+                        .HasForeignKey("TicketTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("TicketType");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
@@ -3638,6 +3683,8 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Payments");
 
                     b.Navigation("Signups");
+
+                    b.Navigation("Tickets");
 
                     b.Navigation("Wears");
                 });

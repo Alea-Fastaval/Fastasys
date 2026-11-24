@@ -15,6 +15,7 @@ import {
   ParticipantRow,
   ParticipantSearchResult,
   ParticipantSearchStep,
+  TicketTypeOption,
 } from '@shared/types';
 import { TranslatePipe } from '@shared/pipes';
 import { AuthService, QueryParamsService, TranslationService } from '@shared/services';
@@ -86,6 +87,7 @@ export class ParticipantsComponent {
   public readonly showSearch = signal(false);
   public readonly categories = signal<ParticipantCategory[]>([]);
   public readonly organizerAreas = signal<OrganizerArea[]>([]);
+  public readonly ticketTypes = signal<TicketTypeOption[]>([]);
 
   // The columns the user may add, by their name as Infosys lists them (asort)
   public readonly availableColumns = computed(() => {
@@ -217,6 +219,7 @@ export class ParticipantsComponent {
       next: options => {
         this.categories.set(options.categories);
         this.organizerAreas.set(sortByDanish(options.organizerAreas, a => a.nameDanish));
+        this.ticketTypes.set(options.ticketTypes);
       },
       error: err => console.error('Failed to load participant options:', err),
     });

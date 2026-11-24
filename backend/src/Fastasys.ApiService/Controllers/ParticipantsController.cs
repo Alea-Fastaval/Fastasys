@@ -180,9 +180,9 @@ public record ParticipantDetailsDto(
     string? SleepingNote,
     // The Wear box. null until wear is ported (see ParticipantWearOrderDto); then the participant's orders.
     IReadOnlyList<ParticipantWearOrderDto>? WearOrders,
-    // The Indgang/Mad box: the tickets (null until entrance is ported, see ParticipantTicketDto) and the meals
-    // (null until food is ported, see ParticipantMealDto)
-    IReadOnlyList<ParticipantTicketDto>? Tickets,
+    // The Indgang/Mad box: the tickets (see ParticipantTicketDto) and the meals (null until food is ported, see
+    // ParticipantMealDto)
+    IReadOnlyList<ParticipantTicketDto> Tickets,
     IReadOnlyList<ParticipantMealDto>? Meals,
     // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
     IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces,
@@ -256,21 +256,16 @@ public enum TicketLine
 }
 
 // One ticket (Infosys indgang) in the Indgang/Mad box of the Infosys participant page (visdeltager.phtml,
-// #indgang_mad_info). The Indgang and Overnatning lines show "Partout", or else the short Danish name of Start's day
+// #indgang_mad_info). The Indgang and Overnatning lines show "Partout", or else the short Danish name of Day
 // ("Ons"), followed by " (Digital)" for a digital ticket (Indgang::getShortDescription). The Andet line shows Name.
 // Each line joins its tickets with ", ".
-// To fill it when entrance is ported:
-// - The tickets are the participant's deltagere_indgang rows, in indgang id order (DeltagereIndgang::getDeltagerIndgang).
-// - Line: Entrance when the type contains "indgang" or "Dagsbillet" (Indgang::isEntrance), Sleeping when it
-//   contains "overnatning" (Indgang::isSleepTicket), otherwise Other; case-insensitive. Infosys shows a type with
-//   both words on both lines, which one Line can't express. Give the Fastasys ticket types explicit flags instead
-//   of matching on their names, and decide that case then.
-// - IsAllConvention: the type contains "partout", "fastafamily", "alle" or "leje" (Indgang::spansAllConvention).
-// - Start: indgang.start (a UTC instant; the box shows its Copenhagen day).
-// - IsDigital: the type contains "digital".
-// - Name, for the Andet line (Indgang::getDescription in Danish): "Fest" for the type "Ottofest", "Champagne" for
-//   "Ottofest - Champagne", otherwise the type itself.
-public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateTime Start, bool IsDigital, string Name);
+// - The tickets are the participant's tickets, in ticket type id order (DeltagereIndgang::getDeltagerIndgang).
+// - Line comes from the ticket type's Kind (see TicketLineOf): Entrance and Sleeping have their own lines, Alea
+//   membership and the other kinds are on the Andet line. Infosys matched words in the name, so a type with both
+//   "indgang" and "overnatning" was on both lines; a Fastasys type has one kind (agreed 2026-11-24).
+// - Name is the ticket type's name. Infosys showed "Fest" for its type "Ottofest" and "Champagne" for
+//   "Ottofest - Champagne"; the name is now only a label, shown as it is.
+public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateOnly Day, bool IsDigital, string Name);
 
 // One meal on the Mad list of the Indgang/Mad box:
 // "{short Danish name of Time's day} {Category} — (Udleveret|Ikke udleveret)".
@@ -320,7 +315,9 @@ public record ParticipantOptionsDto(
     IReadOnlyList<CountryDto> Countries,
     IReadOnlyList<GameOptionDto> Games,
     // The ID card templates, in id order (Infosys ParticipantModel::fetchTemplateSelectData)
-    IReadOnlyList<IdCardTemplateOptionDto> IdCardTemplates
+    IReadOnlyList<IdCardTemplateOptionDto> IdCardTemplates,
+    // The ticket types for the search box's Indgang section, in id order (Infosys ParticipantModel::getAllIndgang)
+    IReadOnlyList<TicketTypeOptionDto> TicketTypes
 );
 
 // The fields of the Infosys create form (deltager/opret)
@@ -475,6 +472,7 @@ public class ParticipantsController : ControllerBase
             .Include(p => p.Country)
             .Include(p => p.OrganizerArea)
             .Include(p => p.GameActivity)
+            .Include(p => p.Tickets)
             .OrderBy(p => p.Id)
             .ToListAsync();
         var year = CopenhagenNow().Year;
@@ -524,8 +522,10 @@ public class ParticipantsController : ControllerBase
             .Select(a => new GameOptionDto(a.Id, a.Title, a.TitleEnglish)).ToListAsync();
         var idCardTemplates = await _db.IdCardTemplates.AsNoTracking().OrderBy(t => t.Id)
             .Select(t => new IdCardTemplateOptionDto(t.Id, t.Name)).ToListAsync();
+        var ticketTypes = await _db.TicketTypes.AsNoTracking().OrderBy(t => t.Id)
+            .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.IsAllConvention)).ToListAsync();
 
-        return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates));
+        return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates, ticketTypes));
     }
 
     // Infosys deltager/opret ("Opret deltager")
@@ -609,7 +609,8 @@ public class ParticipantsController : ControllerBase
     }
 
     // Infosys deltager/delete/:id: ("Slet for pokker"). Infosys only offers it for annulled participants; that is
-    // now checked here too. Their seats on runs and their signup wishes are removed with them, as in Infosys.
+    // now checked here too. Their seats on runs, their signup wishes and their tickets are removed with them, as in
+    // Infosys.
     [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Delete(int id)
@@ -625,6 +626,7 @@ public class ParticipantsController : ControllerBase
         _db.RunSeats.RemoveRange(_db.RunSeats.Where(s => s.ParticipantId == id));
         _db.ScheduleSignups.RemoveRange(_db.ScheduleSignups.Where(s => s.ParticipantId == id));
         _db.ParticipantPhotos.RemoveRange(_db.ParticipantPhotos.Where(s => s.ParticipantId == id));
+        _db.ParticipantTickets.RemoveRange(_db.ParticipantTickets.Where(t => t.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -934,6 +936,29 @@ public class ParticipantsController : ControllerBase
             .Include(p => p.GameActivity)
             .FirstOrDefaultAsync(p => p.Id == id);
 
+    // The Indgang/Mad box's tickets: the participant's tickets in ticket type id order
+    // (DeltagereIndgang::getDeltagerIndgang)
+    private async Task<IReadOnlyList<ParticipantTicketDto>> LoadTicketsAsync(int participantId)
+    {
+        var types = await _db.ParticipantTickets
+            .AsNoTracking()
+            .Where(t => t.ParticipantId == participantId)
+            .OrderBy(t => t.TicketTypeId)
+            .Select(t => t.TicketType)
+            .ToListAsync();
+
+        return types
+            .Select(t => new ParticipantTicketDto(TicketLineOf(t.Kind), t.IsAllConvention, t.Day, t.IsDigital, t.Name))
+            .ToList();
+    }
+
+    public static TicketLine TicketLineOf(TicketKind kind) => kind switch
+    {
+        TicketKind.Entrance => TicketLine.Entrance,
+        TicketKind.Sleeping => TicketLine.Sleeping,
+        _ => TicketLine.Other,
+    };
+
     private async Task<ParticipantDto> ToDtoAsync(Participant p)
     {
         var canEdit = (await _authorization.AuthorizeAsync(User, "ParticipantManagement")).Succeeded;
@@ -979,8 +1004,7 @@ public class ParticipantsController : ControllerBase
                 p.SleepingNote,
                 // TODO when wear is ported: load the participant's orders here (see ParticipantWearOrderDto)
                 WearOrders: null,
-                // TODO when entrance is ported: load the participant's tickets here (see ParticipantTicketDto)
-                Tickets: null,
+                Tickets: await LoadTicketsAsync(p.Id),
                 // TODO when food is ported: load the participant's meals here (see ParticipantMealDto)
                 Meals: null,
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)

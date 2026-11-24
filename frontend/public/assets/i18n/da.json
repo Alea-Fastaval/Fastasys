@@ -9,6 +9,7 @@
     "food": "Mad & Forplejning",
     "wear": "Wear & Merchandise",
     "rooms": "Lokaler & Rum",
+    "tickets": "Indgang",
     "boardgames": "Brætspiludlån",
     "communications": "Kommunikation",
     "users": "Brugere",
@@ -259,7 +260,8 @@
         "Union": "Tilføj søgning til tidligere resultat",
         "Difference": "Træk tidligere resultat fra denne søgning"
       },
-      "submit": "Søg"
+      "submit": "Søg",
+      "tickets": "Indgang"
     },
     "fields": {
       "birthDate": "Fødselsdato",
@@ -340,7 +342,6 @@
       "digital": "(Digital)",
       "received": "Udleveret",
       "notReceived": "Ikke udleveret",
-      "ticketsNotPorted": "Indgang er ikke flyttet til Fastasys endnu.",
       "mealsNotPorted": "Mad er ikke flyttet til Fastasys endnu."
     },
     "sleeping": {
@@ -442,7 +443,8 @@
       "signupNotFound": "Kan ikke finde afvikling",
       "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
       "signupUpdateFailed": "Kunne ikke opdatere deltageren.",
-      "signupDeleteFailed": "Kunne ikke slette tilmeldingen"
+      "signupDeleteFailed": "Kunne ikke slette tilmeldingen",
+      "ticketsUpdateFailed": "Kunne ikke opdatere deltageren."
     },
     "seats": {
       "title": "Opdater Aktiviteter",
@@ -466,6 +468,11 @@
       "delete": "Slet",
       "confirmDelete": "Er du sikker?",
       "sortTitle": "Sorter efter prioritet"
+    },
+    "tickets": {
+      "editTitle": "Rediger indgang, mad og wear",
+      "ticketType": "Indgangs-type",
+      "add": "Tilføj"
     }
   },
   "activities": {
@@ -764,6 +771,55 @@
     "location": "Placering",
     "stock": "Lagerbeholdning",
     "size": "Størrelse"
+  },
+  "tickets": {
+    "allTitle": "Alle indgangs-typer",
+    "create": "Opret indgangs-type",
+    "createTitle": "Opret indgang",
+    "editTitle": "Opdater indgang",
+    "editDelete": "Ret/slet",
+    "deleteConfirmTitle": "Slet indgang?",
+    "fields": {
+      "id": "Id",
+      "name": "Type",
+      "price": "Pris",
+      "day": "Start",
+      "kind": "Art",
+      "isAllConvention": "Hele Fastaval (partout)",
+      "isDigital": "Digital",
+      "soldCount": "Antal solgt"
+    },
+    "kinds": {
+      "Entrance": "Indgang",
+      "Sleeping": "Overnatning",
+      "AleaMembership": "Alea-medlemskab",
+      "Other": "Andet"
+    },
+    "buttons": {
+      "create": "Opret",
+      "update": "Opdater",
+      "cancel": "Fortryd",
+      "delete": "Slet"
+    },
+    "stats": {
+      "title": "Statistik",
+      "heading": "Indgangs stats",
+      "entrancePartout": "Indgang, partout",
+      "sleepingPartout": "Overnatning, partout",
+      "entranceDay": "Indgang, enkelt dag",
+      "sleepingDay": "Overnatning, enkelt dag"
+    },
+    "messages": {
+      "created": "Indgangs-typen blev oprettet.",
+      "createFailed": "Indgangs-typen kunne ikke oprettes.",
+      "updated": "Indgangs-typen blev opdateret.",
+      "updateFailed": "Kunne ikke opdatere indgangs-typen.",
+      "notUpdated": "indgangs-typen blev ikke opdateret.",
+      "deleted": "Indgangs-typen blev slettet",
+      "deleteFailed": "Kunne ikke slette indgangs-typen",
+      "notFound": "Kunne ikke finde indgang ud fra kriteriet.",
+      "loadFailed": "Kunne ikke hente indgangs-typerne."
+    }
   },
   "boardgames": {
     "title": "Brætspiludlån (Brætspiludlån)",
