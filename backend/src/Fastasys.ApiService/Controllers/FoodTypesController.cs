@@ -273,9 +273,9 @@ public class FoodTypesController(
     {
         // Infosys refuses a kategori that PHP's empty() calls empty, which includes "0"
         if (string.IsNullOrEmpty(dto.NameDanish) || dto.NameDanish == "0")
-            return (false, "Kategori is required");
+            return (false, "The Danish name is required");
         if (dto.NameDanish.Length > FoodType.MaxNameLength)
-            return (false, $"Kategori can be at most {FoodType.MaxNameLength} characters");
+            return (false, $"The Danish name can be at most {FoodType.MaxNameLength} characters");
         if ((dto.NameEnglish?.Length ?? 0) > FoodType.MaxNameLength)
             return (false, $"The English name can be at most {FoodType.MaxNameLength} characters");
 

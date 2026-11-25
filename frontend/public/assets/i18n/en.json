@@ -782,7 +782,7 @@
     "orderedHint": "Can't be deleted: {{count}} participants have ordered it.",
     "fields": {
       "id": "Id",
-      "nameDanish": "Category",
+      "nameDanish": "Danish name",
       "nameEnglish": "English",
       "price": "Price",
       "isHidden": "Hidden",
