@@ -284,7 +284,6 @@ export interface ParticipantTicket {
   isAllConvention: boolean;
   // "yyyy-mm-dd"; the box shows its short day name
   day: string;
-  isDigital: boolean;
   // What the Andet line shows
   name: string;
 }

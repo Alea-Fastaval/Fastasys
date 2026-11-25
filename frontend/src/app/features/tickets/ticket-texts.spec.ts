@@ -4,6 +4,7 @@ import {
   dayWithDate,
   statsDayText,
   statsHeadingKey,
+  ticketDayOptions,
   ticketOptionText,
   ticketSearchText,
   ticketTypeListText,
@@ -27,6 +28,26 @@ describe('the ticket type texts', () => {
   it('writes a day like PHP date("D d/m"), in the page language', () => {
     expect(dayWithDate('2027-03-24', shortDay)).toBe('Ons 24/03');
     expect(dayWithDate('2027-04-01', shortDay)).toBe('Tor 01/04');
+    // The form's "Dag" uses the full day names
+    expect(dayWithDate('2027-03-24', () => 'Onsdag')).toBe('Onsdag 24/03');
+  });
+
+  it("offers the convention's days, and keeps a type's own day outside them", () => {
+    expect(ticketDayOptions('2027-03-24', '2027-03-26', null)).toEqual(['2027-03-24', '2027-03-25', '2027-03-26']);
+    expect(ticketDayOptions('2027-03-24', '2027-03-26', '2027-03-25')).toEqual([
+      '2027-03-24',
+      '2027-03-25',
+      '2027-03-26',
+    ]);
+    expect(ticketDayOptions('2027-03-24', '2027-03-26', '2027-02-03')).toEqual([
+      '2027-02-03',
+      '2027-03-24',
+      '2027-03-25',
+      '2027-03-26',
+    ]);
+    // Without the convention's dates there is nothing to pick, apart from the type's own day
+    expect(ticketDayOptions(null, '2027-03-26', null)).toEqual([]);
+    expect(ticketDayOptions(null, null, '2027-03-25')).toEqual(['2027-03-25']);
   });
 
   it('shows "name - day" in the list of all types (entrytypes.phtml)', () => {

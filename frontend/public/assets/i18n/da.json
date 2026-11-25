@@ -339,7 +339,6 @@
       "other": "Andet",
       "meals": "Mad",
       "partout": "Partout",
-      "digital": "(Digital)",
       "received": "Udleveret",
       "notReceived": "Ikke udleveret",
       "mealsNotPorted": "Mad er ikke flyttet til Fastasys endnu."
@@ -783,10 +782,9 @@
       "id": "Id",
       "name": "Type",
       "price": "Pris",
-      "day": "Start",
+      "day": "Dag",
       "kind": "Art",
       "isAllConvention": "Hele Fastaval (partout)",
-      "isDigital": "Digital",
       "soldCount": "Antal solgt"
     },
     "kinds": {
@@ -818,7 +816,8 @@
       "deleted": "Indgangs-typen blev slettet",
       "deleteFailed": "Kunne ikke slette indgangs-typen",
       "notFound": "Kunne ikke finde indgang ud fra kriteriet.",
-      "loadFailed": "Kunne ikke hente indgangs-typerne."
+      "loadFailed": "Kunne ikke hente indgangs-typerne.",
+      "noConventionDays": "Fastavals datoer er ikke sat, så der kan ikke vælges en dag."
     }
   },
   "boardgames": {

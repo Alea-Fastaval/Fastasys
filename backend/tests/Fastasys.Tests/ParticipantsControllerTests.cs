@@ -898,8 +898,8 @@ public class ParticipantsControllerTests
         Assert.Equal(["B", "A"], options.IdCardTemplates.Select(t => t.Name));
     }
 
-    private static TicketType Ticket(int id, string name, TicketKind kind, int day = 24, bool partout = false, bool digital = false) =>
-        new() { Id = id, Name = name, Price = 100, Day = new DateOnly(2027, 3, day), Kind = kind, IsAllConvention = partout, IsDigital = digital };
+    private static TicketType Ticket(int id, string name, TicketKind kind, int day = 24, bool partout = false) =>
+        new() { Id = id, Name = name, Price = 100, Day = new DateOnly(2027, 3, day), Kind = kind, IsAllConvention = partout };
 
     [Fact]
     public async Task Get_FillsTheIndgangLinesFromTheTicketKinds_InTicketTypeIdOrder()
@@ -913,7 +913,7 @@ public class ParticipantsControllerTests
             Ticket(7, "Ottofest", TicketKind.Other),
             Ticket(3, "Overnatning - Enkelt", TicketKind.Sleeping, day: 25),
             Ticket(5, "Alea medlemskab", TicketKind.AleaMembership),
-            Ticket(1, "Indgang - Partout", TicketKind.Entrance, partout: true, digital: true),
+            Ticket(1, "Indgang - Partout", TicketKind.Entrance, partout: true),
             Ticket(9, "Indgang - Enkelt", TicketKind.Entrance, day: 26));
         db.ParticipantTickets.AddRange(
             new ParticipantTicket { ParticipantId = 1, TicketTypeId = 7 },
@@ -928,11 +928,11 @@ public class ParticipantsControllerTests
 
         Assert.Equal(
             [
-                new ParticipantTicketDto(TicketLine.Entrance, true, new DateOnly(2027, 3, 24), true, "Indgang - Partout"),
-                new ParticipantTicketDto(TicketLine.Sleeping, false, new DateOnly(2027, 3, 25), false, "Overnatning - Enkelt"),
-                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), false, "Alea medlemskab"),
+                new ParticipantTicketDto(TicketLine.Entrance, true, new DateOnly(2027, 3, 24), "Indgang - Partout"),
+                new ParticipantTicketDto(TicketLine.Sleeping, false, new DateOnly(2027, 3, 25), "Overnatning - Enkelt"),
+                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), "Alea medlemskab"),
                 // The name is shown as it is; Infosys showed "Fest" for "Ottofest"
-                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), false, "Ottofest"),
+                new ParticipantTicketDto(TicketLine.Other, false, new DateOnly(2027, 3, 24), "Ottofest"),
             ],
             participant.Details!.Tickets);
     }

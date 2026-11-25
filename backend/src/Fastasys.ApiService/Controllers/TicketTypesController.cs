@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -16,12 +18,11 @@ public record TicketTypeDto(
     DateOnly Day,
     TicketKind Kind,
     bool IsAllConvention,
-    bool IsDigital,
     int SoldCount
 );
 
-// The fields of the Infosys create/edit form (indgang/createentry, indgang/editentry): Type, Pris and Start, plus the
-// fields that say what the type is (agreed 2026-11-24, replacing Infosys's words in the name)
+// The fields of the Infosys create/edit form (indgang/createentry, indgang/editentry): Type, Pris and Start ("Dag"
+// here), plus the fields that say what the type is (agreed 2026-11-24, replacing Infosys's words in the name)
 public abstract record TicketTypeFieldsDto
 {
     public string? Name { get; init; }
@@ -29,7 +30,6 @@ public abstract record TicketTypeFieldsDto
     public DateOnly? Day { get; init; }
     public TicketKind? Kind { get; init; }
     public bool IsAllConvention { get; init; }
-    public bool IsDigital { get; init; }
 }
 
 public record CreateTicketTypeDto : TicketTypeFieldsDto;
@@ -52,7 +52,11 @@ public record TicketStatsDayDto(DateOnly Day, int Count);
 [ApiController]
 [Route("api/ticket-types")]
 [Authorize(Policy = "TicketTypeView")]
-public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesController> logger) : ControllerBase
+public class TicketTypesController(
+    InfosysDbContext db,
+    IOptions<ConventionOptions> convention,
+    ILogger<TicketTypesController> logger
+) : ControllerBase
 {
     private const string NotFoundMessage = "Ticket type not found";
 
@@ -106,7 +110,7 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
     [Authorize(Policy = "TicketTypeManagement")]
     public async Task<ActionResult<TicketTypeDto>> Create([FromBody] CreateTicketTypeDto dto)
     {
-        var (isValid, error) = Validate(dto);
+        var (isValid, error) = Validate(dto, convention.Value);
         if (!isValid)
             return BadRequest(new { message = error });
 
@@ -130,7 +134,7 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
         if (type == null)
             return NotFound(new { message = NotFoundMessage });
 
-        var (isValid, error) = Validate(dto);
+        var (isValid, error) = Validate(dto, convention.Value, type.Day);
         if (!isValid)
             return BadRequest(new { message = error });
 
@@ -214,7 +218,12 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
     }
 
     // Returns whether the form fields are valid and, if not, why. Invalid input is expected, so it never throws.
-    public static (bool IsValid, string Error) Validate(TicketTypeFieldsDto dto)
+    // currentDay is the day of the type being updated.
+    public static (bool IsValid, string Error) Validate(
+        TicketTypeFieldsDto dto,
+        ConventionOptions convention,
+        DateOnly? currentDay = null
+    )
     {
         // Infosys refuses a type that PHP's empty() calls empty, which includes "0"
         if (string.IsNullOrEmpty(dto.Name) || dto.Name == "0")
@@ -228,8 +237,21 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
             return (false, "Price must be a whole number of 0 or more");
 
         // Infosys turned an empty or unreadable start into 1 January 1970 (fixed 2026-11-24)
-        if (dto.Day == null)
+        if (dto.Day is not { } day)
             return (false, "Day is required");
+
+        // The day is picked from the convention's days (agreed 2026-11-25; Infosys's date picker only suggested them).
+        // A type keeps a day outside them when it isn't changed. Without the dates in the configuration it can't be
+        // checked.
+        if (
+            convention.Start is { } start
+            && convention.End is { } end
+            && (day < start || day > end)
+            && day != currentDay
+        )
+        {
+            return (false, "Day must be one of the convention's days");
+        }
 
         if (dto.Kind is not { } kind || !Enum.IsDefined(kind))
             return (false, "Unknown kind");
@@ -244,7 +266,6 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
         type.Day = dto.Day!.Value;
         type.Kind = dto.Kind!.Value;
         type.IsAllConvention = dto.IsAllConvention;
-        type.IsDigital = dto.IsDigital;
     }
 
     // How many participants have each type (Infosys EntranceModel::getNumbersSold, Indgang::getParticipantCount)
@@ -255,7 +276,7 @@ public class TicketTypesController(InfosysDbContext db, ILogger<TicketTypesContr
             .ToDictionaryAsync(g => g.TicketTypeId, g => g.Count);
 
     private static TicketTypeDto ToDto(TicketType t, IReadOnlyDictionary<int, int> soldCounts) =>
-        new(t.Id, t.Name, t.Price, t.Day, t.Kind, t.IsAllConvention, t.IsDigital, soldCounts.GetValueOrDefault(t.Id));
+        new(t.Id, t.Name, t.Price, t.Day, t.Kind, t.IsAllConvention, soldCounts.GetValueOrDefault(t.Id));
 
     private string? CurrentUserId() => User?.FindFirstValue(ClaimTypes.NameIdentifier);
 }

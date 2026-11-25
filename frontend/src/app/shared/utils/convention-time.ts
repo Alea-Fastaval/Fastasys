@@ -47,6 +47,20 @@ export function weekdayOfDate(date: string): Weekday {
   return WEEKDAYS[(new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7];
 }
 
+// Every calendar date from first to last, both included ("2027-03-24" ... "2027-03-29"); empty when last is before
+// first
+export function datesBetween(first: string, last: string): string[] {
+  const toUtc = (date: string) => {
+    const [year, month, day] = date.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  const dates: string[] = [];
+  for (let time = toUtc(first); time <= toUtc(last); time += 24 * 60 * 60 * 1000) {
+    dates.push(new Date(time).toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
 // "HH:mm", like PHP date('H:i')
 export function formatClock(time: ConventionTime): string {
   return `${pad(time.hour)}:${pad(time.minute)}`;

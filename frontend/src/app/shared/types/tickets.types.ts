@@ -9,12 +9,11 @@ export interface TicketType {
   name: string;
   // Whole DKK
   price: number;
-  // "yyyy-mm-dd" (Infosys start; only the day is kept)
+  // "yyyy-mm-dd": one of the convention's days (Infosys start; only the day is kept)
   day: string;
   kind: TicketKind;
   // "Partout": for the whole convention, not only for day
   isAllConvention: boolean;
-  isDigital: boolean;
   soldCount: number;
 }
 
@@ -25,7 +24,6 @@ export interface TicketTypeFieldsDto {
   day: string | null;
   kind: TicketKind | null;
   isAllConvention: boolean;
-  isDigital: boolean;
 }
 
 export type CreateTicketTypeDto = TicketTypeFieldsDto;

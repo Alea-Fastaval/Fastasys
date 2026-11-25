@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -19,7 +19,9 @@ import {
 } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
+import { TranslationService } from '@shared/services';
 import { TicketFlashService } from '../ticket-flash.service';
+import { dayWithDate, ticketDayOptions, translatedLongDay } from '../ticket-texts';
 
 // indgang.type is varchar(64)
 export const MAX_TICKET_NAME_LENGTH = 64;
@@ -31,12 +33,11 @@ export interface TicketTypeForm {
   day: string;
   kind: TicketKind | null;
   isAllConvention: boolean;
-  isDigital: boolean;
 }
 
 // Infosys's create form starts empty
 export function newTicketTypeForm(): TicketTypeForm {
-  return { name: '', price: null, day: '', kind: null, isAllConvention: false, isDigital: false };
+  return { name: '', price: null, day: '', kind: null, isAllConvention: false };
 }
 
 export function toForm(type: TicketType): TicketTypeForm {
@@ -46,7 +47,6 @@ export function toForm(type: TicketType): TicketTypeForm {
     day: type.day,
     kind: type.kind,
     isAllConvention: type.isAllConvention,
-    isDigital: type.isDigital,
   };
 }
 
@@ -57,7 +57,6 @@ export function toDto(form: TicketTypeForm): TicketTypeFieldsDto {
     day: form.day === '' ? null : form.day,
     kind: form.kind,
     isAllConvention: form.isAllConvention,
-    isDigital: form.isDigital,
   };
 }
 
@@ -78,8 +77,9 @@ export function canSubmitTicketType(form: TicketTypeForm): boolean {
 }
 
 // Infosys indgang/createentry and indgang/editentry/:id: ("Opret indgang" / "Opdater indgang"), with the delete
-// confirmation (displaydelete.phtml, "Slet indgang?"). Like Infosys's date picker, the day can be picked between the
-// convention's first and last day; other days can still be typed (a fee can be for a day before the convention).
+// confirmation (displaydelete.phtml, "Slet indgang?"). Infosys's "Start" was a date picker that suggested the
+// convention's days; here "Dag" is a dropdown of the convention's days (Convention:Start to Convention:End, agreed
+// 2026-11-25), read from the signup status.
 @Component({
   selector: 'app-ticket-type-form',
   imports: [
@@ -111,16 +111,25 @@ export class TicketTypeFormComponent implements OnInit {
   public readonly busy = signal(false);
   public readonly errorKey = signal<string | null>(null);
   public readonly confirmingDelete = signal(false);
-  public readonly conventionStart = signal<string | null>(null);
-  public readonly conventionEnd = signal<string | null>(null);
+  private readonly conventionStart = signal<string | null>(null);
+  private readonly conventionEnd = signal<string | null>(null);
+  // The day of the type being edited, which stays choosable when it is outside the convention
+  private readonly originalDay = signal<string | null>(null);
+  // Whether the convention's dates have been asked for (they may not be set, or the request may fail)
+  public readonly datesLoaded = signal(false);
+  public readonly days = computed(() =>
+    ticketDayOptions(this.conventionStart(), this.conventionEnd(), this.originalDay()),
+  );
+  private readonly longDay = translatedLongDay(inject(TranslationService));
 
   public ngOnInit(): void {
     this.http.get<SignupStatus>('/api/signup/status').subscribe({
       next: status => {
         this.conventionStart.set(status.conventionStart);
         this.conventionEnd.set(status.conventionEnd);
+        this.datesLoaded.set(true);
       },
-      error: () => undefined,
+      error: () => this.datesLoaded.set(true),
     });
 
     const id = this.route.snapshot.paramMap.get('id');
@@ -131,9 +140,17 @@ export class TicketTypeFormComponent implements OnInit {
 
     this.typeId.set(Number(id));
     this.http.get<TicketType>(`/api/ticket-types/${id}`).subscribe({
-      next: type => this.form.set(toForm(type)),
+      next: type => {
+        this.originalDay.set(type.day);
+        this.form.set(toForm(type));
+      },
       error: () => this.notFound.set(true),
     });
+  }
+
+  // "Onsdag 24/03"
+  public dayText(day: string): string {
+    return dayWithDate(day, this.longDay);
   }
 
   public canSubmit(form: TicketTypeForm): boolean {

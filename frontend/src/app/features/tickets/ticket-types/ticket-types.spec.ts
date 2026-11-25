@@ -15,7 +15,6 @@ const type = (overrides: Partial<TicketType>): TicketType => ({
   day: '2027-03-24',
   kind: 'Entrance',
   isAllConvention: true,
-  isDigital: false,
   soldCount: 0,
   ...overrides,
 });

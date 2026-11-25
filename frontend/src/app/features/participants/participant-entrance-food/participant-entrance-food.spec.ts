@@ -12,14 +12,13 @@ const ticket = (overrides: Partial<ParticipantTicket>): ParticipantTicket => ({
   line: 'Entrance',
   isAllConvention: false,
   day: '2027-03-24',
-  isDigital: false,
   name: 'Indgang - Enkelt',
   ...overrides,
 });
 
 const partout = ticket({ isAllConvention: true, name: 'Indgang - Partout' });
 const thursday = ticket({ day: '2027-03-25', name: 'Dagsbillet torsdag' });
-const digitalSaturday = ticket({ day: '2027-03-27', isDigital: true, name: 'Indgang - Digital' });
+const saturday = ticket({ day: '2027-03-27', name: 'Indgang - Digital' });
 const sleepingWednesday = ticket({ line: 'Sleeping', name: 'Overnatning - Enkelt' });
 const party = ticket({ line: 'Other', name: 'Fest' });
 const bubbles = ticket({ line: 'Other', name: 'Champagne' });
@@ -36,13 +35,14 @@ const shortDanish: Record<Weekday, string> = {
   Saturday: 'Lør',
   Sunday: 'Søn',
 };
-const texts: TicketTexts = { partout: 'Partout', digital: '(Digital)', shortDay: weekday => shortDanish[weekday] };
+const texts: TicketTexts = { partout: 'Partout', shortDay: weekday => shortDanish[weekday] };
 
 describe('ticketLineText (a line of the Infosys Indgang/Mad box)', () => {
-  const tickets = [partout, thursday, digitalSaturday, sleepingWednesday, party, bubbles];
+  const tickets = [partout, thursday, saturday, sleepingWednesday, party, bubbles];
 
-  it('shows the entrance tickets as Partout or their short Danish day, with (Digital) for digital ones', () => {
-    expect(ticketLineText(tickets, 'Entrance', texts)).toBe('Partout, Tor, Lør (Digital)');
+  it('shows the entrance tickets as Partout or their short Danish day', () => {
+    // Infosys added " (Digital)" for a type with "digital" in its name; dropped on 2026-11-25
+    expect(ticketLineText(tickets, 'Entrance', texts)).toBe('Partout, Tor, Lør');
   });
 
   it('shows the sleeping tickets the same way', () => {
@@ -52,12 +52,6 @@ describe('ticketLineText (a line of the Infosys Indgang/Mad box)', () => {
 
   it('shows the other tickets by name', () => {
     expect(ticketLineText(tickets, 'Other', texts)).toBe('Fest, Champagne');
-  });
-
-  it('shows Partout with (Digital) for a digital ticket for the whole convention', () => {
-    expect(ticketLineText([ticket({ isAllConvention: true, isDigital: true })], 'Entrance', texts)).toBe(
-      'Partout (Digital)',
-    );
   });
 
   it('is empty for a line without tickets', () => {

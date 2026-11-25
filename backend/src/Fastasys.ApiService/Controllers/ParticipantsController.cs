@@ -257,15 +257,15 @@ public enum TicketLine
 
 // One ticket (Infosys indgang) in the Indgang/Mad box of the Infosys participant page (visdeltager.phtml,
 // #indgang_mad_info). The Indgang and Overnatning lines show "Partout", or else the short Danish name of Day
-// ("Ons"), followed by " (Digital)" for a digital ticket (Indgang::getShortDescription). The Andet line shows Name.
-// Each line joins its tickets with ", ".
+// ("Ons") (Indgang::getShortDescription). The Andet line shows Name. Each line joins its tickets with ", ".
+// Infosys added " (Digital)" for a type with "digital" in its name; that was dropped (the user, 2026-11-25).
 // - The tickets are the participant's tickets, in ticket type id order (DeltagereIndgang::getDeltagerIndgang).
 // - Line comes from the ticket type's Kind (see TicketLineOf): Entrance and Sleeping have their own lines, Alea
 //   membership and the other kinds are on the Andet line. Infosys matched words in the name, so a type with both
 //   "indgang" and "overnatning" was on both lines; a Fastasys type has one kind (agreed 2026-11-24).
 // - Name is the ticket type's name. Infosys showed "Fest" for its type "Ottofest" and "Champagne" for
 //   "Ottofest - Champagne"; the name is now only a label, shown as it is.
-public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateOnly Day, bool IsDigital, string Name);
+public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateOnly Day, string Name);
 
 // One meal on the Mad list of the Indgang/Mad box:
 // "{short Danish name of Time's day} {Category} — (Udleveret|Ikke udleveret)".
@@ -948,7 +948,7 @@ public class ParticipantsController : ControllerBase
             .ToListAsync();
 
         return types
-            .Select(t => new ParticipantTicketDto(TicketLineOf(t.Kind), t.IsAllConvention, t.Day, t.IsDigital, t.Name))
+            .Select(t => new ParticipantTicketDto(TicketLineOf(t.Kind), t.IsAllConvention, t.Day, t.Name))
             .ToList();
     }
 

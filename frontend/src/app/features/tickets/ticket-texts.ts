@@ -1,24 +1,40 @@
 import { TicketKind, TicketStatsGroup, TicketTypeOption } from '@shared/types';
 import { TranslationService } from '@shared/services';
-import { Weekday, weekdayOfDate } from '@shared/utils';
+import { Weekday, datesBetween, weekdayOfDate } from '@shared/utils';
 
-// The short name of a day in the page's language, e.g. "Ons"
+// The name of a day in the page's language, e.g. "Ons" or "Onsdag"
 export type ShortDay = (weekday: Weekday) => string;
 
 // Infosys writes its day names with PHP date('D'), in English on some pages and in Danish on others. Fastasys uses the
 // page's language everywhere (common.weekdaysShort).
 export function translatedShortDay(translation: TranslationService): ShortDay {
+  return translatedDayName(translation, 'common.weekdaysShort');
+}
+
+// The full name of a day in the page's language, e.g. "Onsdag" (common.weekdays)
+export function translatedLongDay(translation: TranslationService): ShortDay {
+  return translatedDayName(translation, 'common.weekdays');
+}
+
+function translatedDayName(translation: TranslationService, key: string): ShortDay {
   return weekday => {
     // Reading the signal makes a template update when the language changes, like the translate pipe
     translation.translations();
-    return translation.translate(`common.weekdaysShort.${weekday}`);
+    return translation.translate(`${key}.${weekday}`);
   };
 }
 
-// "Ons 24/03" (Infosys date('D d/m'))
-export function dayWithDate(day: string, shortDay: ShortDay): string {
+// "Ons 24/03" (Infosys date('D d/m')), or "Onsdag 24/03" with the full day names
+export function dayWithDate(day: string, dayName: ShortDay): string {
   const [, month, dayOfMonth] = day.split('-');
-  return `${shortDay(weekdayOfDate(day))} ${dayOfMonth}/${month}`;
+  return `${dayName(weekdayOfDate(day))} ${dayOfMonth}/${month}`;
+}
+
+// The days the form's "Dag" offers: the convention's days (agreed 2026-11-25), plus the type's own day when it is
+// outside them, so editing doesn't change it. No days when the convention's dates aren't known.
+export function ticketDayOptions(start: string | null, end: string | null, current: string | null): string[] {
+  const days = start && end ? datesBetween(start, end) : [];
+  return current && !days.includes(current) ? [...days, current].sort() : days;
 }
 
 // The Type column of "Alle indgangs-typer": "Indgang - Enkelt - Ons 24/03" (entrytypes.phtml)

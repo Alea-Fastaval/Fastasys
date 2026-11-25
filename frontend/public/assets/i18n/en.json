@@ -339,7 +339,6 @@
       "other": "Other",
       "meals": "Food",
       "partout": "Partout",
-      "digital": "(Digital)",
       "received": "Handed out",
       "notReceived": "Not handed out",
       "mealsNotPorted": "Food has not been moved to Fastasys yet."
@@ -783,10 +782,9 @@
       "id": "Id",
       "name": "Type",
       "price": "Price",
-      "day": "Start",
+      "day": "Day",
       "kind": "Kind",
       "isAllConvention": "All of Fastaval (partout)",
-      "isDigital": "Digital",
       "soldCount": "Number sold"
     },
     "kinds": {
@@ -818,7 +816,8 @@
       "deleted": "The ticket type was deleted",
       "deleteFailed": "Could not delete the ticket type",
       "notFound": "Could not find a ticket type matching the criteria.",
-      "loadFailed": "Could not load the ticket types."
+      "loadFailed": "Could not load the ticket types.",
+      "noConventionDays": "Fastaval's dates are not set, so no day can be chosen."
     }
   },
   "boardgames": {

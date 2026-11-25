@@ -11,14 +11,13 @@ import { Weekday, toConventionTime, weekdayOfDate } from '@shared/utils';
 // The translated words a line of tickets is made of
 export interface TicketTexts {
   partout: string;
-  digital: string;
   // The short name of a day, e.g. "Ons"
   shortDay: (weekday: Weekday) => string;
 }
 
 // What Infosys shows on one line of the box: the line's tickets joined with ", ". On the Indgang and Overnatning
-// lines a ticket is "Partout" or the short name of its day ("Ons"), followed by " (Digital)" for a digital ticket
-// (Indgang::getShortDescription). On the Andet line it is the ticket's name (Indgang::getDescription).
+// lines a ticket is "Partout" or the short name of its day ("Ons") (Indgang::getShortDescription). On the Andet line
+// it is the ticket's name (Indgang::getDescription). Infosys's " (Digital)" was dropped (the user, 2026-11-25).
 export function ticketLineText(tickets: ParticipantTicket[], line: TicketLine, texts: TicketTexts): string {
   return tickets
     .filter(ticket => ticket.line === line)
@@ -27,8 +26,7 @@ export function ticketLineText(tickets: ParticipantTicket[], line: TicketLine, t
 }
 
 function ticketShortText(ticket: ParticipantTicket, texts: TicketTexts): string {
-  const day = ticket.isAllConvention ? texts.partout : texts.shortDay(weekdayOfDate(ticket.day));
-  return ticket.isDigital ? `${day} ${texts.digital}` : day;
+  return ticket.isAllConvention ? texts.partout : texts.shortDay(weekdayOfDate(ticket.day));
 }
 
 // What Infosys shows for a meal, without its "Udleveret"/"Ikke udleveret": the short name of the meal's day and
@@ -63,7 +61,6 @@ export class ParticipantEntranceFoodComponent {
   public lineText(tickets: ParticipantTicket[], line: TicketLine): string {
     return ticketLineText(tickets, line, {
       partout: this.translate('participants.entranceFood.partout'),
-      digital: this.translate('participants.entranceFood.digital'),
       shortDay: weekday => this.shortDay(weekday),
     });
   }

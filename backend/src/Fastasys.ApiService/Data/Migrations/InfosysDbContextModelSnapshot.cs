@@ -3178,9 +3178,6 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Property<bool>("IsAllConvention")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDigital")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasColumnType("text");

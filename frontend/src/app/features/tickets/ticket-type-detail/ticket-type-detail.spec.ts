@@ -9,12 +9,11 @@ import { TicketTypeDetailComponent } from './ticket-type-detail';
 
 const type: TicketType = {
   id: 4,
-  name: 'Indgang - Partout - Digital',
+  name: 'Indgang - Partout',
   price: 300,
   day: '2027-03-24',
   kind: 'Entrance',
   isAllConvention: true,
-  isDigital: true,
   soldCount: 7,
 };
 
@@ -56,12 +55,12 @@ describe('TicketTypeDetailComponent', () => {
     const element = await render(['entrance_view']);
 
     expect(text(element, '.id')).toBe('4');
-    expect(text(element, '.name')).toBe('Indgang - Partout - Digital');
+    expect(text(element, '.name')).toBe('Indgang - Partout');
     expect(text(element, '.price')).toBe('300 DKK');
-    expect(text(element, '.day')).toBe('2027-03-24');
+    expect(text(element, '.day')).toBe('common.weekdays.Wednesday 24/03');
     expect(text(element, '.kind')).toBe('tickets.kinds.Entrance');
     expect(text(element, '.all-convention')).toBe('common.yes');
-    expect(text(element, '.digital')).toBe('common.yes');
+    expect(element.querySelector('.digital')).toBeNull();
     expect(text(element, '.sold')).toBe('7');
     // "ret/slet" is for entrance_edit only
     expect(element.querySelector('a[href="/resources/tickets/4/edit"]')).toBeNull();

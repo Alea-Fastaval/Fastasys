@@ -20,6 +20,8 @@
   <app-card [title]="(typeId() === null ? 'tickets.createTitle' : 'tickets.editTitle') | translate">
     @if (errorKey(); as key) {
     <p class="flash error">{{ 'tickets.messages.' + key | translate }}</p>
+    } @if (datesLoaded() && days().length === 0) {
+    <p class="flash error no-days">{{ 'tickets.messages.noConventionDays' | translate }}</p>
     }
 
     <form (ngSubmit)="submit()">
@@ -37,15 +39,11 @@
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'tickets.fields.day' | translate }}</mat-label>
-          <input
-            matInput
-            type="date"
-            name="day"
-            required
-            [attr.min]="conventionStart()"
-            [attr.max]="conventionEnd()"
-            [(ngModel)]="f.day"
-          />
+          <mat-select name="day" required [(ngModel)]="f.day">
+            @for (day of days(); track day) {
+            <mat-option [value]="day">{{ dayText(day) }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -60,9 +58,6 @@
         <div class="checkboxes wide">
           <mat-checkbox name="isAllConvention" [(ngModel)]="f.isAllConvention">
             {{ 'tickets.fields.isAllConvention' | translate }}
-          </mat-checkbox>
-          <mat-checkbox name="isDigital" [(ngModel)]="f.isDigital">
-            {{ 'tickets.fields.isDigital' | translate }}
           </mat-checkbox>
         </div>
       </div>

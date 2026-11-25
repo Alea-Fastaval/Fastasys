@@ -7,6 +7,7 @@ using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.Tests;
 
@@ -25,8 +26,15 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
         return context;
     }
 
+    // Fastaval 2027: Wednesday 24 to Monday 29 March
+    private static readonly ConventionOptions Convention = new()
+    {
+        Start = new DateOnly(2027, 3, 24),
+        End = new DateOnly(2027, 3, 29),
+    };
+
     private static TicketTypesController Types(InfosysDbContext db) =>
-        new(db, NullLogger<TicketTypesController>.Instance);
+        new(db, Options.Create(Convention), NullLogger<TicketTypesController>.Instance);
 
     private static ParticipantTicketsController Tickets(InfosysDbContext db) =>
         new(db, NullLogger<ParticipantTicketsController>.Instance);
@@ -117,10 +125,7 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
 
         var type = Value(await Types(db).Get(5));
 
-        Assert.Equal(
-            new TicketTypeDto(5, "Ottofest", 75, new DateOnly(2027, 3, 24), TicketKind.Other, false, false, 1),
-            type
-        );
+        Assert.Equal(new TicketTypeDto(5, "Ottofest", 75, new DateOnly(2027, 3, 24), TicketKind.Other, false, 1), type);
         Assert.IsType<NotFoundObjectResult>((await Types(db).Get(6)).Result);
     }
 
@@ -129,7 +134,7 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     {
         using var db = CreateDbContext();
 
-        var result = await Types(db).Create(ValidCreate() with { IsDigital = true });
+        var result = await Types(db).Create(ValidCreate());
 
         var created = Assert.IsType<TicketTypeDto>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
         var stored = await db.TicketTypes.SingleAsync(Ct);
@@ -139,7 +144,6 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(new DateOnly(2027, 3, 24), stored.Day);
         Assert.Equal(TicketKind.Entrance, stored.Kind);
         Assert.True(stored.IsAllConvention);
-        Assert.True(stored.IsDigital);
         Assert.Equal(0, created.SoldCount);
     }
 
@@ -161,6 +165,10 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
             { ValidCreate() with { Price = null }, false },
             // Infosys turned an empty start into 1970-01-01 (fixed 2026-11-24)
             { ValidCreate() with { Day = null }, false },
+            // The day is one of the convention's days (agreed 2026-11-25)
+            { ValidCreate() with { Day = new DateOnly(2027, 3, 29) }, true },
+            { ValidCreate() with { Day = new DateOnly(2027, 3, 23) }, false },
+            { ValidCreate() with { Day = new DateOnly(2027, 3, 30) }, false },
             { ValidCreate() with { Kind = null }, false },
             { ValidCreate() with { Kind = (TicketKind)99 }, false },
         };
@@ -169,10 +177,25 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     [MemberData(nameof(Inputs))]
     public void Validate_PinsTheFormRules(CreateTicketTypeDto dto, bool isValid)
     {
-        var (valid, error) = TicketTypesController.Validate(dto);
+        var (valid, error) = TicketTypesController.Validate(dto, Convention);
 
         Assert.Equal(isValid, valid);
         Assert.Equal(isValid, error.Length == 0);
+    }
+
+    [Fact]
+    public void Validate_LetsATypeKeepADayOutsideTheConvention_AndChecksNoDayWithoutTheDates()
+    {
+        var february = ValidCreate() with { Day = new DateOnly(2027, 2, 3) };
+
+        // A type that already has the day may keep it, but not move to another day outside the convention
+        Assert.True(TicketTypesController.Validate(february, Convention, new DateOnly(2027, 2, 3)).IsValid);
+        Assert.False(TicketTypesController.Validate(february, Convention, new DateOnly(2027, 3, 24)).IsValid);
+        // Without the convention's dates in the configuration the day can't be checked
+        Assert.True(TicketTypesController.Validate(february, new ConventionOptions()).IsValid);
+        Assert.True(
+            TicketTypesController.Validate(february, new ConventionOptions { Start = Convention.Start }).IsValid
+        );
     }
 
     [Fact]
@@ -194,10 +217,33 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
 
         var updated = Value(await Types(db).Update(1, update with { Price = 80 }));
         Assert.Equal(
-            new TicketTypeDto(1, "Dagsbillet", 80, new DateOnly(2027, 3, 26), TicketKind.Entrance, false, false, 0),
+            new TicketTypeDto(1, "Dagsbillet", 80, new DateOnly(2027, 3, 26), TicketKind.Entrance, false, 0),
             updated
         );
         Assert.IsType<NotFoundObjectResult>((await Types(db).Update(2, update with { Price = 80 })).Result);
+    }
+
+    [Fact]
+    public async Task Update_KeepsADayOutsideTheConvention_ButDoesntMoveToOne()
+    {
+        // Infosys's own Billetgebyr was for a day in February, before the convention
+        using var db = CreateDbContext();
+        var fee = Type(1, "Billetgebyr", kind: TicketKind.Other);
+        fee.Day = new DateOnly(2027, 2, 3);
+        await SeedAsync(db, [fee]);
+        var update = new UpdateTicketTypeDto
+        {
+            Name = "Billetgebyr",
+            Price = 15,
+            Day = new DateOnly(2027, 2, 3),
+            Kind = TicketKind.Other,
+        };
+
+        Assert.Equal(15, Value(await Types(db).Update(1, update)).Price);
+        Assert.IsType<BadRequestObjectResult>(
+            (await Types(db).Update(1, update with { Day = new DateOnly(2027, 3, 30) })).Result
+        );
+        Assert.Equal(new DateOnly(2027, 2, 3), (await db.TicketTypes.SingleAsync(Ct)).Day);
     }
 
     [Fact]

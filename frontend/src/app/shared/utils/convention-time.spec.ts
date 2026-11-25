@@ -1,11 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import {
   conventionLocalToIso,
+  datesBetween,
   formatClock,
   toConventionLocalInput,
   toConventionTime,
   weekdayOfDate,
 } from './convention-time';
+
+describe('datesBetween', () => {
+  it('lists every date from the first to the last, also across the clock change and a month', () => {
+    expect(datesBetween('2027-03-24', '2027-03-29')).toEqual([
+      '2027-03-24',
+      '2027-03-25',
+      '2027-03-26',
+      '2027-03-27',
+      '2027-03-28',
+      '2027-03-29',
+    ]);
+    expect(datesBetween('2027-03-31', '2027-04-01')).toEqual(['2027-03-31', '2027-04-01']);
+    expect(datesBetween('2027-03-24', '2027-03-24')).toEqual(['2027-03-24']);
+    expect(datesBetween('2027-03-29', '2027-03-24')).toEqual([]);
+  });
+});
 
 describe('weekdayOfDate', () => {
   it('gives the weekday of a calendar date, also across the clock change on 28 March 2027', () => {

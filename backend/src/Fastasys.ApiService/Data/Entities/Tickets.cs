@@ -7,7 +7,8 @@ namespace Fastasys.ApiService.Data.Entities;
 /// <summary>
 /// A ticket type (Infosys: indgang): an entrance, a night's sleep, an Alea membership, or anything else a participant
 /// can buy, such as a fee, the party or a mattress. Infosys worked out what a type is from words in its name; here
-/// Kind, IsAllConvention and IsDigital say it, and the name is only a label (agreed 2026-11-24).
+/// Kind and IsAllConvention say it, and the name is only a label (agreed 2026-11-24). Infosys's "digital" in the name,
+/// which only added "(Digital)" to the participant page, was dropped (the user, 2026-11-25).
 /// </summary>
 [Table("ticket_types")]
 public class TicketType
@@ -24,7 +25,7 @@ public class TicketType
     public int Price { get; set; }
 
     // Infosys: start. Infosys stores a date and time, but only the day is ever used, so only the day is kept
-    // (agreed 2026-11-24).
+    // (agreed 2026-11-24). It is one of the convention's days (agreed 2026-11-25).
     public DateOnly Day { get; set; }
 
     public TicketKind Kind { get; set; }
@@ -32,9 +33,6 @@ public class TicketType
     // "Partout": the ticket is for the whole convention, not only for Day. Infosys: "partout", "fastafamily", "alle"
     // or "leje" in the name (Indgang::spansAllConvention).
     public bool IsAllConvention { get; set; }
-
-    // Infosys: "digital" in the name (Indgang::isDigital)
-    public bool IsDigital { get; set; }
 }
 
 /// <summary>What a ticket type is. More kinds come with the features that need them (the signup, payments).</summary>

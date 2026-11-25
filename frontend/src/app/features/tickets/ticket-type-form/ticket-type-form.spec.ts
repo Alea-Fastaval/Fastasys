@@ -22,7 +22,6 @@ const existing: TicketType = {
   day: '2027-03-24',
   kind: 'Sleeping',
   isAllConvention: false,
-  isDigital: false,
   soldCount: 3,
 };
 
@@ -53,7 +52,6 @@ describe('canSubmitTicketType (the rules the API checks)', () => {
       day: '2027-03-25',
       kind: 'Entrance',
       isAllConvention: false,
-      isDigital: false,
     });
   });
 });
@@ -63,7 +61,9 @@ describe('TicketTypeFormComponent', () => {
 
   afterEach(() => http.verify());
 
-  const render = async (id: string | null) => {
+  const fastaval2027 = { conventionStart: '2027-03-24', conventionEnd: '2027-03-29' };
+
+  const render = async (id: string | null, dates: object = fastaval2027, type: TicketType = existing) => {
     await TestBed.configureTestingModule({
       imports: [TicketTypeFormComponent],
       providers: [
@@ -78,19 +78,53 @@ describe('TicketTypeFormComponent', () => {
     const fixture = TestBed.createComponent(TicketTypeFormComponent);
     fixture.detectChanges();
     http.match('/assets/i18n/en.json').forEach(request => request.flush({}));
-    http.expectOne('/api/signup/status').flush({ conventionStart: '2027-03-24', conventionEnd: '2027-03-29' });
-    if (id) http.expectOne(`/api/ticket-types/${id}`).flush(existing);
+    http.expectOne('/api/signup/status').flush(dates);
+    if (id) http.expectOne(`/api/ticket-types/${id}`).flush(type);
     fixture.detectChanges();
     return { fixture, component: fixture.componentInstance, navigate, flash: TestBed.inject(TicketFlashService) };
   };
 
+  it("offers the convention's days in the Dag dropdown", async () => {
+    const { fixture, component } = await render(null);
+
+    expect(component.days()).toEqual([
+      '2027-03-24',
+      '2027-03-25',
+      '2027-03-26',
+      '2027-03-27',
+      '2027-03-28',
+      '2027-03-29',
+    ]);
+    // Without translations the key is shown for the day name
+    expect(component.dayText('2027-03-24')).toBe('common.weekdays.Wednesday 24/03');
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('mat-select[name="day"]')).not.toBeNull();
+    expect(element.querySelector('input[name="day"]')).toBeNull();
+    expect(element.querySelector('.no-days')).toBeNull();
+    // Digital was dropped (2026-11-25)
+    expect(element.querySelector('[name="isDigital"]')).toBeNull();
+  });
+
+  it('keeps the day of a type that is outside the convention choosable', async () => {
+    const { component } = await render('4', fastaval2027, { ...existing, name: 'Billetgebyr', day: '2027-02-03' });
+
+    expect(component.days()[0]).toBe('2027-02-03');
+    expect(component.days().length).toBe(7);
+    expect(component.form()?.day).toBe('2027-02-03');
+  });
+
+  it("says so when the convention's dates aren't set", async () => {
+    const { fixture, component } = await render(null, { conventionStart: null, conventionEnd: null });
+
+    expect(component.days()).toEqual([]);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.no-days')?.textContent).toContain(
+      'tickets.messages.noConventionDays',
+    );
+  });
+
   it('creates a type and opens it with "Indgangs-typen blev oprettet."', async () => {
     const { fixture, component, navigate, flash } = await render(null);
     const element = fixture.nativeElement as HTMLElement;
-    // Like Infosys's date picker: the convention's days
-    const day = element.querySelector<HTMLInputElement>('input[name="day"]');
-    expect(day?.getAttribute('min')).toBe('2027-03-24');
-    expect(day?.getAttribute('max')).toBe('2027-03-29');
     // The create form has no Fortryd or Slet
     expect(element.querySelectorAll('.form-actions button').length).toBe(1);
 

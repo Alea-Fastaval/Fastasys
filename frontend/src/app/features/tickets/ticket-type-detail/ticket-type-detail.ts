@@ -6,9 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { TicketType } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
-import { AuthService } from '@shared/services';
+import { AuthService, TranslationService } from '@shared/services';
 import { priceText } from '../../participants/participant-price/participant-price';
 import { TicketFlashService } from '../ticket-flash.service';
+import { dayWithDate, translatedLongDay } from '../ticket-texts';
 
 // Infosys indgang/entry/:id: (showtype.phtml): Id, Type, Pris and Start, with a "ret/slet" link. Infosys's heading
 // was a description made from words in the name ("Indgang Alea Ung Partout"); the name is shown instead, and the fields
@@ -22,6 +23,7 @@ import { TicketFlashService } from '../ticket-flash.service';
 export class TicketTypeDetailComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
+  private readonly longDay = translatedLongDay(inject(TranslationService));
 
   public readonly flash = inject(TicketFlashService).take();
   public readonly mayEdit = inject(AuthService).hasPrivilege('entrance_edit');
@@ -35,5 +37,10 @@ export class TicketTypeDetailComponent implements OnInit {
       next: type => this.type.set(type),
       error: () => this.notFound.set(true),
     });
+  }
+
+  // "Onsdag 24/03", like the form's "Dag"
+  public dayText(day: string): string {
+    return dayWithDate(day, this.longDay);
   }
 }

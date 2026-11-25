@@ -34,7 +34,7 @@
       </div>
       <div>
         <dt>{{ 'tickets.fields.day' | translate }}:</dt>
-        <dd class="day">{{ t.day }}</dd>
+        <dd class="day">{{ dayText(t.day) }}</dd>
       </div>
       <div>
         <dt>{{ 'tickets.fields.kind' | translate }}:</dt>
@@ -43,10 +43,6 @@
       <div>
         <dt>{{ 'tickets.fields.isAllConvention' | translate }}:</dt>
         <dd class="all-convention">{{ (t.isAllConvention ? 'common.yes' : 'common.no') | translate }}</dd>
-      </div>
-      <div>
-        <dt>{{ 'tickets.fields.isDigital' | translate }}:</dt>
-        <dd class="digital">{{ (t.isDigital ? 'common.yes' : 'common.no') | translate }}</dd>
       </div>
       <div>
         <dt>{{ 'tickets.fields.soldCount' | translate }}:</dt>
