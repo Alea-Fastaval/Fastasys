@@ -20,7 +20,7 @@
   <app-card [title]="(typeId() === null ? 'tickets.createTitle' : 'tickets.editTitle') | translate">
     @if (errorKey(); as key) {
     <p class="flash error">{{ 'tickets.messages.' + key | translate }}</p>
-    } @if (!f.isAllConvention && datesLoaded() && days().length === 0) {
+    } @if (hasOwnDay(f) && datesLoaded() && days().length === 0) {
     <p class="flash error no-days">{{ 'tickets.messages.noConventionDays' | translate }}</p>
     }
 
@@ -52,8 +52,9 @@
           </mat-checkbox>
         </div>
 
-        <!-- A partout type has no day of its own; the API gives it the convention's first day (agreed 2026-11-25) -->
-        @if (!f.isAllConvention) {
+        <!-- A partout type and an Alea membership have no day of their own; the API gives them the convention's first
+             day (agreed 2026-11-25) -->
+        @if (hasOwnDay(f)) {
         <mat-form-field appearance="outline">
           <mat-label>{{ 'tickets.fields.day' | translate }}</mat-label>
           <mat-select name="day" required [(ngModel)]="f.day">

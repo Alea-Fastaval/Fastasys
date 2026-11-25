@@ -3,14 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { TicketStatsGroup } from '@shared/types';
+import { TicketStatsGroup, TicketStatsType } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { TranslationService } from '@shared/services';
-import { statsDayText, statsHeadingKey, translatedShortDay } from '../ticket-texts';
+import { statsKindKey, statsTypeText, translatedShortDay } from '../ticket-texts';
 
 // Infosys entry/stats ("Statistik" in the Indgang menu, entrystats.phtml): a heading per ticket type name, with each
-// day and the number of participants who have that type ("Ons, 24 — 12"). Annulled participants count too.
+// type and the number of participants who have it ("Ons, 24 — 12"). Annulled participants count too. The heading is
+// the name with the kind under it (agreed 2026-11-25; Infosys showed only the kind), and every type is listed.
 @Component({
   selector: 'app-ticket-stats',
   imports: [RouterLink, MatButtonModule, MatIconModule, Card, TranslatePipe],
@@ -32,16 +33,22 @@ export class TicketStatsComponent implements OnInit {
     });
   }
 
-  // "Indgang, partout" and the like, or the name (Indgang::getProperType)
-  public heading(group: TicketStatsGroup): string {
-    const key = statsHeadingKey(group);
-    if (key === null) return group.name;
+  // "Indgang, partout", "Alea-medlemskab" and the like (Indgang::getProperType)
+  public kindText(group: TicketStatsGroup): string {
+    return this.translate(statsKindKey(group));
+  }
+
+  // "Ons, 24", "Partout" or "Antal solgt"
+  public typeText(type: TicketStatsType): string {
+    return statsTypeText(type, this.shortDay, {
+      partout: this.translate('tickets.partout'),
+      soldCount: this.translate('tickets.fields.soldCount'),
+    });
+  }
+
+  private translate(key: string): string {
     // Reading the signal makes the template update when the language changes
     this.translation.translations();
     return this.translation.translate(key);
-  }
-
-  public dayText(day: string): string {
-    return statsDayText(day, this.shortDay);
   }
 }

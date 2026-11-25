@@ -124,6 +124,17 @@ describe('TicketTypeFormComponent', () => {
     expect(element.querySelector('mat-select[name="day"]')).not.toBeNull();
   });
 
+  it('hides Dag for an Alea membership, and sends no day for it (2026-11-25)', async () => {
+    const { fixture, component } = await render(null);
+
+    component.form.set({ ...complete, kind: 'AleaMembership' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('mat-select[name="day"]')).toBeNull();
+    expect(canSubmitTicketType({ ...complete, kind: 'AleaMembership', day: '' })).toBe(true);
+    expect(toDto({ ...complete, kind: 'AleaMembership' }).day).toBeNull();
+  });
+
   it('keeps the day of a type that is outside the convention choosable', async () => {
     const { component } = await render('4', fastaval2027, { ...existing, name: 'Billetgebyr', day: '2027-02-03' });
 

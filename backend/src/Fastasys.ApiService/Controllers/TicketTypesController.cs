@@ -37,16 +37,18 @@ public record CreateTicketTypeDto : TicketTypeFieldsDto;
 public record UpdateTicketTypeDto : TicketTypeFieldsDto;
 
 // One heading of the Infosys statistics page (entry/stats): the ticket types with the same name, with the number of
-// participants who have each. The page makes the heading from Kind and IsAllConvention (Indgang::getProperType).
+// participants who have each. The heading is the name, with the kind of the first type under it (agreed 2026-11-25;
+// Infosys's heading was only the kind, Indgang::getProperType, so different types looked the same).
 public record TicketStatsGroupDto(
     string Name,
     TicketKind Kind,
     bool IsAllConvention,
-    IReadOnlyList<TicketStatsDayDto> Days
+    IReadOnlyList<TicketStatsTypeDto> Types
 );
 
-// IsAllConvention: the page shows "Partout" instead of the day
-public record TicketStatsDayDto(DateOnly Day, int Count, bool IsAllConvention);
+// One type under a heading: its day ("Ons, 24"), or "Partout", or nothing for a type without a day of its own
+// (see TicketTypesController.HasOwnDay)
+public record TicketStatsTypeDto(int Id, DateOnly Day, TicketKind Kind, bool IsAllConvention, int Count);
 
 // Infosys EntranceController (the Indgang menu): all ticket types, one type, create, edit, delete and statistics.
 // Infosys lets superuser and Infonaut use all of it; here entrance_view may look and entrance_edit may change.
@@ -177,51 +179,40 @@ public class TicketTypesController(
         return Ok(new { message = "Ticket type deleted successfully" });
     }
 
-    // Infosys EntranceModel::getEntryStats and entrystats.phtml. Infosys keys the types by name and then by start
-    // ($return[$type][$start] = $entry): the headings come in the order their name first appears (id order), the days
-    // in the order they first appear under the heading, and a later type with the same name and day takes the earlier
-    // one's place. A heading is made from its first day's type.
+    // Infosys EntranceModel::getEntryStats and entrystats.phtml: the types grouped by name, the headings in the order
+    // their name first appears (id order). Every type is listed, in id order. Infosys keyed the types by name and start
+    // ($return[$type][$start] = $entry), so a later type with the same name and start hid the earlier one and its
+    // count; every partout type now has the same day, so that would hide types (fixed 2026-11-25).
     public static IReadOnlyList<TicketStatsGroupDto> ToStats(
         IReadOnlyList<TicketType> typesInIdOrder,
         IReadOnlyDictionary<int, int> soldCounts
-    )
-    {
-        var names = new List<string>();
-        var groups = new Dictionary<string, List<TicketType>>(StringComparer.Ordinal);
-        foreach (var type in typesInIdOrder)
-        {
-            if (!groups.TryGetValue(type.Name, out var days))
+    ) =>
+        typesInIdOrder
+            .GroupBy(t => t.Name, StringComparer.Ordinal)
+            .Select(group =>
             {
-                days = [];
-                groups[type.Name] = days;
-                names.Add(type.Name);
-            }
-
-            var index = days.FindIndex(t => t.Day == type.Day);
-            if (index >= 0)
-                days[index] = type;
-            else
-                days.Add(type);
-        }
-
-        return names
-            .Select(name =>
-            {
-                var days = groups[name];
+                var first = group.First();
                 return new TicketStatsGroupDto(
-                    name,
-                    days[0].Kind,
-                    days[0].IsAllConvention,
-                    days.Select(t => new TicketStatsDayDto(
+                    group.Key,
+                    first.Kind,
+                    first.IsAllConvention,
+                    group
+                        .Select(t => new TicketStatsTypeDto(
+                            t.Id,
                             t.Day,
-                            soldCounts.GetValueOrDefault(t.Id),
-                            t.IsAllConvention
+                            t.Kind,
+                            t.IsAllConvention,
+                            soldCounts.GetValueOrDefault(t.Id)
                         ))
                         .ToList()
                 );
             })
             .ToList();
-    }
+
+    // Whether a type is for one day of its own, picked in the form's "Dag". A partout type is for the whole convention,
+    // and an Alea membership isn't for a day at all, so they get the convention's first day (agreed 2026-11-25).
+    public static bool HasOwnDay(TicketKind kind, bool isAllConvention) =>
+        !isAllConvention && kind != TicketKind.AleaMembership;
 
     // Returns whether the form fields are valid and, if not, why. Invalid input is expected, so it never throws.
     // currentDay is the day of the type being updated.
@@ -242,19 +233,21 @@ public class TicketTypesController(
         if (dto.Price is null or < 0)
             return (false, "Price must be a whole number of 0 or more");
 
+        if (dto.Kind is not { } kind || !Enum.IsDefined(kind))
+            return (false, "Unknown kind");
+
         // Infosys turned an empty or unreadable start into 1 January 1970 (fixed 2026-11-24)
+        var hasOwnDay = HasOwnDay(kind, dto.IsAllConvention);
         if (DayToStore(dto, convention, currentDay) is not { } day)
         {
-            return dto.IsAllConvention
-                ? (false, "The convention's first day is not configured")
-                : (false, "Day is required");
+            return hasOwnDay ? (false, "Day is required") : (false, "The convention's first day is not configured");
         }
 
         // The day is picked from the convention's days (agreed 2026-11-25; Infosys's date picker only suggested them).
         // A type keeps a day outside them when it isn't changed. Without the dates in the configuration it can't be
         // checked.
         if (
-            !dto.IsAllConvention
+            hasOwnDay
             && convention.Start is { } start
             && convention.End is { } end
             && (day < start || day > end)
@@ -264,20 +257,21 @@ public class TicketTypesController(
             return (false, "Day must be one of the convention's days");
         }
 
-        if (dto.Kind is not { } kind || !Enum.IsDefined(kind))
-            return (false, "Unknown kind");
-
         return (true, string.Empty);
     }
 
-    // The day to store. A partout type (for the whole convention) has no day of its own: it gets the convention's first
-    // day, whatever was sent, like Infosys's partout types had (agreed 2026-11-25; the form hides "Dag" for it). Without
-    // that date in the configuration it keeps its day, or takes the one sent. null when there is no day to store.
+    // The day to store. A type without a day of its own (partout, or an Alea membership; see HasOwnDay) gets the
+    // convention's first day, whatever was sent, like Infosys's partout types had (agreed 2026-11-25; the form hides
+    // "Dag" for it). Without that date in the configuration it keeps its day, or takes the one sent. null when there is
+    // no day to store.
     public static DateOnly? DayToStore(
         TicketTypeFieldsDto dto,
         ConventionOptions convention,
         DateOnly? currentDay = null
-    ) => dto.IsAllConvention ? convention.Start ?? currentDay ?? dto.Day : dto.Day;
+    ) =>
+        HasOwnDay(dto.Kind ?? TicketKind.Entrance, dto.IsAllConvention)
+            ? dto.Day
+            : convention.Start ?? currentDay ?? dto.Day;
 
     private static void Apply(TicketType type, TicketTypeFieldsDto dto, DateOnly day)
     {

@@ -523,7 +523,7 @@ public class ParticipantsController : ControllerBase
         var idCardTemplates = await _db.IdCardTemplates.AsNoTracking().OrderBy(t => t.Id)
             .Select(t => new IdCardTemplateOptionDto(t.Id, t.Name)).ToListAsync();
         var ticketTypes = await _db.TicketTypes.AsNoTracking().OrderBy(t => t.Id)
-            .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.IsAllConvention)).ToListAsync();
+            .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.Kind, t.IsAllConvention)).ToListAsync();
 
         return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates, ticketTypes));
     }

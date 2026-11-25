@@ -31,19 +31,22 @@ export interface TicketTypeFieldsDto {
 export type CreateTicketTypeDto = TicketTypeFieldsDto;
 export type UpdateTicketTypeDto = TicketTypeFieldsDto;
 
-// One heading of the statistics page: the ticket types with the same name, by day
+// One heading of the statistics page: the ticket types with the same name. The heading is the name, with the kind of
+// the first type under it.
 export interface TicketStatsGroup {
   name: string;
   kind: TicketKind;
   isAllConvention: boolean;
-  days: TicketStatsDay[];
+  types: TicketStatsType[];
 }
 
-export interface TicketStatsDay {
+// One type under a heading, with how many participants have it
+export interface TicketStatsType {
+  id: number;
   day: string;
-  count: number;
-  // Shown as "Partout" instead of the day
+  kind: TicketKind;
   isAllConvention: boolean;
+  count: number;
 }
 
 // A ticket type in a select or a list: the participant's ticket editor and the search box's Indgang section
@@ -51,6 +54,7 @@ export interface TicketTypeOption {
   id: number;
   name: string;
   day: string;
+  kind: TicketKind;
   isAllConvention: boolean;
 }
 

@@ -971,8 +971,8 @@ public class ParticipantsControllerTests
 
         Assert.Equal(
             [
-                new TicketTypeOptionDto(1, "Indgang - Partout", new DateOnly(2027, 3, 24), true),
-                new TicketTypeOptionDto(2, "Overnatning - Enkelt", new DateOnly(2027, 3, 25), false),
+                new TicketTypeOptionDto(1, "Indgang - Partout", new DateOnly(2027, 3, 24), TicketKind.Entrance, true),
+                new TicketTypeOptionDto(2, "Overnatning - Enkelt", new DateOnly(2027, 3, 25), TicketKind.Sleeping, false),
             ],
             options.TicketTypes);
     }

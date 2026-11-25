@@ -9,7 +9,7 @@ import { TranslatePipe } from '@shared/pipes';
 import { AuthService, TranslationService } from '@shared/services';
 import { priceText } from '../../participants/participant-price/participant-price';
 import { TicketFlashService } from '../ticket-flash.service';
-import { dayWithDate, translatedLongDay } from '../ticket-texts';
+import { dayWithDate, hasOwnDay, translatedLongDay } from '../ticket-texts';
 
 // Infosys indgang/entry/:id: (showtype.phtml): Id, Type, Pris and Start, with a "ret/slet" link. Infosys's heading
 // was a description made from words in the name ("Indgang Alea Ung Partout"); the name is shown instead, and the fields
@@ -30,6 +30,7 @@ export class TicketTypeDetailComponent implements OnInit {
   public readonly type = signal<TicketType | null>(null);
   public readonly notFound = signal(false);
   public readonly priceText = priceText;
+  public readonly hasOwnDay = hasOwnDay;
 
   public ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

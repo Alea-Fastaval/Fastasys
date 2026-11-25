@@ -11,13 +11,10 @@
   } @if (groups(); as list) {
   <div class="groups">
     @for (group of list; track group.name) {
-    <app-card [title]="heading(group)">
+    <app-card [title]="group.name" [subtitle]="kindText(group)">
       <ul class="days">
-        @for (day of group.days; track day.day) {
-        <li>
-          {{ day.isAllConvention ? ('tickets.partout' | translate) : dayText(day.day) }} &mdash;
-          <strong>{{ day.count }}</strong>
-        </li>
+        @for (type of group.types; track type.id) {
+        <li>{{ typeText(type) }} &mdash; <strong>{{ type.count }}</strong></li>
         }
       </ul>
     </app-card>

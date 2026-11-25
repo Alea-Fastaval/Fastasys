@@ -40,8 +40,8 @@
         <dt>{{ 'tickets.fields.isAllConvention' | translate }}:</dt>
         <dd class="all-convention">{{ (t.isAllConvention ? 'common.yes' : 'common.no') | translate }}</dd>
       </div>
-      <!-- A partout type has no day of its own, like in the form -->
-      @if (!t.isAllConvention) {
+      <!-- A partout type and an Alea membership have no day of their own, like in the form -->
+      @if (hasOwnDay(t)) {
       <div>
         <dt>{{ 'tickets.fields.day' | translate }}:</dt>
         <dd class="day">{{ dayText(t.day) }}</dd>

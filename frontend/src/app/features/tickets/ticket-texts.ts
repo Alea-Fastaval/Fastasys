@@ -1,6 +1,12 @@
-import { TicketKind, TicketStatsGroup, TicketTypeOption } from '@shared/types';
+import { TicketKind, TicketStatsGroup, TicketStatsType, TicketTypeOption } from '@shared/types';
 import { TranslationService } from '@shared/services';
 import { Weekday, datesBetween, weekdayOfDate } from '@shared/utils';
+
+// Whether a type is for one day of its own, picked in the form's "Dag": not partout, and not an Alea membership
+// (agreed 2026-11-25). The API gives the others the convention's first day, and the pages don't show it.
+export function hasOwnDay(type: { kind: TicketKind | null; isAllConvention: boolean }): boolean {
+  return !type.isAllConvention && type.kind !== 'AleaMembership';
+}
 
 // The name of a day in the page's language, e.g. "Ons" or "Onsdag"
 export type ShortDay = (weekday: Weekday) => string;
@@ -37,42 +43,58 @@ export function ticketDayOptions(start: string | null, end: string | null, curre
   return current && !days.includes(current) ? [...days, current].sort() : days;
 }
 
-// The Type column of "Alle indgangs-typer": "Indgang - Enkelt - Ons 24/03" (entrytypes.phtml). Infosys showed the
-// day of a ticket for the whole convention too; it has no day of its own, so it says "Partout" (agreed 2026-11-25).
+// The Type column of "Alle indgangs-typer": "Indgang - Enkelt - Ons 24/03" (entrytypes.phtml). Infosys showed a day
+// for every type; a type without a day of its own shows "Partout", or only its name for an Alea membership
+// (agreed 2026-11-25).
 export function ticketTypeListText(
-  type: { name: string; day: string; isAllConvention: boolean },
+  type: { name: string; day: string; kind: TicketKind; isAllConvention: boolean },
   shortDay: ShortDay,
   partout: string,
 ): string {
-  return `${type.name} - ${type.isAllConvention ? partout : dayWithDate(type.day, shortDay)}`;
+  if (hasOwnDay(type)) return `${type.name} - ${dayWithDate(type.day, shortDay)}`;
+  return type.kind === 'AleaMembership' ? type.name : `${type.name} - ${partout}`;
 }
 
-// A ticket type in the participant's ticket editor: "Indgang - Enkelt (Ons)" (viseditmadwear.phtml), or "(Partout)"
-// for a ticket for the whole convention (Infosys showed its day)
+// A ticket type in the participant's ticket editor: "Indgang - Enkelt (Ons)" (viseditmadwear.phtml), "(Partout)" for a
+// ticket for the whole convention, or only the name for an Alea membership (Infosys showed a day for every type)
 export function ticketOptionText(option: TicketTypeOption, shortDay: ShortDay, partout: string): string {
-  return `${option.name} (${option.isAllConvention ? partout : shortDay(weekdayOfDate(option.day))})`;
+  if (hasOwnDay(option)) return `${option.name} (${shortDay(weekdayOfDate(option.day))})`;
+  return option.kind === 'AleaMembership' ? option.name : `${option.name} (${partout})`;
 }
 
 // A row of the search box's Indgang section: "Indgang - Enkelt Ons", or the name alone for a ticket for the whole
-// convention (ViewHelper::searchBox)
+// convention (ViewHelper::searchBox) and for an Alea membership
 export function ticketSearchText(option: TicketTypeOption, shortDay: ShortDay): string {
-  return option.isAllConvention ? option.name : `${option.name} ${shortDay(weekdayOfDate(option.day))}`;
+  return hasOwnDay(option) ? `${option.name} ${shortDay(weekdayOfDate(option.day))}` : option.name;
 }
 
-// The heading of a group on the statistics page (Indgang::getProperType): a translation key, or null when the group's
-// name is the heading. Infosys also had "Fest" for its type "Ottofest"; the name is now shown instead.
-export function statsHeadingKey(group: Pick<TicketStatsGroup, 'kind' | 'isAllConvention'>): string | null {
-  const kind: TicketKind = group.kind;
-  if (group.isAllConvention) {
-    // Like Infosys, a ticket for the whole convention that isn't a sleeping ticket is called an entrance
-    return kind === 'Sleeping' ? 'tickets.stats.sleepingPartout' : 'tickets.stats.entrancePartout';
+// The line under a heading on the statistics page: what kind of tickets they are, like Indgang::getProperType. The
+// heading itself is the name (agreed 2026-11-25): Infosys's heading was only this, so an Alea membership or an
+// "Andet" type for the whole convention looked like "Indgang, partout".
+export function statsKindKey(group: Pick<TicketStatsGroup, 'kind' | 'isAllConvention'>): string {
+  switch (group.kind) {
+    case 'AleaMembership':
+      return 'tickets.kinds.AleaMembership';
+    case 'Other':
+      return 'tickets.kinds.Other';
+    case 'Sleeping':
+      return group.isAllConvention ? 'tickets.stats.sleepingPartout' : 'tickets.stats.sleepingDay';
+    default:
+      return group.isAllConvention ? 'tickets.stats.entrancePartout' : 'tickets.stats.entranceDay';
   }
-  if (kind === 'Entrance') return 'tickets.stats.entranceDay';
-  if (kind === 'Sleeping') return 'tickets.stats.sleepingDay';
-  return null;
 }
 
 // A day on the statistics page: "Ons, 24" (Infosys DanishDayNames(date('D, j')))
 export function statsDayText(day: string, shortDay: ShortDay): string {
   return `${shortDay(weekdayOfDate(day))}, ${Number(day.split('-')[2])}`;
+}
+
+// A type under a heading on the statistics page: its day, "Partout", or "Antal solgt" for an Alea membership
+export function statsTypeText(
+  type: TicketStatsType,
+  shortDay: ShortDay,
+  texts: { partout: string; soldCount: string },
+): string {
+  if (hasOwnDay(type)) return statsDayText(type.day, shortDay);
+  return type.kind === 'AleaMembership' ? texts.soldCount : texts.partout;
 }

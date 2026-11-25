@@ -73,6 +73,12 @@ describe('TicketTypeDetailComponent', () => {
     expect(text(element, '.day')).toBe('common.weekdays.Thursday 25/03');
   });
 
+  it('shows no day for an Alea membership (2026-11-25)', async () => {
+    const element = await render(['entrance_view'], true, { ...type, kind: 'AleaMembership', isAllConvention: false });
+
+    expect(element.querySelector('.day')).toBeNull();
+  });
+
   it('links "ret/slet" for entrance_edit', async () => {
     const element = await render(['entrance_edit']);
 

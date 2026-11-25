@@ -21,7 +21,7 @@ import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { TranslationService } from '@shared/services';
 import { TicketFlashService } from '../ticket-flash.service';
-import { dayWithDate, ticketDayOptions, translatedLongDay } from '../ticket-texts';
+import { dayWithDate, hasOwnDay, ticketDayOptions, translatedLongDay } from '../ticket-texts';
 
 // indgang.type is varchar(64)
 export const MAX_TICKET_NAME_LENGTH = 64;
@@ -50,20 +50,22 @@ export function toForm(type: TicketType): TicketTypeForm {
   };
 }
 
-// A partout type sends no day: the API gives it the convention's first day (agreed 2026-11-25)
+// A type without a day of its own (partout, or an Alea membership) sends no day: the API gives it the convention's
+// first day (agreed 2026-11-25)
 export function toDto(form: TicketTypeForm): TicketTypeFieldsDto {
   return {
     name: form.name,
     price: form.price,
-    day: form.isAllConvention || form.day === '' ? null : form.day,
+    day: !hasOwnDay(form) || form.day === '' ? null : form.day,
     kind: form.kind,
     isAllConvention: form.isAllConvention,
   };
 }
 
 // The rules the API checks (TicketTypesController.Validate): a type that isn't empty or "0" (PHP empty()), at most 64
-// characters, a whole price of 0 or more, a kind, and a day unless the type is partout. Infosys's edit form didn't
-// check the price, and an empty start became 1 January 1970 (both fixed 2026-11-24).
+// characters, a whole price of 0 or more, a kind, and a day for a type with a day of its own (not partout, not an Alea
+// membership). Infosys's edit form didn't check the price, and an empty start became 1 January 1970 (both fixed
+// 2026-11-24).
 export function canSubmitTicketType(form: TicketTypeForm): boolean {
   return (
     form.name !== '' &&
@@ -72,7 +74,7 @@ export function canSubmitTicketType(form: TicketTypeForm): boolean {
     form.price !== null &&
     Number.isInteger(form.price) &&
     form.price >= 0 &&
-    (form.isAllConvention || form.day !== '') &&
+    (!hasOwnDay(form) || form.day !== '') &&
     form.kind !== null
   );
 }
@@ -152,6 +154,11 @@ export class TicketTypeFormComponent implements OnInit {
   // "Onsdag 24/03"
   public dayText(day: string): string {
     return dayWithDate(day, this.longDay);
+  }
+
+  // "Dag" is shown for a type with a day of its own
+  public hasOwnDay(form: TicketTypeForm): boolean {
+    return hasOwnDay(form);
   }
 
   public canSubmit(form: TicketTypeForm): boolean {

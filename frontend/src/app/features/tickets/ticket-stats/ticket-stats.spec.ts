@@ -16,42 +16,61 @@ describe('TicketStatsComponent', () => {
     const fixture = TestBed.createComponent(TicketStatsComponent);
     fixture.detectChanges();
     http.match('/assets/i18n/en.json').forEach(request => request.flush({}));
+    const day = (id: number, date: string, count: number) => ({
+      id,
+      day: date,
+      kind: 'Entrance' as const,
+      isAllConvention: false,
+      count,
+    });
     const groups: TicketStatsGroup[] = [
       {
         name: 'Indgang - Enkelt',
         kind: 'Entrance',
         isAllConvention: false,
-        days: [
-          { day: '2027-03-25', count: 12, isAllConvention: false },
-          { day: '2027-03-24', count: 3, isAllConvention: false },
-        ],
+        types: [day(2, '2027-03-25', 12), day(4, '2027-03-24', 3)],
       },
       {
         name: 'Campingvogn',
         kind: 'Other',
         isAllConvention: false,
-        days: [{ day: '2027-03-24', count: 1, isAllConvention: false }],
+        types: [{ ...day(5, '2027-03-24', 1), kind: 'Other' }],
       },
       {
         name: 'Hele Fastaval',
         kind: 'Entrance',
         isAllConvention: true,
-        days: [{ day: '2027-03-24', count: 40, isAllConvention: true }],
+        types: [{ ...day(1, '2027-03-24', 40), isAllConvention: true }],
+      },
+      {
+        name: 'Alea medlemskab',
+        kind: 'AleaMembership',
+        isAllConvention: true,
+        types: [{ ...day(6, '2027-03-24', 5), kind: 'AleaMembership', isAllConvention: true }],
       },
     ];
     http.expectOne('/api/ticket-types/stats').flush(groups);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
+    // The heading is the name, with the kind under it (2026-11-25; Infosys showed only the kind, so the Alea
+    // membership looked like "Indgang, partout")
     const titles = [...element.querySelectorAll('.atom-card-title')].map(title => title.textContent?.trim());
-    expect(titles).toEqual(['tickets.stats.entranceDay', 'Campingvogn', 'tickets.stats.entrancePartout']);
-    const days = [...element.querySelectorAll('.days li')].map(li => li.textContent?.replace(/\s+/g, ' ').trim());
-    expect(days).toEqual([
+    expect(titles).toEqual(['Indgang - Enkelt', 'Campingvogn', 'Hele Fastaval', 'Alea medlemskab']);
+    const kinds = [...element.querySelectorAll('.atom-card-subtitle')].map(subtitle => subtitle.textContent?.trim());
+    expect(kinds).toEqual([
+      'tickets.stats.entranceDay',
+      'tickets.kinds.Other',
+      'tickets.stats.entrancePartout',
+      'tickets.kinds.AleaMembership',
+    ]);
+    const rows = [...element.querySelectorAll('.days li')].map(li => li.textContent?.replace(/\s+/g, ' ').trim());
+    expect(rows).toEqual([
       'common.weekdaysShort.Thursday, 25 — 12',
       'common.weekdaysShort.Wednesday, 24 — 3',
       'common.weekdaysShort.Wednesday, 24 — 1',
-      // A partout type has no day of its own (2026-11-25)
       'tickets.partout — 40',
+      'tickets.fields.soldCount — 5',
     ]);
     http.verify();
   });

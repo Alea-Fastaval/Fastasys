@@ -3,13 +3,25 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ParticipantTickets } from '@shared/types';
+import { ParticipantTickets, TicketTypeOption } from '@shared/types';
 import { ParticipantFlashService } from '../participant-flash.service';
 import { ParticipantTicketsComponent, addTicket } from './participant-tickets';
 
-const partout = { id: 1, name: 'Indgang - Partout', day: '2027-03-24', isAllConvention: true };
-const thursday = { id: 2, name: 'Indgang - Enkelt', day: '2027-03-25', isAllConvention: false };
-const party = { id: 3, name: 'Ottofest', day: '2027-03-27', isAllConvention: false };
+const partout: TicketTypeOption = {
+  id: 1,
+  name: 'Indgang - Partout',
+  day: '2027-03-24',
+  kind: 'Entrance',
+  isAllConvention: true,
+};
+const thursday: TicketTypeOption = {
+  id: 2,
+  name: 'Indgang - Enkelt',
+  day: '2027-03-25',
+  kind: 'Entrance',
+  isAllConvention: false,
+};
+const party: TicketTypeOption = { id: 3, name: 'Ottofest', day: '2027-03-27', kind: 'Other', isAllConvention: false };
 
 describe('addTicket (imwedit.js setupIndgang)', () => {
   it('adds the chosen type unless it is already listed', () => {

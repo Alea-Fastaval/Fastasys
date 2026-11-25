@@ -238,6 +238,26 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public void DayToStore_GivesAnAleaMembershipTheConventionsFirstDay()
+    {
+        // An Alea membership isn't for a day either (agreed 2026-11-25), partout or not
+        var membership = DayTicket() with { Name = "Alea medlemskab", Kind = TicketKind.AleaMembership, Day = null };
+
+        Assert.False(TicketTypesController.HasOwnDay(TicketKind.AleaMembership, false));
+        Assert.True(TicketTypesController.HasOwnDay(TicketKind.Other, false));
+        Assert.False(TicketTypesController.HasOwnDay(TicketKind.Other, true));
+        Assert.Equal(new DateOnly(2027, 3, 24), TicketTypesController.DayToStore(membership, Convention));
+        Assert.Equal(
+            new DateOnly(2027, 3, 24),
+            TicketTypesController.DayToStore(membership with { Day = new DateOnly(2027, 3, 30) }, Convention)
+        );
+        Assert.True(TicketTypesController.Validate(membership, Convention).IsValid);
+        Assert.True(
+            TicketTypesController.Validate(membership with { Day = new DateOnly(2027, 3, 30) }, Convention).IsValid
+        );
+    }
+
+    [Fact]
     public async Task CreateAndUpdate_StoreTheConventionsFirstDayForAPartoutType()
     {
         using var db = CreateDbContext();
@@ -330,59 +350,93 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
-    public void ToStats_GroupsByNameLikeInfosysKeysTheTypes()
+    public void ToStats_GroupsByName_AndListsEveryKind()
     {
-        // EntranceModel::getEntryStats: $return[$type][$start] = $entry
+        // EntranceModel::getEntryStats groups the types by name, in the order the names first appear
         var types = new List<TicketType>
         {
             Type(1, "Indgang - Partout", partout: true),
             Type(2, "Indgang - Enkelt", day: 25),
             Type(3, "Overnatning - Enkelt", day: 25, kind: TicketKind.Sleeping),
             Type(4, "Indgang - Enkelt", day: 24),
-            // The same name and day as type 2: it takes 2's place, so 2 is not counted
-            Type(5, "Indgang - Enkelt", day: 25),
+            Type(6, "Alea medlemskab", kind: TicketKind.AleaMembership),
+            Type(7, "Ottofest", day: 27, kind: TicketKind.Other),
         };
         var counts = new Dictionary<int, int>
         {
             [1] = 10,
             [2] = 7,
             [4] = 3,
-            [5] = 2,
+            [6] = 5,
         };
 
         var stats = TicketTypesController.ToStats(types, counts);
 
-        Assert.Equal(["Indgang - Partout", "Indgang - Enkelt", "Overnatning - Enkelt"], stats.Select(g => g.Name));
-        // The page shows "Partout" instead of the day of a partout type
-        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 24), 10, true)], stats[0].Days);
+        Assert.Equal(
+            ["Indgang - Partout", "Indgang - Enkelt", "Overnatning - Enkelt", "Alea medlemskab", "Ottofest"],
+            stats.Select(g => g.Name)
+        );
+        Assert.Equal(
+            [new TicketStatsTypeDto(1, new DateOnly(2027, 3, 24), TicketKind.Entrance, true, 10)],
+            stats[0].Types
+        );
         Assert.True(stats[0].IsAllConvention);
         Assert.Equal(
             [
-                new TicketStatsDayDto(new DateOnly(2027, 3, 25), 2, false),
-                new TicketStatsDayDto(new DateOnly(2027, 3, 24), 3, false),
+                new TicketStatsTypeDto(2, new DateOnly(2027, 3, 25), TicketKind.Entrance, false, 7),
+                new TicketStatsTypeDto(4, new DateOnly(2027, 3, 24), TicketKind.Entrance, false, 3),
             ],
-            stats[1].Days
+            stats[1].Types
         );
         Assert.Equal(TicketKind.Sleeping, stats[2].Kind);
-        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 25), 0, false)], stats[2].Days);
+        Assert.Equal(0, Assert.Single(stats[2].Types).Count);
+        Assert.Equal(TicketKind.AleaMembership, stats[3].Kind);
+        Assert.Equal(5, Assert.Single(stats[3].Types).Count);
+        Assert.Equal(TicketKind.Other, stats[4].Kind);
     }
 
     [Fact]
-    public void ToStats_TakesTheHeadingFromTheFirstDaysType()
+    public void ToStats_ListsEveryTypeWithTheSameNameAndDay()
     {
-        // entrystats.phtml uses reset($entry): the type in the heading's first slot, after any replacement
+        // Infosys keyed the types by name and start, so a later type with the same name and start hid the earlier one
+        // and its count. Every partout type has the same day now, so they would hide each other (fixed 2026-11-25).
         var types = new List<TicketType>
         {
-            Type(1, "Campingvogn", kind: TicketKind.Other),
-            Type(2, "Campingvogn", kind: TicketKind.Other, day: 25),
+            Type(1, "Partout", partout: true),
+            Type(2, "Partout", partout: true),
+            Type(3, "Indgang - Enkelt", day: 25),
+            Type(4, "Indgang - Enkelt", day: 25),
+        };
+        var counts = new Dictionary<int, int>
+        {
+            [1] = 3,
+            [2] = 4,
+            [3] = 1,
+            [4] = 2,
+        };
+
+        var stats = TicketTypesController.ToStats(types, counts);
+
+        Assert.Equal([1, 2], stats[0].Types.Select(t => t.Id));
+        Assert.Equal([3, 4], stats[0].Types.Select(t => t.Count));
+        Assert.Equal([3, 4], stats[1].Types.Select(t => t.Id));
+        Assert.Equal([1, 2], stats[1].Types.Select(t => t.Count));
+    }
+
+    [Fact]
+    public void ToStats_TakesTheHeadingsKindFromTheFirstType()
+    {
+        var types = new List<TicketType>
+        {
             Type(3, "Campingvogn", kind: TicketKind.Sleeping, partout: true),
+            Type(5, "Campingvogn", kind: TicketKind.Other, day: 25),
         };
 
         var group = Assert.Single(TicketTypesController.ToStats(types, new Dictionary<int, int>()));
 
         Assert.Equal(TicketKind.Sleeping, group.Kind);
         Assert.True(group.IsAllConvention);
-        Assert.Equal(2, group.Days.Count);
+        Assert.Equal(2, group.Types.Count);
     }
 
     [Fact]
@@ -406,7 +460,10 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.Equal(1, page.ParticipantId);
         Assert.Equal([1, 3], page.Tickets.Select(t => t.Id));
         Assert.Equal([1, 2, 3], page.TicketTypes.Select(t => t.Id));
-        Assert.Equal(new TicketTypeOptionDto(1, "Indgang - Partout", new DateOnly(2027, 3, 24), true), page.Tickets[0]);
+        Assert.Equal(
+            new TicketTypeOptionDto(1, "Indgang - Partout", new DateOnly(2027, 3, 24), TicketKind.Entrance, true),
+            page.Tickets[0]
+        );
         Assert.IsType<NotFoundObjectResult>((await Tickets(db).Get(9)).Result);
     }
 

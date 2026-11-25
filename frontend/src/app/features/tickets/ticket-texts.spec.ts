@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Weekday } from '@shared/utils';
+import { TicketKind, TicketTypeOption } from '@shared/types';
 import {
   dayWithDate,
+  hasOwnDay,
   statsDayText,
-  statsHeadingKey,
+  statsKindKey,
+  statsTypeText,
   ticketDayOptions,
   ticketOptionText,
   ticketSearchText,
@@ -21,8 +24,41 @@ const danish: Record<Weekday, string> = {
 };
 const shortDay = (weekday: Weekday) => danish[weekday];
 
-const partout = { id: 1, name: 'Indgang - Partout', day: '2027-03-24', isAllConvention: true };
-const thursday = { id: 2, name: 'Indgang - Enkelt', day: '2027-03-25', isAllConvention: false };
+const partout: TicketTypeOption = {
+  id: 1,
+  name: 'Indgang - Partout',
+  day: '2027-03-24',
+  kind: 'Entrance',
+  isAllConvention: true,
+};
+const thursday: TicketTypeOption = {
+  id: 2,
+  name: 'Indgang - Enkelt',
+  day: '2027-03-25',
+  kind: 'Entrance',
+  isAllConvention: false,
+};
+const membership: TicketTypeOption = {
+  id: 3,
+  name: 'Alea medlemskab',
+  day: '2027-03-24',
+  kind: 'AleaMembership',
+  isAllConvention: false,
+};
+
+describe('hasOwnDay', () => {
+  it('is false for a partout type and for an Alea membership (2026-11-25)', () => {
+    const type = (kind: TicketKind, isAllConvention: boolean) => hasOwnDay({ kind, isAllConvention });
+    expect(type('Entrance', false)).toBe(true);
+    expect(type('Sleeping', false)).toBe(true);
+    expect(type('Other', false)).toBe(true);
+    expect(type('Entrance', true)).toBe(false);
+    expect(type('Other', true)).toBe(false);
+    expect(type('AleaMembership', false)).toBe(false);
+    // The form before a kind is chosen
+    expect(hasOwnDay({ kind: null, isAllConvention: false })).toBe(true);
+  });
+});
 
 describe('the ticket type texts', () => {
   it('writes a day like PHP date("D d/m"), in the page language', () => {
@@ -56,6 +92,9 @@ describe('the ticket type texts', () => {
     expect(ticketTypeListText({ ...partout, name: 'Hele Fastaval' }, shortDay, 'Partout')).toBe(
       'Hele Fastaval - Partout',
     );
+    // An Alea membership isn't for a day at all
+    expect(ticketTypeListText(membership, shortDay, 'Partout')).toBe('Alea medlemskab');
+    expect(ticketTypeListText({ ...membership, isAllConvention: true }, shortDay, 'Partout')).toBe('Alea medlemskab');
   });
 
   it('shows "name (day)" in the participant ticket editor (viseditmadwear.phtml)', () => {
@@ -63,11 +102,13 @@ describe('the ticket type texts', () => {
     expect(ticketOptionText({ ...partout, name: 'Hele Fastaval' }, shortDay, 'Partout')).toBe(
       'Hele Fastaval (Partout)',
     );
+    expect(ticketOptionText(membership, shortDay, 'Partout')).toBe('Alea medlemskab');
   });
 
-  it('leaves the day out of the search row of a ticket for the whole convention (ViewHelper)', () => {
+  it('leaves the day out of the search row of a type without a day of its own (ViewHelper)', () => {
     expect(ticketSearchText(thursday, shortDay)).toBe('Indgang - Enkelt Tor');
     expect(ticketSearchText(partout, shortDay)).toBe('Indgang - Partout');
+    expect(ticketSearchText(membership, shortDay)).toBe('Alea medlemskab');
   });
 
   it('writes a statistics day like DanishDayNames(date("D, j"))', () => {
@@ -75,15 +116,23 @@ describe('the ticket type texts', () => {
     expect(statsDayText('2027-04-01', shortDay)).toBe('Tor, 1');
   });
 
-  it('makes the statistics headings like Indgang::getProperType', () => {
-    expect(statsHeadingKey({ kind: 'Sleeping', isAllConvention: true })).toBe('tickets.stats.sleepingPartout');
-    expect(statsHeadingKey({ kind: 'Entrance', isAllConvention: true })).toBe('tickets.stats.entrancePartout');
-    // Infosys calls any ticket for the whole convention that isn't for sleeping an entrance
-    expect(statsHeadingKey({ kind: 'Other', isAllConvention: true })).toBe('tickets.stats.entrancePartout');
-    expect(statsHeadingKey({ kind: 'Entrance', isAllConvention: false })).toBe('tickets.stats.entranceDay');
-    expect(statsHeadingKey({ kind: 'Sleeping', isAllConvention: false })).toBe('tickets.stats.sleepingDay');
-    // Otherwise the name is the heading
-    expect(statsHeadingKey({ kind: 'Other', isAllConvention: false })).toBeNull();
-    expect(statsHeadingKey({ kind: 'AleaMembership', isAllConvention: false })).toBeNull();
+  it('describes the kind under a statistics heading like Indgang::getProperType', () => {
+    expect(statsKindKey({ kind: 'Sleeping', isAllConvention: true })).toBe('tickets.stats.sleepingPartout');
+    expect(statsKindKey({ kind: 'Entrance', isAllConvention: true })).toBe('tickets.stats.entrancePartout');
+    expect(statsKindKey({ kind: 'Entrance', isAllConvention: false })).toBe('tickets.stats.entranceDay');
+    expect(statsKindKey({ kind: 'Sleeping', isAllConvention: false })).toBe('tickets.stats.sleepingDay');
+    // Infosys called these "Indgang, partout" when they were for the whole convention (fixed 2026-11-25)
+    expect(statsKindKey({ kind: 'AleaMembership', isAllConvention: true })).toBe('tickets.kinds.AleaMembership');
+    expect(statsKindKey({ kind: 'Other', isAllConvention: true })).toBe('tickets.kinds.Other');
+    expect(statsKindKey({ kind: 'Other', isAllConvention: false })).toBe('tickets.kinds.Other');
+  });
+
+  it('shows each type under a statistics heading by its day, as Partout, or as Antal solgt', () => {
+    const texts = { partout: 'Partout', soldCount: 'Antal solgt' };
+    const row = (option: TicketTypeOption) => ({ ...option, count: 4 });
+
+    expect(statsTypeText(row(thursday), shortDay, texts)).toBe('Tor, 25');
+    expect(statsTypeText(row(partout), shortDay, texts)).toBe('Partout');
+    expect(statsTypeText(row(membership), shortDay, texts)).toBe('Antal solgt');
   });
 });

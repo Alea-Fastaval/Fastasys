@@ -94,8 +94,9 @@ describe('ParticipantSearchFormComponent', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(ParticipantSearchFormComponent);
     fixture.componentRef.setInput('ticketTypes', [
-      { id: 1, name: 'Indgang - Partout', day: '2027-03-24', isAllConvention: true },
-      { id: 3, name: 'Indgang - Enkelt', day: '2027-03-25', isAllConvention: false },
+      { id: 1, name: 'Indgang - Partout', day: '2027-03-24', kind: 'Entrance', isAllConvention: true },
+      { id: 3, name: 'Indgang - Enkelt', day: '2027-03-25', kind: 'Entrance', isAllConvention: false },
+      { id: 4, name: 'Alea medlemskab', day: '2027-03-24', kind: 'AleaMembership', isAllConvention: false },
     ]);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
@@ -106,6 +107,6 @@ describe('ParticipantSearchFormComponent', () => {
     const rows = [...(fixture.nativeElement as HTMLElement).querySelectorAll('fieldset.tickets .ticket-name')].map(
       cell => cell.textContent?.trim(),
     );
-    expect(rows).toEqual(['Indgang - Partout', 'Indgang - Enkelt common.weekdaysShort.Thursday']);
+    expect(rows).toEqual(['Indgang - Partout', 'Indgang - Enkelt common.weekdaysShort.Thursday', 'Alea medlemskab']);
   });
 });

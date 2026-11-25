@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Fastasys.ApiService.Controllers;
 
 // A ticket type in the edit page's select and list, and in the participant search's Indgang section. The pages show
-// it as "{Name} ({short day of Day})" and the search as "{Name} {short day of Day}", without the day when
-// IsAllConvention.
-public record TicketTypeOptionDto(int Id, string Name, DateOnly Day, bool IsAllConvention);
+// it as "{Name} ({short day of Day})" and the search as "{Name} {short day of Day}". A type without a day of its own
+// (TicketTypesController.HasOwnDay) shows "Partout" instead of the day, or only the name for an Alea membership.
+public record TicketTypeOptionDto(int Id, string Name, DateOnly Day, TicketKind Kind, bool IsAllConvention);
 
 // The Indgang part of Infosys's "Rediger indgang, mad og wear" page (deltager/updatemadwear/:id:): the participant's
 // tickets, in ticket type id order, and every ticket type the select offers, in id order
@@ -48,6 +48,7 @@ public class ParticipantTicketsController(InfosysDbContext db, ILogger<Participa
                 t.TicketType.Id,
                 t.TicketType.Name,
                 t.TicketType.Day,
+                t.TicketType.Kind,
                 t.TicketType.IsAllConvention
             ))
             .ToListAsync();
@@ -55,7 +56,7 @@ public class ParticipantTicketsController(InfosysDbContext db, ILogger<Participa
         var types = await db
             .TicketTypes.AsNoTracking()
             .OrderBy(t => t.Id)
-            .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.IsAllConvention))
+            .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.Kind, t.IsAllConvention))
             .ToListAsync();
 
         return Ok(new ParticipantTicketsDto(participantId, tickets, types));
