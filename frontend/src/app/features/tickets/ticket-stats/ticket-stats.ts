@@ -10,7 +10,8 @@ import { TranslationService } from '@shared/services';
 import { statsKindKey, statsTypeText, translatedShortDay } from '../ticket-texts';
 
 // Infosys entry/stats ("Statistik" in the Indgang menu, entrystats.phtml): a heading per ticket type name, with each
-// type and the number of participants who have it ("Ons, 24 — 12"). Annulled participants count too. The heading is
+// type and the number of participants who have it ("Ons, 24 — 12"), not counting annulled participants (agreed
+// 2026-11-25; Infosys counted them). The heading is
 // the name with the kind under it (agreed 2026-11-25; Infosys showed only the kind), and every type is listed.
 @Component({
   selector: 'app-ticket-stats',

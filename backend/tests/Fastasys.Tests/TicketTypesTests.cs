@@ -128,6 +128,43 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task TheCountsLeaveOutAnnulledParticipants()
+    {
+        // Infosys counted the tickets of annulled participants too; they are left out (agreed 2026-11-25), in "Antal
+        // solgt" and in the statistics. Their tickets still keep the type from being deleted.
+        using var db = CreateDbContext();
+        await SeedAsync(
+            db,
+            [Type(1, "Indgang - Partout", partout: true), Type(2, "Ottofest", day: 27, kind: TicketKind.Other)],
+            (1, 1),
+            (2, 1),
+            (2, 2),
+            (3, 2)
+        );
+        (await db.Participants.SingleAsync(p => p.Id == 2, Ct)).IsAnnulled = true;
+        (await db.Participants.SingleAsync(p => p.Id == 3, Ct)).IsAnnulled = true;
+        await db.SaveChangesAsync(Ct);
+        db.ChangeTracker.Clear();
+
+        Assert.Equal([1, 0], Value(await Types(db).GetAll()).OrderBy(t => t.Id).Select(t => t.SoldCount));
+        Assert.Equal(1, Value(await Types(db).Get(1)).SoldCount);
+        Assert.Equal(0, Value(await Types(db).Get(2)).SoldCount);
+        var stats = Value(await Types(db).GetStats()).SelectMany(g => g.Types).ToDictionary(t => t.Id, t => t.Count);
+        Assert.Equal(1, stats[1]);
+        Assert.Equal(0, stats[2]);
+        var update = new UpdateTicketTypeDto
+        {
+            Name = "Ottofest",
+            Price = 100,
+            Day = new DateOnly(2027, 3, 27),
+            Kind = TicketKind.Other,
+        };
+        Assert.Equal(0, Value(await Types(db).Update(2, update)).SoldCount);
+
+        Assert.IsType<ConflictObjectResult>(await Types(db).Delete(2));
+    }
+
+    [Fact]
     public async Task Get_ShowsOneTypeOr404()
     {
         using var db = CreateDbContext();

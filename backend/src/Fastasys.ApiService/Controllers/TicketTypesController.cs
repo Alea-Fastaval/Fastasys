@@ -9,8 +9,8 @@ using Microsoft.Extensions.Options;
 
 namespace Fastasys.ApiService.Controllers;
 
-// A ticket type (Infosys indgang) with the number of participants who have it (Infosys "Antal solgt", which counts
-// annulled participants too)
+// A ticket type (Infosys indgang) with the number of participants who have it (Infosys "Antal solgt"), not counting
+// annulled participants (see SoldTickets)
 public record TicketTypeDto(
     int Id,
     string Name,
@@ -95,7 +95,7 @@ public class TicketTypesController(
         if (type == null)
             return NotFound(new { message = NotFoundMessage });
 
-        var count = await db.ParticipantTickets.CountAsync(t => t.TicketTypeId == id);
+        var count = await SoldTickets().CountAsync(t => t.TicketTypeId == id);
         return Ok(ToDto(type, new Dictionary<int, int> { [id] = count }));
     }
 
@@ -146,7 +146,7 @@ public class TicketTypesController(
 
         logger.LogInformation("Ticket type {TicketTypeId} updated by user {UserId}", id, CurrentUserId());
 
-        var count = await db.ParticipantTickets.CountAsync(t => t.TicketTypeId == id);
+        var count = await SoldTickets().CountAsync(t => t.TicketTypeId == id);
         return Ok(ToDto(type, new Dictionary<int, int> { [id] = count }));
     }
 
@@ -282,10 +282,15 @@ public class TicketTypesController(
         type.IsAllConvention = dto.IsAllConvention;
     }
 
-    // How many participants have each type (Infosys EntranceModel::getNumbersSold, Indgang::getParticipantCount)
+    // The tickets "Antal solgt" and the statistics count (Infosys EntranceModel::getNumbersSold,
+    // Indgang::getParticipantCount). Infosys counted the tickets of annulled participants too; they are left out
+    // (agreed 2026-11-25). Their tickets still exist, so they still keep a type from being deleted.
+    private IQueryable<ParticipantTicket> SoldTickets() => db.ParticipantTickets.Where(t => !t.Participant.IsAnnulled);
+
+    // How many participants have each type
     private async Task<Dictionary<int, int>> SoldCountsAsync() =>
-        await db
-            .ParticipantTickets.GroupBy(t => t.TicketTypeId)
+        await SoldTickets()
+            .GroupBy(t => t.TicketTypeId)
             .Select(g => new { TicketTypeId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.TicketTypeId, g => g.Count);
 
