@@ -66,6 +66,16 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
             IsAllConvention = true,
         };
 
+    // A ticket for one day, Thursday
+    private static CreateTicketTypeDto DayTicket() =>
+        ValidCreate() with
+        {
+            Name = "Indgang - Enkelt",
+            Price = 75,
+            Day = new DateOnly(2027, 3, 25),
+            IsAllConvention = false,
+        };
+
     private static T Value<T>(ActionResult<T> result) =>
         Assert.IsAssignableFrom<T>(Assert.IsAssignableFrom<ObjectResult>(result.Result).Value);
 
@@ -164,11 +174,14 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
             { ValidCreate() with { Price = -1 }, false },
             { ValidCreate() with { Price = null }, false },
             // Infosys turned an empty start into 1970-01-01 (fixed 2026-11-24)
-            { ValidCreate() with { Day = null }, false },
+            { DayTicket() with { Day = null }, false },
             // The day is one of the convention's days (agreed 2026-11-25)
-            { ValidCreate() with { Day = new DateOnly(2027, 3, 29) }, true },
-            { ValidCreate() with { Day = new DateOnly(2027, 3, 23) }, false },
-            { ValidCreate() with { Day = new DateOnly(2027, 3, 30) }, false },
+            { DayTicket() with { Day = new DateOnly(2027, 3, 29) }, true },
+            { DayTicket() with { Day = new DateOnly(2027, 3, 23) }, false },
+            { DayTicket() with { Day = new DateOnly(2027, 3, 30) }, false },
+            // A partout type needs no day; it gets the convention's first day (agreed 2026-11-25)
+            { ValidCreate() with { Day = null }, true },
+            { ValidCreate() with { Day = new DateOnly(2027, 3, 30) }, true },
             { ValidCreate() with { Kind = null }, false },
             { ValidCreate() with { Kind = (TicketKind)99 }, false },
         };
@@ -186,7 +199,7 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
     [Fact]
     public void Validate_LetsATypeKeepADayOutsideTheConvention_AndChecksNoDayWithoutTheDates()
     {
-        var february = ValidCreate() with { Day = new DateOnly(2027, 2, 3) };
+        var february = DayTicket() with { Day = new DateOnly(2027, 2, 3) };
 
         // A type that already has the day may keep it, but not move to another day outside the convention
         Assert.True(TicketTypesController.Validate(february, Convention, new DateOnly(2027, 2, 3)).IsValid);
@@ -196,6 +209,61 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
         Assert.True(
             TicketTypesController.Validate(february, new ConventionOptions { Start = Convention.Start }).IsValid
         );
+    }
+
+    [Fact]
+    public void DayToStore_GivesAPartoutTypeTheConventionsFirstDay()
+    {
+        var partout = ValidCreate() with { Day = new DateOnly(2027, 3, 27) };
+
+        Assert.Equal(new DateOnly(2027, 3, 24), TicketTypesController.DayToStore(partout, Convention));
+        Assert.Equal(
+            new DateOnly(2027, 3, 24),
+            TicketTypesController.DayToStore(partout, Convention, new DateOnly(2027, 3, 26))
+        );
+        // A type for one day keeps the day it was given
+        Assert.Equal(new DateOnly(2027, 3, 25), TicketTypesController.DayToStore(DayTicket(), Convention));
+
+        // Without the first day in the configuration, a partout type keeps its day, or takes the one sent, and needs one
+        var noDates = new ConventionOptions();
+        Assert.Equal(
+            new DateOnly(2027, 3, 26),
+            TicketTypesController.DayToStore(partout, noDates, new DateOnly(2027, 3, 26))
+        );
+        Assert.Equal(new DateOnly(2027, 3, 27), TicketTypesController.DayToStore(partout, noDates));
+        Assert.False(TicketTypesController.Validate(partout with { Day = null }, noDates).IsValid);
+        Assert.True(
+            TicketTypesController.Validate(partout with { Day = null }, noDates, new DateOnly(2027, 3, 26)).IsValid
+        );
+    }
+
+    [Fact]
+    public async Task CreateAndUpdate_StoreTheConventionsFirstDayForAPartoutType()
+    {
+        using var db = CreateDbContext();
+        await SeedAsync(db, [Type(1, "Overnatning - Partout", day: 27, kind: TicketKind.Sleeping, partout: true)]);
+
+        var created = Assert.IsType<TicketTypeDto>(
+            Assert
+                .IsType<CreatedAtActionResult>((await Types(db).Create(ValidCreate() with { Day = null })).Result)
+                .Value
+        );
+        var updated = Value(
+            await Types(db)
+                .Update(
+                    1,
+                    new UpdateTicketTypeDto
+                    {
+                        Name = "Overnatning - Partout",
+                        Price = 200,
+                        Kind = TicketKind.Sleeping,
+                        IsAllConvention = true,
+                    }
+                )
+        );
+
+        Assert.Equal(new DateOnly(2027, 3, 24), created.Day);
+        Assert.Equal(new DateOnly(2027, 3, 24), updated.Day);
     }
 
     [Fact]
@@ -285,14 +353,18 @@ public class TicketTypesTests(TestWebApplicationFactory factory) : IClassFixture
         var stats = TicketTypesController.ToStats(types, counts);
 
         Assert.Equal(["Indgang - Partout", "Indgang - Enkelt", "Overnatning - Enkelt"], stats.Select(g => g.Name));
-        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 24), 10)], stats[0].Days);
+        // The page shows "Partout" instead of the day of a partout type
+        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 24), 10, true)], stats[0].Days);
         Assert.True(stats[0].IsAllConvention);
         Assert.Equal(
-            [new TicketStatsDayDto(new DateOnly(2027, 3, 25), 2), new TicketStatsDayDto(new DateOnly(2027, 3, 24), 3)],
+            [
+                new TicketStatsDayDto(new DateOnly(2027, 3, 25), 2, false),
+                new TicketStatsDayDto(new DateOnly(2027, 3, 24), 3, false),
+            ],
             stats[1].Days
         );
         Assert.Equal(TicketKind.Sleeping, stats[2].Kind);
-        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 25), 0)], stats[2].Days);
+        Assert.Equal([new TicketStatsDayDto(new DateOnly(2027, 3, 25), 0, false)], stats[2].Days);
     }
 
     [Fact]

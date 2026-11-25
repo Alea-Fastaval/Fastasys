@@ -51,14 +51,18 @@ describe('the ticket type texts', () => {
   });
 
   it('shows "name - day" in the list of all types (entrytypes.phtml)', () => {
-    expect(ticketTypeListText(thursday, shortDay)).toBe('Indgang - Enkelt - Tor 25/03');
-    // Infosys shows the day also for a ticket for the whole convention
-    expect(ticketTypeListText(partout, shortDay)).toBe('Indgang - Partout - Ons 24/03');
+    expect(ticketTypeListText(thursday, shortDay, 'Partout')).toBe('Indgang - Enkelt - Tor 25/03');
+    // Infosys showed the day also for a ticket for the whole convention, which has no day of its own (2026-11-25)
+    expect(ticketTypeListText({ ...partout, name: 'Hele Fastaval' }, shortDay, 'Partout')).toBe(
+      'Hele Fastaval - Partout',
+    );
   });
 
   it('shows "name (day)" in the participant ticket editor (viseditmadwear.phtml)', () => {
-    expect(ticketOptionText(thursday, shortDay)).toBe('Indgang - Enkelt (Tor)');
-    expect(ticketOptionText(partout, shortDay)).toBe('Indgang - Partout (Ons)');
+    expect(ticketOptionText(thursday, shortDay, 'Partout')).toBe('Indgang - Enkelt (Tor)');
+    expect(ticketOptionText({ ...partout, name: 'Hele Fastaval' }, shortDay, 'Partout')).toBe(
+      'Hele Fastaval (Partout)',
+    );
   });
 
   it('leaves the day out of the search row of a ticket for the whole convention (ViewHelper)', () => {

@@ -54,7 +54,8 @@ describe('ParticipantTicketsComponent', () => {
     const rows = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.ticket-list .ticket')].map(cell =>
       cell.textContent?.trim(),
     );
-    expect(rows).toEqual(['Indgang - Partout (common.weekdaysShort.Wednesday)']);
+    expect(rows).toEqual(['Indgang - Partout (tickets.partout)']);
+    expect(component.optionText(thursday)).toBe('Indgang - Enkelt (common.weekdaysShort.Thursday)');
     expect(component.chosenId).toBe(1);
   });
 

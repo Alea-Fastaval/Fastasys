@@ -42,7 +42,8 @@ export class ParticipantTicketsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly flash = inject(ParticipantFlashService);
-  private readonly shortDay = translatedShortDay(inject(TranslationService));
+  private readonly translation = inject(TranslationService);
+  private readonly shortDay = translatedShortDay(this.translation);
 
   public readonly participantId = Number(this.route.snapshot.paramMap.get('id'));
   public readonly page = signal<ParticipantTickets | null>(null);
@@ -65,7 +66,7 @@ export class ParticipantTicketsComponent implements OnInit {
   }
 
   public optionText(option: TicketTypeOption): string {
-    return ticketOptionText(option, this.shortDay);
+    return ticketOptionText(option, this.shortDay, this.translation.translate('tickets.partout'));
   }
 
   public add(): void {

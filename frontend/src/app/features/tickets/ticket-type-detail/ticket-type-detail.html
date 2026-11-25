@@ -33,10 +33,6 @@
         <dd class="price">{{ priceText(t.price) }}</dd>
       </div>
       <div>
-        <dt>{{ 'tickets.fields.day' | translate }}:</dt>
-        <dd class="day">{{ dayText(t.day) }}</dd>
-      </div>
-      <div>
         <dt>{{ 'tickets.fields.kind' | translate }}:</dt>
         <dd class="kind">{{ 'tickets.kinds.' + t.kind | translate }}</dd>
       </div>
@@ -44,6 +40,13 @@
         <dt>{{ 'tickets.fields.isAllConvention' | translate }}:</dt>
         <dd class="all-convention">{{ (t.isAllConvention ? 'common.yes' : 'common.no') | translate }}</dd>
       </div>
+      <!-- A partout type has no day of its own, like in the form -->
+      @if (!t.isAllConvention) {
+      <div>
+        <dt>{{ 'tickets.fields.day' | translate }}:</dt>
+        <dd class="day">{{ dayText(t.day) }}</dd>
+      </div>
+      }
       <div>
         <dt>{{ 'tickets.fields.soldCount' | translate }}:</dt>
         <dd class="sold">{{ t.soldCount }}</dd>

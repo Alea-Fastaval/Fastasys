@@ -37,6 +37,10 @@ describe('canSubmitTicketType (the rules the API checks)', () => {
     expect(canSubmitTicketType({ ...complete, kind: null })).toBe(false);
   });
 
+  it('needs no day for a partout type (2026-11-25)', () => {
+    expect(canSubmitTicketType({ ...complete, day: '', isAllConvention: true })).toBe(true);
+  });
+
   it('refuses the types PHP empty() refuses, and more than 64 characters', () => {
     expect(canSubmitTicketType({ ...complete, name: '' })).toBe(false);
     expect(canSubmitTicketType({ ...complete, name: '0' })).toBe(false);
@@ -44,8 +48,10 @@ describe('canSubmitTicketType (the rules the API checks)', () => {
     expect(canSubmitTicketType({ ...complete, name: 'x'.repeat(65) })).toBe(false);
   });
 
-  it('sends no day when none is chosen', () => {
+  it('sends no day when none is chosen, nor for a partout type', () => {
     expect(toDto({ ...complete, day: '' }).day).toBeNull();
+    // The API gives a partout type the convention's first day
+    expect(toDto({ ...complete, isAllConvention: true }).day).toBeNull();
     expect(toDto(complete)).toEqual({
       name: 'Indgang - Enkelt',
       price: 75,
@@ -105,6 +111,19 @@ describe('TicketTypeFormComponent', () => {
     expect(element.querySelector('[name="isDigital"]')).toBeNull();
   });
 
+  it('hides Dag while partout is ticked (2026-11-25)', async () => {
+    const { fixture, component } = await render(null);
+    const element = fixture.nativeElement as HTMLElement;
+
+    component.form.update(form => form && { ...form, isAllConvention: true });
+    fixture.detectChanges();
+    expect(element.querySelector('mat-select[name="day"]')).toBeNull();
+
+    component.form.update(form => form && { ...form, isAllConvention: false });
+    fixture.detectChanges();
+    expect(element.querySelector('mat-select[name="day"]')).not.toBeNull();
+  });
+
   it('keeps the day of a type that is outside the convention choosable', async () => {
     const { component } = await render('4', fastaval2027, { ...existing, name: 'Billetgebyr', day: '2027-02-03' });
 
@@ -132,7 +151,8 @@ describe('TicketTypeFormComponent', () => {
     component.submit();
     const request = http.expectOne('/api/ticket-types');
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({ ...toDto(complete), isAllConvention: true });
+    // A partout type sends no day
+    expect(request.request.body).toEqual({ ...toDto(complete), isAllConvention: true, day: null });
     request.flush({ ...existing, id: 9 });
 
     expect(flash.take()).toEqual({ type: 'success', key: 'created' });

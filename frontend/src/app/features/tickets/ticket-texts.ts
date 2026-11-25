@@ -37,15 +37,20 @@ export function ticketDayOptions(start: string | null, end: string | null, curre
   return current && !days.includes(current) ? [...days, current].sort() : days;
 }
 
-// The Type column of "Alle indgangs-typer": "Indgang - Enkelt - Ons 24/03" (entrytypes.phtml)
-export function ticketTypeListText(type: { name: string; day: string }, shortDay: ShortDay): string {
-  return `${type.name} - ${dayWithDate(type.day, shortDay)}`;
+// The Type column of "Alle indgangs-typer": "Indgang - Enkelt - Ons 24/03" (entrytypes.phtml). Infosys showed the
+// day of a ticket for the whole convention too; it has no day of its own, so it says "Partout" (agreed 2026-11-25).
+export function ticketTypeListText(
+  type: { name: string; day: string; isAllConvention: boolean },
+  shortDay: ShortDay,
+  partout: string,
+): string {
+  return `${type.name} - ${type.isAllConvention ? partout : dayWithDate(type.day, shortDay)}`;
 }
 
-// A ticket type in the participant's ticket editor: "Indgang - Partout (Ons)" (viseditmadwear.phtml). Infosys shows
-// the day also for a ticket for the whole convention.
-export function ticketOptionText(option: TicketTypeOption, shortDay: ShortDay): string {
-  return `${option.name} (${shortDay(weekdayOfDate(option.day))})`;
+// A ticket type in the participant's ticket editor: "Indgang - Enkelt (Ons)" (viseditmadwear.phtml), or "(Partout)"
+// for a ticket for the whole convention (Infosys showed its day)
+export function ticketOptionText(option: TicketTypeOption, shortDay: ShortDay, partout: string): string {
+  return `${option.name} (${option.isAllConvention ? partout : shortDay(weekdayOfDate(option.day))})`;
 }
 
 // A row of the search box's Indgang section: "Indgang - Enkelt Ons", or the name alone for a ticket for the whole

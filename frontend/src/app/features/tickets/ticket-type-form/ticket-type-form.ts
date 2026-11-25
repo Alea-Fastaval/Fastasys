@@ -50,19 +50,20 @@ export function toForm(type: TicketType): TicketTypeForm {
   };
 }
 
+// A partout type sends no day: the API gives it the convention's first day (agreed 2026-11-25)
 export function toDto(form: TicketTypeForm): TicketTypeFieldsDto {
   return {
     name: form.name,
     price: form.price,
-    day: form.day === '' ? null : form.day,
+    day: form.isAllConvention || form.day === '' ? null : form.day,
     kind: form.kind,
     isAllConvention: form.isAllConvention,
   };
 }
 
 // The rules the API checks (TicketTypesController.Validate): a type that isn't empty or "0" (PHP empty()), at most 64
-// characters, a whole price of 0 or more, a day and a kind. Infosys's edit form didn't check the price, and an empty
-// start became 1 January 1970 (both fixed 2026-11-24).
+// characters, a whole price of 0 or more, a kind, and a day unless the type is partout. Infosys's edit form didn't
+// check the price, and an empty start became 1 January 1970 (both fixed 2026-11-24).
 export function canSubmitTicketType(form: TicketTypeForm): boolean {
   return (
     form.name !== '' &&
@@ -71,7 +72,7 @@ export function canSubmitTicketType(form: TicketTypeForm): boolean {
     form.price !== null &&
     Number.isInteger(form.price) &&
     form.price >= 0 &&
-    form.day !== '' &&
+    (form.isAllConvention || form.day !== '') &&
     form.kind !== null
   );
 }

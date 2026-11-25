@@ -22,7 +22,8 @@ import { ticketTypeListText, translatedShortDay } from '../ticket-texts';
 })
 export class TicketTypesComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly shortDay = translatedShortDay(inject(TranslationService));
+  private readonly translation = inject(TranslationService);
+  private readonly shortDay = translatedShortDay(this.translation);
 
   public readonly flash = inject(TicketFlashService).take();
   public readonly mayEdit = inject(AuthService).hasPrivilege('entrance_edit');
@@ -38,6 +39,6 @@ export class TicketTypesComponent implements OnInit {
   }
 
   public typeText(type: TicketType): string {
-    return ticketTypeListText(type, this.shortDay);
+    return ticketTypeListText(type, this.shortDay, this.translation.translate('tickets.partout'));
   }
 }

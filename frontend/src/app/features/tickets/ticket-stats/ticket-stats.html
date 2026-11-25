@@ -14,7 +14,10 @@
     <app-card [title]="heading(group)">
       <ul class="days">
         @for (day of group.days; track day.day) {
-        <li>{{ dayText(day.day) }} &mdash; <strong>{{ day.count }}</strong></li>
+        <li>
+          {{ day.isAllConvention ? ('tickets.partout' | translate) : dayText(day.day) }} &mdash;
+          <strong>{{ day.count }}</strong>
+        </li>
         }
       </ul>
     </app-card>

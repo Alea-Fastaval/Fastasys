@@ -777,6 +777,7 @@
     "createTitle": "Create ticket type",
     "editTitle": "Update ticket type",
     "editDelete": "Edit/delete",
+    "partout": "Partout",
     "deleteConfirmTitle": "Delete ticket type?",
     "fields": {
       "id": "Id",

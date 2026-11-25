@@ -45,7 +45,8 @@ public record TicketStatsGroupDto(
     IReadOnlyList<TicketStatsDayDto> Days
 );
 
-public record TicketStatsDayDto(DateOnly Day, int Count);
+// IsAllConvention: the page shows "Partout" instead of the day
+public record TicketStatsDayDto(DateOnly Day, int Count, bool IsAllConvention);
 
 // Infosys EntranceController (the Indgang menu): all ticket types, one type, create, edit, delete and statistics.
 // Infosys lets superuser and Infonaut use all of it; here entrance_view may look and entrance_edit may change.
@@ -115,7 +116,7 @@ public class TicketTypesController(
             return BadRequest(new { message = error });
 
         var type = new TicketType();
-        Apply(type, dto);
+        Apply(type, dto, DayToStore(dto, convention.Value)!.Value);
 
         db.TicketTypes.Add(type);
         await db.SaveChangesAsync();
@@ -138,7 +139,7 @@ public class TicketTypesController(
         if (!isValid)
             return BadRequest(new { message = error });
 
-        Apply(type, dto);
+        Apply(type, dto, DayToStore(dto, convention.Value, type.Day)!.Value);
         await db.SaveChangesAsync();
 
         logger.LogInformation("Ticket type {TicketTypeId} updated by user {UserId}", id, CurrentUserId());
@@ -211,7 +212,12 @@ public class TicketTypesController(
                     name,
                     days[0].Kind,
                     days[0].IsAllConvention,
-                    days.Select(t => new TicketStatsDayDto(t.Day, soldCounts.GetValueOrDefault(t.Id))).ToList()
+                    days.Select(t => new TicketStatsDayDto(
+                            t.Day,
+                            soldCounts.GetValueOrDefault(t.Id),
+                            t.IsAllConvention
+                        ))
+                        .ToList()
                 );
             })
             .ToList();
@@ -237,14 +243,19 @@ public class TicketTypesController(
             return (false, "Price must be a whole number of 0 or more");
 
         // Infosys turned an empty or unreadable start into 1 January 1970 (fixed 2026-11-24)
-        if (dto.Day is not { } day)
-            return (false, "Day is required");
+        if (DayToStore(dto, convention, currentDay) is not { } day)
+        {
+            return dto.IsAllConvention
+                ? (false, "The convention's first day is not configured")
+                : (false, "Day is required");
+        }
 
         // The day is picked from the convention's days (agreed 2026-11-25; Infosys's date picker only suggested them).
         // A type keeps a day outside them when it isn't changed. Without the dates in the configuration it can't be
         // checked.
         if (
-            convention.Start is { } start
+            !dto.IsAllConvention
+            && convention.Start is { } start
             && convention.End is { } end
             && (day < start || day > end)
             && day != currentDay
@@ -259,11 +270,20 @@ public class TicketTypesController(
         return (true, string.Empty);
     }
 
-    private static void Apply(TicketType type, TicketTypeFieldsDto dto)
+    // The day to store. A partout type (for the whole convention) has no day of its own: it gets the convention's first
+    // day, whatever was sent, like Infosys's partout types had (agreed 2026-11-25; the form hides "Dag" for it). Without
+    // that date in the configuration it keeps its day, or takes the one sent. null when there is no day to store.
+    public static DateOnly? DayToStore(
+        TicketTypeFieldsDto dto,
+        ConventionOptions convention,
+        DateOnly? currentDay = null
+    ) => dto.IsAllConvention ? convention.Start ?? currentDay ?? dto.Day : dto.Day;
+
+    private static void Apply(TicketType type, TicketTypeFieldsDto dto, DateOnly day)
     {
         type.Name = dto.Name!;
         type.Price = dto.Price!.Value;
-        type.Day = dto.Day!.Value;
+        type.Day = day;
         type.Kind = dto.Kind!.Value;
         type.IsAllConvention = dto.IsAllConvention;
     }

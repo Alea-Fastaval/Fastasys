@@ -22,23 +22,36 @@ describe('TicketStatsComponent', () => {
         kind: 'Entrance',
         isAllConvention: false,
         days: [
-          { day: '2027-03-25', count: 12 },
-          { day: '2027-03-24', count: 3 },
+          { day: '2027-03-25', count: 12, isAllConvention: false },
+          { day: '2027-03-24', count: 3, isAllConvention: false },
         ],
       },
-      { name: 'Campingvogn', kind: 'Other', isAllConvention: false, days: [{ day: '2027-03-24', count: 1 }] },
+      {
+        name: 'Campingvogn',
+        kind: 'Other',
+        isAllConvention: false,
+        days: [{ day: '2027-03-24', count: 1, isAllConvention: false }],
+      },
+      {
+        name: 'Hele Fastaval',
+        kind: 'Entrance',
+        isAllConvention: true,
+        days: [{ day: '2027-03-24', count: 40, isAllConvention: true }],
+      },
     ];
     http.expectOne('/api/ticket-types/stats').flush(groups);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
     const titles = [...element.querySelectorAll('.atom-card-title')].map(title => title.textContent?.trim());
-    expect(titles).toEqual(['tickets.stats.entranceDay', 'Campingvogn']);
+    expect(titles).toEqual(['tickets.stats.entranceDay', 'Campingvogn', 'tickets.stats.entrancePartout']);
     const days = [...element.querySelectorAll('.days li')].map(li => li.textContent?.replace(/\s+/g, ' ').trim());
     expect(days).toEqual([
       'common.weekdaysShort.Thursday, 25 — 12',
       'common.weekdaysShort.Wednesday, 24 — 3',
       'common.weekdaysShort.Wednesday, 24 — 1',
+      // A partout type has no day of its own (2026-11-25)
+      'tickets.partout — 40',
     ]);
     http.verify();
   });

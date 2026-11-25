@@ -18,7 +18,7 @@ const type: TicketType = {
 };
 
 describe('TicketTypeDetailComponent', () => {
-  const render = async (privileges: string[], found = true) => {
+  const render = async (privileges: string[], found = true, shown: TicketType = type) => {
     await TestBed.configureTestingModule({
       imports: [TicketTypeDetailComponent],
       providers: [
@@ -42,7 +42,7 @@ describe('TicketTypeDetailComponent', () => {
     fixture.detectChanges();
     http.match('/assets/i18n/en.json').forEach(request => request.flush({}));
     const request = http.expectOne('/api/ticket-types/4');
-    if (found) request.flush(type);
+    if (found) request.flush(shown);
     else request.flush({}, { status: 404, statusText: 'Not found' });
     fixture.detectChanges();
     http.verify();
@@ -57,13 +57,20 @@ describe('TicketTypeDetailComponent', () => {
     expect(text(element, '.id')).toBe('4');
     expect(text(element, '.name')).toBe('Indgang - Partout');
     expect(text(element, '.price')).toBe('300 DKK');
-    expect(text(element, '.day')).toBe('common.weekdays.Wednesday 24/03');
+    // A partout type has no day of its own (2026-11-25)
+    expect(element.querySelector('.day')).toBeNull();
     expect(text(element, '.kind')).toBe('tickets.kinds.Entrance');
     expect(text(element, '.all-convention')).toBe('common.yes');
     expect(element.querySelector('.digital')).toBeNull();
     expect(text(element, '.sold')).toBe('7');
     // "ret/slet" is for entrance_edit only
     expect(element.querySelector('a[href="/resources/tickets/4/edit"]')).toBeNull();
+  });
+
+  it('shows the day of a type for one day', async () => {
+    const element = await render(['entrance_view'], true, { ...type, isAllConvention: false, day: '2027-03-25' });
+
+    expect(text(element, '.day')).toBe('common.weekdays.Thursday 25/03');
   });
 
   it('links "ret/slet" for entrance_edit', async () => {

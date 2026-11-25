@@ -9,7 +9,8 @@ export interface TicketType {
   name: string;
   // Whole DKK
   price: number;
-  // "yyyy-mm-dd": one of the convention's days (Infosys start; only the day is kept)
+  // "yyyy-mm-dd": one of the convention's days (Infosys start; only the day is kept). A partout type gets the first
+  // day; the pages show "Partout" for it.
   day: string;
   kind: TicketKind;
   // "Partout": for the whole convention, not only for day
@@ -21,6 +22,7 @@ export interface TicketType {
 export interface TicketTypeFieldsDto {
   name: string;
   price: number | null;
+  // null for a partout type: the API gives it the convention's first day
   day: string | null;
   kind: TicketKind | null;
   isAllConvention: boolean;
@@ -40,6 +42,8 @@ export interface TicketStatsGroup {
 export interface TicketStatsDay {
   day: string;
   count: number;
+  // Shown as "Partout" instead of the day
+  isAllConvention: boolean;
 }
 
 // A ticket type in a select or a list: the participant's ticket editor and the search box's Indgang section

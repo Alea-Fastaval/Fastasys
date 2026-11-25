@@ -777,6 +777,7 @@
     "createTitle": "Opret indgang",
     "editTitle": "Opdater indgang",
     "editDelete": "Ret/slet",
+    "partout": "Partout",
     "deleteConfirmTitle": "Slet indgang?",
     "fields": {
       "id": "Id",

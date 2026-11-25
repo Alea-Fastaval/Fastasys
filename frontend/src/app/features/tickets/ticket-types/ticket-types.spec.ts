@@ -55,7 +55,10 @@ describe('TicketTypesComponent', () => {
   it('lists the types in the order the API sorted them, with price and number sold', () => {
     const element = render(
       ['entrance_view'],
-      [type({ id: 3, name: 'Indgang - Enkelt', day: '2027-03-25', price: 75, soldCount: 12 }), type({ soldCount: 4 })],
+      [
+        type({ id: 3, name: 'Indgang - Enkelt', day: '2027-03-25', isAllConvention: false, price: 75, soldCount: 12 }),
+        type({ soldCount: 4 }),
+      ],
     );
 
     const rows = [...element.querySelectorAll('tbody tr')].map(row =>
@@ -63,7 +66,8 @@ describe('TicketTypesComponent', () => {
     );
     expect(rows).toEqual([
       ['3', 'Indgang - Enkelt - common.weekdaysShort.Thursday 25/03', '75 DKK', '12'],
-      ['1', 'Indgang - Partout - common.weekdaysShort.Wednesday 24/03', '300 DKK', '4'],
+      // A partout type has no day of its own (2026-11-25)
+      ['1', 'Indgang - Partout - tickets.partout', '300 DKK', '4'],
     ]);
     expect(element.querySelector('tbody a')?.getAttribute('href')).toBe('/resources/tickets/3');
     // Only entrance_edit may create
