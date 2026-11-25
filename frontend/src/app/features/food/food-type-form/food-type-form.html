@@ -1,0 +1,114 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/food"><mat-icon>arrow_back</mat-icon> {{ 'food.allTitle' | translate }}</a>
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'food.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'food.deleteConfirmTitle' | translate">
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
+        {{ 'food.buttons.delete' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">{{ 'food.buttons.cancel' | translate }}</button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card [title]="(foodId() === null ? 'food.createTitle' : 'food.editTitle') | translate">
+    @if (errorKey(); as key) {
+    <p class="flash error">{{ 'food.messages.' + key | translate }}</p>
+    }
+
+    <form (ngSubmit)="submit()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'food.fields.nameDanish' | translate }}</mat-label>
+          <input matInput name="nameDanish" required [maxlength]="maxNameLength" [(ngModel)]="f.nameDanish" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'food.fields.nameEnglish' | translate }}</mat-label>
+          <input matInput name="nameEnglish" [maxlength]="maxNameLength" [(ngModel)]="f.nameEnglish" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'food.fields.price' | translate }}</mat-label>
+          <input matInput type="number" name="price" required min="0" step="1" [(ngModel)]="f.price" />
+          <span matTextSuffix>DKK</span>
+        </mat-form-field>
+
+        <div class="checkboxes">
+          <mat-checkbox name="isHidden" [(ngModel)]="f.isHidden">{{ 'food.fields.isHidden' | translate }}</mat-checkbox>
+        </div>
+      </div>
+
+      <hr />
+      <h4>{{ 'food.fields.mealTimes' | translate }}:</h4>
+      @if (hasNoDays()) {
+      <p class="flash error no-days">{{ 'food.messages.noConventionDays' | translate }}</p>
+      } @for (row of f.mealTimes; track row) {
+      <div class="meal-time">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'food.fields.day' | translate }}</mat-label>
+          <mat-select [name]="'day' + $index" required [(ngModel)]="row.day">
+            @for (day of days(row); track day) {
+            <mat-option [value]="day">{{ dayText(day) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="narrow">
+          <mat-label>{{ 'food.fields.clock' | translate }}</mat-label>
+          <input matInput type="time" [name]="'clock' + $index" required [(ngModel)]="row.clock" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'food.fields.descriptionDanish' | translate }}</mat-label>
+          <input
+            matInput
+            [name]="'descriptionDanish' + $index"
+            [maxlength]="maxDescriptionLength"
+            [(ngModel)]="row.descriptionDanish"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'food.fields.descriptionEnglish' | translate }}</mat-label>
+          <input
+            matInput
+            [name]="'descriptionEnglish' + $index"
+            [maxlength]="maxDescriptionLength"
+            [(ngModel)]="row.descriptionEnglish"
+          />
+        </mat-form-field>
+        <button
+          mat-button
+          color="warn"
+          type="button"
+          class="remove-meal-time"
+          [disabled]="row.orderCount > 0"
+          [title]="row.orderCount > 0 ? ('food.orderedHint' | translate: { count: row.orderCount.toString() }) : ''"
+          (click)="removeMealTime(row)"
+        >
+          {{ 'food.buttons.removeMealTime' | translate }}
+        </button>
+      </div>
+      }
+      <button mat-stroked-button type="button" class="add-meal-time" (click)="addMealTime()">
+        <mat-icon>add</mat-icon> {{ 'food.buttons.addMealTime' | translate }}
+      </button>
+      <hr />
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="!canSubmit(f)">
+          {{ (foodId() === null ? 'food.buttons.create' : 'food.buttons.update') | translate }}
+        </button>
+        @if (foodId() !== null) {
+        <button mat-button type="button" (click)="cancel()">{{ 'food.buttons.cancel' | translate }}</button>
+        <button mat-button color="warn" type="button" (click)="askDelete()">
+          {{ 'food.buttons.delete' | translate }}
+        </button>
+        }
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

@@ -136,6 +136,43 @@
         </tbody>
       </table>
     </fieldset>
+    } @if (mealGrid.rows.length > 0) {
+    <fieldset class="meals">
+      <legend>{{ 'participants.search.meals' | translate }}</legend>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            @for (day of mealGrid.days; track day) {
+            <th class="meal-day">{{ dayText(day) }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of mealGrid.rows; track row.food.id) {
+          <tr>
+            <td class="food-name">{{ row.food.nameDanish }}</td>
+            @for (cell of row.cells; track $index; let dayIndex = $index) {
+            <td>
+              @for (mealTime of cell; track mealTime.id) {
+              <mat-select
+                class="meal-choice"
+                [name]="'meal' + mealTime.id"
+                [aria-label]="row.food.nameDanish + ' ' + dayText(mealGrid.days[dayIndex])"
+                [(ngModel)]="form().meals[mealTime.id]"
+              >
+                <mat-option value="" />
+                <mat-option value="ja">{{ 'participants.yes' | translate }}</mat-option>
+                <mat-option value="nej">{{ 'participants.no' | translate }}</mat-option>
+              </mat-select>
+              }
+            </td>
+            }
+          </tr>
+          }
+        </tbody>
+      </table>
+    </fieldset>
     }
 
     <hr />

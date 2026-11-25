@@ -261,7 +261,8 @@
         "Difference": "Subtract the previous result from this search"
       },
       "submit": "Search",
-      "tickets": "Entrance"
+      "tickets": "Entrance",
+      "meals": "Food"
     },
     "fields": {
       "birthDate": "Birth date",
@@ -340,8 +341,7 @@
       "meals": "Food",
       "partout": "Partout",
       "received": "Handed out",
-      "notReceived": "Not handed out",
-      "mealsNotPorted": "Food has not been moved to Fastasys yet."
+      "notReceived": "Not handed out"
     },
     "sleeping": {
       "title": "Sleeping place",
@@ -443,7 +443,7 @@
       "signupNoGameMasters": "The activity has no game masters.",
       "signupUpdateFailed": "Could not update the participant.",
       "signupDeleteFailed": "Could not delete the signup",
-      "ticketsUpdateFailed": "Could not update the participant."
+      "entranceFoodWearUpdateFailed": "Could not update the participant."
     },
     "seats": {
       "title": "Update activities",
@@ -468,9 +468,12 @@
       "confirmDelete": "Are you sure?",
       "sortTitle": "Sort by priority"
     },
-    "tickets": {
+    "entranceFoodWear": {
       "editTitle": "Edit entrance, food and wear",
       "ticketType": "Ticket type",
+      "foodType": "Food",
+      "day": "Day",
+      "choose": "Choose",
       "add": "Add"
     }
   },
@@ -758,18 +761,64 @@
     "tabFood": "Food & Catering",
     "tabWear": "Wear & Merchandise",
     "tabRooms": "Rooms & Locations",
-    "foodTitle": "Food & Catering Management",
-    "foodSubtitle": "Manage catering options, meal tickets, and participant dietary preferences.",
     "wearTitle": "Wear & Merchandise Management",
     "wearSubtitle": "Manage t-shirts, hoodies, and official Fastaval merchandise inventory.",
     "roomsTitle": "Rooms & Locations Management",
     "roomsSubtitle": "Manage convention venue rooms, sleeping areas, and event locations.",
-    "orderFood": "Order Meal Ticket",
     "orderWear": "Order Merchandise",
     "capacity": "Capacity",
     "location": "Location",
     "stock": "Stock Level",
     "size": "Size"
+  },
+  "food": {
+    "allTitle": "Food types",
+    "create": "Create food type",
+    "createTitle": "Create food category",
+    "editTitle": "Update food category",
+    "detailTitle": "Food",
+    "editDelete": "Edit/delete",
+    "deleteConfirmTitle": "Delete food type?",
+    "orderedHint": "Can't be deleted: {{count}} participants have ordered it.",
+    "fields": {
+      "id": "Id",
+      "nameDanish": "Category",
+      "nameEnglish": "English",
+      "price": "Price",
+      "isHidden": "Hidden",
+      "mealTimes": "Meal times",
+      "day": "Day",
+      "clock": "Time",
+      "descriptionDanish": "Description",
+      "descriptionEnglish": "English"
+    },
+    "buttons": {
+      "create": "Create",
+      "update": "Update",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "addMealTime": "Add",
+      "removeMealTime": "Delete"
+    },
+    "stats": {
+      "title": "Statistics",
+      "heading": "Food stats",
+      "total": "All days combined: {{count}}",
+      "received": "{{received}} of them handed out ({{percent}}%)"
+    },
+    "messages": {
+      "created": "The food type was created.",
+      "createFailed": "The food type could not be created.",
+      "updated": "The food type was updated.",
+      "updateFailed": "Could not update the food type.",
+      "notUpdated": "The food type was not updated.",
+      "deleted": "The food type was deleted",
+      "deleteFailed": "Could not delete the food type",
+      "notFound": "Could not find a food type matching the criteria.",
+      "loadFailed": "Could not load the food types.",
+      "noConventionDays": "Fastaval's dates are not set, so no day can be chosen.",
+      "mealTimeOrdered": "The meal time couldn't be removed, because participants have ordered it."
+    }
   },
   "tickets": {
     "allTitle": "All ticket types",

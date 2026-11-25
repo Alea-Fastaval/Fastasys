@@ -92,6 +92,12 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("TicketTypeView", "entrance_view", "entrance_edit")
     .AddPolicy("TicketTypeManagement", "entrance_edit")
     .AddPolicy("ParticipantTicketManagement", "entrance_participant_edit")
+    // Infosys: the Mad pages (FoodController) are for roles with FoodController/*, and only Infonaut and admin may
+    // create, change and delete food types or change a participant's meals. Fastasys uses its food privileges.
+    .AddPolicy("FoodView", "food_view", "food_edit")
+    .AddPolicy("FoodManagement", "food_edit")
+    .AddPolicy("FoodStatsView", "food_stats_view", "food_view", "food_edit")
+    .AddPolicy("ParticipantFoodManagement", "food_participant_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

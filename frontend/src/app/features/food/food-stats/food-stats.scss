@@ -1,0 +1,40 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0.5rem 0 0;
+    font-size: 1.75rem;
+  }
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.total {
+  margin: 0 0 0.5rem;
+}
+
+.meal-times {
+  margin: 0;
+  padding-left: 1.25rem;
+
+  li {
+    margin: 0.25rem 0;
+  }
+}

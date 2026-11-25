@@ -1,0 +1,61 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/food"><mat-icon>arrow_back</mat-icon> {{ 'food.allTitle' | translate }}</a>
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'food.messages.' + flash.key | translate }}</p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'food.messages.notFound' | translate }}</p>
+  } @if (food(); as f) {
+  <app-card [title]="('food.detailTitle' | translate) + ': ' + f.nameDanish">
+    @if (mayEdit) {
+    <div class="card-actions">
+      <a mat-stroked-button [routerLink]="['/resources/food', f.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ 'food.editDelete' | translate }}
+      </a>
+    </div>
+    }
+
+    <dl class="field-list">
+      <div>
+        <dt>{{ 'food.fields.id' | translate }}:</dt>
+        <dd class="id">{{ f.id }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.nameDanish' | translate }}:</dt>
+        <dd class="name-danish">{{ f.nameDanish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.nameEnglish' | translate }}:</dt>
+        <dd class="name-english">{{ f.nameEnglish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.price' | translate }}:</dt>
+        <dd class="price">{{ priceText(f.price) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.isHidden' | translate }}:</dt>
+        <dd class="hidden-type">{{ (f.isHidden ? 'common.yes' : 'common.no') | translate }}</dd>
+      </div>
+    </dl>
+
+    @for (mealTime of f.mealTimes; track mealTime.id) {
+    <dl class="field-list meal-time">
+      <div>
+        <dt>{{ 'food.fields.day' | translate }}:</dt>
+        <dd class="time">{{ timeText(mealTime.time) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.descriptionDanish' | translate }}:</dt>
+        <dd>{{ mealTime.descriptionDanish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'food.fields.descriptionEnglish' | translate }}:</dt>
+        <dd>{{ mealTime.descriptionEnglish }}</dd>
+      </div>
+    </dl>
+    }
+  </app-card>
+  }
+</div>

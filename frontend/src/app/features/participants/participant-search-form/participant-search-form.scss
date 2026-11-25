@@ -47,6 +47,25 @@ app-card {
   }
 }
 
+// Infosys's Mad fieldset: a row per food type and a column per day, with a ja/nej select per meal time
+.meals {
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  margin: 0 0 1.25rem;
+  overflow-x: auto;
+
+  th,
+  td {
+    padding: 0.15rem 0.5rem 0.15rem 0;
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  .meal-choice {
+    width: 5rem;
+  }
+}
+
 hr {
   border: none;
   border-top: 1px solid #e5e7eb;

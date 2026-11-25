@@ -261,7 +261,8 @@
         "Difference": "Træk tidligere resultat fra denne søgning"
       },
       "submit": "Søg",
-      "tickets": "Indgang"
+      "tickets": "Indgang",
+      "meals": "Mad"
     },
     "fields": {
       "birthDate": "Fødselsdato",
@@ -340,8 +341,7 @@
       "meals": "Mad",
       "partout": "Partout",
       "received": "Udleveret",
-      "notReceived": "Ikke udleveret",
-      "mealsNotPorted": "Mad er ikke flyttet til Fastasys endnu."
+      "notReceived": "Ikke udleveret"
     },
     "sleeping": {
       "title": "Soveplads",
@@ -443,7 +443,7 @@
       "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
       "signupUpdateFailed": "Kunne ikke opdatere deltageren.",
       "signupDeleteFailed": "Kunne ikke slette tilmeldingen",
-      "ticketsUpdateFailed": "Kunne ikke opdatere deltageren."
+      "entranceFoodWearUpdateFailed": "Kunne ikke opdatere deltageren."
     },
     "seats": {
       "title": "Opdater Aktiviteter",
@@ -468,9 +468,12 @@
       "confirmDelete": "Er du sikker?",
       "sortTitle": "Sorter efter prioritet"
     },
-    "tickets": {
+    "entranceFoodWear": {
       "editTitle": "Rediger indgang, mad og wear",
       "ticketType": "Indgangs-type",
+      "foodType": "Mad",
+      "day": "Dag",
+      "choose": "Vælg",
       "add": "Tilføj"
     }
   },
@@ -758,18 +761,64 @@
     "tabFood": "Mad & Forplejning",
     "tabWear": "Wear & Merchandise",
     "tabRooms": "Lokaler & Rum",
-    "foodTitle": "Mad & Forplejning",
-    "foodSubtitle": "Administrer forplejningsmuligheder, madbilletter og deltagernes kostbehov.",
     "wearTitle": "Wear & Merchandise",
     "wearSubtitle": "Administrer t-shirts, hættetrøjer og officielt Fastaval-merchandise.",
     "roomsTitle": "Lokaler & Rum",
     "roomsSubtitle": "Administrer konventionslokaler, sovesale og aktivitetsrum.",
-    "orderFood": "Bestil madbillet",
     "orderWear": "Bestil merchandise",
     "capacity": "Kapacitet",
     "location": "Placering",
     "stock": "Lagerbeholdning",
     "size": "Størrelse"
+  },
+  "food": {
+    "allTitle": "Mad-typer",
+    "create": "Opret mad-type",
+    "createTitle": "Opret mad-kategori",
+    "editTitle": "Opdater mad-kategori",
+    "detailTitle": "Mad",
+    "editDelete": "Ret/slet",
+    "deleteConfirmTitle": "Slet mad-type?",
+    "orderedHint": "Kan ikke slettes: {{count}} deltagere har bestilt den.",
+    "fields": {
+      "id": "Id",
+      "nameDanish": "Kategori",
+      "nameEnglish": "Engelsk",
+      "price": "Pris",
+      "isHidden": "Skjult",
+      "mealTimes": "Mad tider",
+      "day": "Dag",
+      "clock": "Tid",
+      "descriptionDanish": "Beskrivelse",
+      "descriptionEnglish": "Engelsk"
+    },
+    "buttons": {
+      "create": "Opret",
+      "update": "Opdater",
+      "cancel": "Fortryd",
+      "delete": "Slet",
+      "addMealTime": "Tilføj",
+      "removeMealTime": "Slet"
+    },
+    "stats": {
+      "title": "Statistik",
+      "heading": "Food stats",
+      "total": "Alle dage, sammenlagt: {{count}}",
+      "received": "heraf {{received}} udleveret ({{percent}}%)"
+    },
+    "messages": {
+      "created": "Mad-typen blev oprettet.",
+      "createFailed": "Mad-typen kunne ikke oprettes.",
+      "updated": "Mad-typen blev opdateret.",
+      "updateFailed": "Kunne ikke opdatere mad-typen.",
+      "notUpdated": "Mad-typen blev ikke opdateret.",
+      "deleted": "Mad-typen blev slettet",
+      "deleteFailed": "Kunne ikke slette mad-typen",
+      "notFound": "Kunne ikke finde mad type ud fra kriteriet.",
+      "loadFailed": "Kunne ikke hente mad-typerne.",
+      "noConventionDays": "Fastavals datoer er ikke sat, så der kan ikke vælges en dag.",
+      "mealTimeOrdered": "Madtiden kunne ikke fjernes, fordi deltagere har bestilt den."
+    }
   },
   "tickets": {
     "allTitle": "Alle indgangs-typer",

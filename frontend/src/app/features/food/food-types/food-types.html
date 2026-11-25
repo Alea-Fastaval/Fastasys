@@ -1,0 +1,52 @@
+<div class="page-container">
+  <header class="page-header">
+    <h1>{{ 'food.allTitle' | translate }}</h1>
+    <div class="header-actions">
+      @if (maySeeStats) {
+      <a mat-stroked-button routerLink="/resources/food/stats">
+        <mat-icon>bar_chart</mat-icon> {{ 'food.stats.title' | translate }}
+      </a>
+      } @if (mayEdit) {
+      <a mat-raised-button color="primary" routerLink="/resources/food/new">
+        <mat-icon>add</mat-icon> {{ 'food.create' | translate }}
+      </a>
+      }
+    </div>
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">{{ 'food.messages.' + flash.key | translate }}</p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'food.messages.loadFailed' | translate }}</p>
+  } @if (types(); as list) { @if (list.length === 0) {
+  <!-- Infosys's noResults page -->
+  <p class="flash error">{{ 'food.messages.notFound' | translate }}</p>
+  } @else {
+  <app-card>
+    <table class="food-table">
+      <thead>
+        <tr>
+          <th class="id">{{ 'food.fields.id' | translate }}</th>
+          <th>{{ 'food.fields.isHidden' | translate }}</th>
+          <th>{{ 'food.fields.nameDanish' | translate }}</th>
+          <th class="count">{{ 'food.fields.price' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (type of list; track type.id) {
+        <tr>
+          <td class="id">
+            <a [routerLink]="['/resources/food', type.id]">{{ type.id }}</a>
+          </td>
+          <td>{{ (type.isHidden ? 'common.yes' : 'common.no') | translate }}</td>
+          <td>
+            <a [routerLink]="['/resources/food', type.id]">{{ type.nameDanish }}</a>
+          </td>
+          <td class="count">{{ priceText(type.price) }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </app-card>
+  } }
+</div>

@@ -347,11 +347,11 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
-        // Wear, food, sleeping places and prices are not ported yet; the participant page shows that while these are
-        // null. The participant has no tickets.
+        // Wear, sleeping places and prices are not ported yet; the participant page shows that while these are null.
+        // The participant has no tickets or meals.
         Assert.Null(participant.Details.WearOrders);
         Assert.Empty(participant.Details.Tickets);
-        Assert.Null(participant.Details.Meals);
+        Assert.Empty(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
         Assert.Null(participant.Price);
         // No photo and no template yet
@@ -1004,6 +1004,103 @@ public class ParticipantsControllerTests
         // A type that doesn't exist (any more) is had by nobody
         Assert.Empty(await Find(SearchLogic.And, new TicketChoice(99, true)));
         Assert.Equal([1, 2, 3], await Find(SearchLogic.And, new TicketChoice(99, false)));
+    }
+
+    // A food type with meal times at the given UTC times on Wednesday 24 March 2027
+    private static async Task<FoodType> AddFoodAsync(InfosysDbContext db, int id, string name, params (int Id, int Hour)[] mealTimes)
+    {
+        var food = new FoodType { Id = id, NameDanish = name, NameEnglish = name, Price = 50 };
+        foreach (var (mealTimeId, hour) in mealTimes)
+            food.MealTimes.Add(new MealTime { Id = mealTimeId, Time = Wednesday(hour) });
+        db.FoodTypes.Add(food);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return food;
+    }
+
+    [Fact]
+    public async Task Get_FillsTheMadListByMealTime()
+    {
+        // Infosys visdeltager's Mad list: deltagere_madtider by madtider.dato, with the food's kategori and received
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddFoodAsync(db, 1, "Aftensmad", (10, 16));
+        await AddFoodAsync(db, 2, "Morgenmad", (20, 7), (21, 8));
+        db.ParticipantMeals.AddRange(
+            new ParticipantMeal { ParticipantId = 1, MealTimeId = 10 },
+            new ParticipantMeal { ParticipantId = 1, MealTimeId = 21, IsReceived = true },
+            new ParticipantMeal { ParticipantId = 1, MealTimeId = 20 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var participant = Ok(await CreateController(db).Get(1));
+
+        Assert.Equal(
+            [
+                new ParticipantMealDto(Wednesday(7), "Morgenmad", false),
+                new ParticipantMealDto(Wednesday(8), "Morgenmad", true),
+                new ParticipantMealDto(Wednesday(16), "Aftensmad", false),
+            ],
+            participant.Details!.Meals);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsMeals()
+    {
+        // Infosys Deltagere::delete calls removeFood
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        await AddFoodAsync(db, 1, "Aftensmad", (10, 16));
+        db.ParticipantMeals.AddRange(
+            new ParticipantMeal { ParticipantId = 1, MealTimeId = 10 },
+            new ParticipantMeal { ParticipantId = 2, MealTimeId = 10 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        Assert.IsType<OkObjectResult>(await CreateController(db).Delete(1));
+
+        Assert.Equal([2], db.ParticipantMeals.Select(m => m.ParticipantId));
+    }
+
+    [Fact]
+    public async Task GetOptions_ListsTheFoodTypesWithTheirMealTimes()
+    {
+        // The search box's Mad section (Infosys ParticipantModel::getAllMad, Mad::getMadtider), hidden types too
+        using var db = CreateDbContext();
+        await AddFoodAsync(db, 2, "Morgenmad", (21, 8), (20, 7));
+        await AddFoodAsync(db, 1, "Skjult mad");
+        (await db.FoodTypes.SingleAsync(f => f.Id == 1, TestContext.Current.CancellationToken)).IsHidden = true;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var options = Ok(await CreateController(db).GetOptions());
+
+        Assert.Equal([1, 2], options.FoodTypes.Select(f => f.Id));
+        Assert.Empty(options.FoodTypes[0].MealTimes);
+        Assert.Equal(
+            [new MealTimeOptionDto(20, Wednesday(7)), new MealTimeOptionDto(21, Wednesday(8))],
+            options.FoodTypes[1].MealTimes);
+    }
+
+    [Fact]
+    public async Task Search_FindsParticipantsByTheirMeals()
+    {
+        // Infosys search box, Mad section: "ja" has ordered the meal time, "nej" hasn't
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddAsync(db, 2);
+        await AddFoodAsync(db, 1, "Aftensmad", (10, 16), (11, 17));
+        db.ParticipantMeals.AddRange(
+            new ParticipantMeal { ParticipantId = 1, MealTimeId = 10 },
+            new ParticipantMeal { ParticipantId = 2, MealTimeId = 11 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+        async Task<IEnumerable<int>> Find(SearchLogic logic, params MealChoice[] choices) =>
+            Ok(await CreateController(db).Search(Search(new ParticipantSearchStepDto(null, new ParticipantCriteria { Meals = choices }, logic))))
+                .Rows.Select(r => r.Id);
+
+        Assert.Equal([1], await Find(SearchLogic.And, new MealChoice(10, true)));
+        Assert.Equal([2], await Find(SearchLogic.And, new MealChoice(10, false), new MealChoice(11, true)));
+        Assert.Equal([1, 2], await Find(SearchLogic.Or, new MealChoice(10, true), new MealChoice(11, true)));
     }
 
     [Fact]

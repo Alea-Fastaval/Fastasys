@@ -1,0 +1,64 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0 1rem;
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.checkboxes {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.5rem 0 1rem;
+}
+
+h4 {
+  margin: 0 0 0.75rem;
+}
+
+// One row per meal time: Dag, Tid, Beskrivelse, Engelsk and Slet
+.meal-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+
+  .narrow {
+    width: 8rem;
+  }
+}
+
+.add-meal-time {
+  margin-bottom: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

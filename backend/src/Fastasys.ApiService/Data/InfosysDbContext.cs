@@ -36,7 +36,8 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
 
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<FoodType> FoodTypes => Set<FoodType>();
-    public DbSet<ParticipantFood> ParticipantFoods => Set<ParticipantFood>();
+    public DbSet<MealTime> MealTimes => Set<MealTime>();
+    public DbSet<ParticipantMeal> ParticipantMeals => Set<ParticipantMeal>();
     public DbSet<WearItem> WearItems => Set<WearItem>();
     public DbSet<ParticipantWear> ParticipantWears => Set<ParticipantWear>();
     public DbSet<TicketType> TicketTypes => Set<TicketType>();
@@ -221,14 +222,36 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
 
         modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
 
-        modelBuilder
-            .Entity<ParticipantFood>()
-            .HasKey(pf => new
-            {
-                pf.ParticipantId,
-                pf.FoodTypeId,
-                pf.Date,
-            });
+        // Infosys mad: kategori is unique
+        modelBuilder.Entity<FoodType>().HasIndex(f => f.NameDanish).IsUnique();
+
+        // Infosys madtider: unique (mad_id, dato). Its foreign key has no ON DELETE CASCADE, so Infosys couldn't delete a
+        // food type with meal times; agreed 2026-11-25: deleting a food type deletes its meal times, which is refused while
+        // participants have ordered one of them (participant_meals is RESTRICT).
+        modelBuilder.Entity<MealTime>(mealTime =>
+        {
+            mealTime.HasOne(m => m.FoodType)
+                .WithMany(f => f.MealTimes)
+                .HasForeignKey(m => m.FoodTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            mealTime.HasIndex(m => new { m.FoodTypeId, m.Time }).IsUnique();
+        });
+
+        // Infosys deltagere_madtider has the primary key (deltager_id, madtid_id) and foreign keys without ON DELETE
+        // CASCADE. Deleting a participant removes their meals (Infosys's code does that); an ordered meal time can't be
+        // deleted.
+        modelBuilder.Entity<ParticipantMeal>(meal =>
+        {
+            meal.HasKey(m => new { m.ParticipantId, m.MealTimeId });
+            meal.HasOne(m => m.Participant)
+                .WithMany(p => p.Meals)
+                .HasForeignKey(m => m.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            meal.HasOne(m => m.MealTime)
+                .WithMany()
+                .HasForeignKey(m => m.MealTimeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<ParticipantWear>().HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
     }

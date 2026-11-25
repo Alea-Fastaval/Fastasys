@@ -94,6 +94,7 @@ describe('the searches in the URL', () => {
           categoryId: 2,
           activityLanguages: ['Danish' as const],
           tickets: [{ ticketTypeId: 4, has: false }],
+          meals: [{ mealTimeId: 10, has: true }],
         },
         logic: 'Or' as const,
         combination: 'Intersection' as const,
@@ -115,6 +116,8 @@ describe('the searches in the URL', () => {
     '[{"criteria":{"tickets":[{"ticketTypeId":"4","has":true}]},"logic":"And","combination":"New"}]',
     '[{"criteria":{"tickets":[{"ticketTypeId":4,"has":"ja"}]},"logic":"And","combination":"New"}]',
     '[{"criteria":{"tickets":[{"ticketTypeId":4,"has":true,"x":1}]},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"meals":[{"mealTimeId":"10","has":true}]},"logic":"And","combination":"New"}]',
+    '[{"criteria":{"meals":{"10":true}},"logic":"And","combination":"New"}]',
   ])('refuses %s', value => {
     expect(() => parseSearch(value)).toThrow(UnknownQueryParamError);
   });

@@ -20,10 +20,13 @@ import {
   SearchCombination,
   SearchLogic,
   TicketTypeOption,
+  FoodTypeOption,
+  MealTimeOption,
 } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 import { TranslationService } from '@shared/services';
+import { toConventionLocalInput, weekdayOfDate } from '@shared/utils';
 import { ticketSearchText, translatedShortDay } from '../../tickets/ticket-texts';
 
 // The Infosys ja/nej selects start empty, which means the field is not used
@@ -63,6 +66,8 @@ export interface SearchForm {
   notes: string;
   // The Indgang section, by ticket type id; a type that isn't here is not used
   tickets: Record<number, YesNoChoice>;
+  // The Mad section, by meal time id
+  meals: Record<number, YesNoChoice>;
   logic: SearchLogic;
   combination: SearchCombination;
 }
@@ -102,6 +107,7 @@ export function newSearchForm(): SearchForm {
     checkedInAt: '',
     notes: '',
     tickets: {},
+    meals: {},
     logic: 'And',
     combination: 'New',
   };
@@ -152,11 +158,35 @@ export function toSearchStep(form: SearchForm): CriteriaSearchStep {
     .filter(([, choice]) => choice !== '')
     .map(([id, choice]) => ({ ticketTypeId: Number(id), has: choice === 'ja' }));
   if (tickets.length > 0) criteria.tickets = tickets;
+  // The keys are meal time ids, so they come in id order
+  const meals = Object.entries(form.meals)
+    .filter(([, choice]) => choice !== '')
+    .map(([id, choice]) => ({ mealTimeId: Number(id), has: choice === 'ja' }));
+  if (meals.length > 0) criteria.meals = meals;
   return { criteria, logic: form.logic, combination: form.combination };
 }
 
+// The grid of the Mad section (ViewHelper::searchBox): a column per day with a meal time (ParticipantModel::
+// getAllFoodDays, in Copenhagen time) and a row per food type with meal times; each cell holds the type's meal times on
+// that day
+export interface MealSearchGrid {
+  days: string[];
+  rows: { food: FoodTypeOption; cells: MealTimeOption[][] }[];
+}
+
+export function mealSearchGrid(foodTypes: FoodTypeOption[]): MealSearchGrid {
+  const dayOf = (mealTime: MealTimeOption) => toConventionLocalInput(mealTime.time).split('T')[0];
+  const days = [...new Set(foodTypes.flatMap(food => food.mealTimes.map(dayOf)))].sort();
+  return {
+    days,
+    rows: foodTypes
+      .filter(food => food.mealTimes.length > 0)
+      .map(food => ({ food, cells: days.map(day => food.mealTimes.filter(m => dayOf(m) === day)) })),
+  };
+}
+
 // Infosys ParticipantController search box ("Søg" on the participant list). Its "Reset" button is left out: in
-// Infosys it searches instead of clearing the box (reported 2026-11-11). Mad comes with food.
+// Infosys it searches instead of clearing the box (reported 2026-11-11).
 @Component({
   selector: 'app-participant-search-form',
   imports: [
@@ -180,6 +210,11 @@ export class ParticipantSearchFormComponent {
   @Input() public organizerAreas: OrganizerArea[] = [];
   // In id order (Infosys getAllIndgang)
   @Input() public ticketTypes: TicketTypeOption[] = [];
+  // In id order (Infosys getAllMad)
+  @Input() public set foodTypes(foodTypes: FoodTypeOption[]) {
+    this.mealGrid = mealSearchGrid(foodTypes);
+  }
+  public mealGrid: MealSearchGrid = { days: [], rows: [] };
   public readonly searched = output<CriteriaSearchStep>();
   private readonly shortDay = translatedShortDay(inject(TranslationService));
 
@@ -227,6 +262,11 @@ export class ParticipantSearchFormComponent {
   // "Indgang - Enkelt Ons", or the name alone for a ticket for the whole convention
   public ticketText(type: TicketTypeOption): string {
     return ticketSearchText(type, this.shortDay);
+  }
+
+  // A column of the Mad section: the short day name, "Ons"
+  public dayText(day: string): string {
+    return this.shortDay(weekdayOfDate(day));
   }
 
   public submit(): void {

@@ -296,6 +296,16 @@ function isTicketChoice(choice: unknown): boolean {
   );
 }
 
+// A select of the Mad section: { mealTimeId, has }
+function isMealChoice(choice: unknown): boolean {
+  return (
+    isObject(choice) &&
+    Object.keys(choice).length === 2 &&
+    Number.isInteger(choice['mealTimeId']) &&
+    typeof choice['has'] === 'boolean'
+  );
+}
+
 function isCriteria(criteria: unknown): criteria is ParticipantCriteria {
   if (!isObject(criteria)) return false;
   return Object.entries(criteria).every(([field, value]) => {
@@ -307,6 +317,7 @@ function isCriteria(criteria: unknown): criteria is ParticipantCriteria {
       return Array.isArray(value) && value.every(l => (PARTICIPANT_LANGUAGES as readonly unknown[]).includes(l));
     }
     if (field === 'tickets') return Array.isArray(value) && value.every(isTicketChoice);
+    if (field === 'meals') return Array.isArray(value) && value.every(isMealChoice);
     return false;
   });
 }

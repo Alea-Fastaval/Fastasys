@@ -55,7 +55,7 @@ const details: ParticipantDetails = {
   sleepingNote: null,
   wearOrders: null,
   tickets: [],
-  meals: null,
+  meals: [],
   sleepingPlaces: null,
   idCard: { photoUrl: null, templateId: null, templateName: null, defaultTemplateName: null },
 };
@@ -135,6 +135,7 @@ const options: ParticipantOptions = {
   games: [],
   idCardTemplates: [],
   ticketTypes: [],
+  foodTypes: [],
 };
 
 describe('editorValue', () => {
@@ -250,9 +251,9 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
       'app-participant-wear',
       'app-participant-price',
     ]);
-    // Tickets are ported (the participant has none); food isn't
+    // Tickets and food are ported (the participant has none)
     expect(element.querySelector('.info-boxes app-participant-entrance-food .line.entrance')).not.toBeNull();
-    expect(element.querySelector('.info-boxes app-participant-entrance-food .meals-not-ported')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-entrance-food .line.meals')).not.toBeNull();
     // The IDkort box works: photo upload, the card, and the template
     expect(element.querySelector('.info-boxes app-participant-id-card a.photo-upload')?.getAttribute('href')).toBe(
       '/participants/7/photo',

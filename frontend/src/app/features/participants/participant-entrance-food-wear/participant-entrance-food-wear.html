@@ -1,0 +1,111 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button [routerLink]="['/participants', participantId]"
+      ><mat-icon>arrow_back</mat-icon> {{ 'participants.seats.backToParticipant' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  } @else if (isLoaded()) {
+  <app-card [title]="'participants.entranceFoodWear.editTitle' | translate">
+    <form (ngSubmit)="submit()">
+      @if (ticketsPage(); as p) {
+      <section class="entrance">
+        <h4>{{ 'participants.entranceFood.entrance' | translate }}</h4>
+        <div class="choose">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'participants.entranceFoodWear.ticketType' | translate }}</mat-label>
+            <mat-select name="chosenTicketId" [(ngModel)]="chosenTicketId">
+              @for (type of p.ticketTypes; track type.id) {
+              <mat-option [value]="type.id">{{ ticketText(type) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-ticket"
+            [disabled]="chosenTicketId === null"
+            (click)="addTicket()"
+          >
+            <mat-icon>add</mat-icon> {{ 'participants.entranceFoodWear.add' | translate }}
+          </button>
+        </div>
+
+        <table class="row-list ticket-list">
+          <tbody>
+            @for (ticket of tickets(); track ticket.id) {
+            <tr>
+              <td class="ticket">{{ ticketText(ticket) }}</td>
+              <td class="actions">
+                <button mat-button type="button" color="warn" (click)="removeTicket(ticket)">
+                  {{ 'participants.seats.delete' | translate }}
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+      } @if (mealsPage(); as p) {
+      <section class="food">
+        <h4>{{ 'participants.entranceFood.meals' | translate }}</h4>
+        <div class="choose">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'participants.entranceFoodWear.foodType' | translate }}</mat-label>
+            <mat-select name="chosenFoodId" [(ngModel)]="chosenFoodId" (ngModelChange)="foodChanged()">
+              <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+              @for (food of p.foodTypes; track food.id) {
+              <mat-option [value]="food.id">{{ food.nameDanish }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          @if (chosenFood(); as food) {
+          <mat-form-field appearance="outline" class="narrow">
+            <mat-label>{{ 'participants.entranceFoodWear.day' | translate }}</mat-label>
+            <mat-select name="chosenMealTimeId" [(ngModel)]="chosenMealTimeId">
+              <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+              @for (mealTime of food.mealTimes; track mealTime.id) {
+              <mat-option [value]="mealTime.id">{{ dayText(mealTime.time) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          }
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-meal"
+            [disabled]="chosenMealTimeId === null"
+            (click)="addMeal()"
+          >
+            <mat-icon>add</mat-icon> {{ 'participants.entranceFoodWear.add' | translate }}
+          </button>
+        </div>
+
+        <table class="row-list meal-list">
+          <tbody>
+            @for (meal of meals(); track meal.mealTimeId) {
+            <tr>
+              <td class="meal">{{ meal.foodName }} {{ dayText(meal.time) }}</td>
+              <td class="actions">
+                <button mat-button type="button" color="warn" (click)="removeMeal(meal)">
+                  {{ 'participants.seats.delete' | translate }}
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+      }
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy()">
+          {{ 'participants.seats.update' | translate }}
+        </button>
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

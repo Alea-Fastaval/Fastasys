@@ -18,7 +18,10 @@ import { ParticipantSignupsComponent } from './features/participants/participant
 import { ParticipantPhotoComponent } from './features/participants/participant-photo/participant-photo';
 import { IdCardTemplatesComponent } from './features/id-cards/id-card-templates/id-card-templates';
 import { IdCardsPrintComponent } from './features/id-cards/id-cards-print/id-cards-print';
-import { FoodComponent } from './features/resources/food/food';
+import { FoodTypesComponent } from './features/food/food-types/food-types';
+import { FoodTypeDetailComponent } from './features/food/food-type-detail/food-type-detail';
+import { FoodTypeFormComponent } from './features/food/food-type-form/food-type-form';
+import { FoodStatsComponent } from './features/food/food-stats/food-stats';
 import { RoomsComponent } from './features/resources/rooms/rooms';
 import { WearComponent } from './features/resources/wear/wear';
 import { ShopComponent } from './features/shop/shop';
@@ -26,7 +29,7 @@ import { TicketTypesComponent } from './features/tickets/ticket-types/ticket-typ
 import { TicketTypeDetailComponent } from './features/tickets/ticket-type-detail/ticket-type-detail';
 import { TicketTypeFormComponent } from './features/tickets/ticket-type-form/ticket-type-form';
 import { TicketStatsComponent } from './features/tickets/ticket-stats/ticket-stats';
-import { ParticipantTicketsComponent } from './features/participants/participant-tickets/participant-tickets';
+import { ParticipantEntranceFoodWearComponent } from './features/participants/participant-entrance-food-wear/participant-entrance-food-wear';
 import { SignupComponent } from './features/signup/signup';
 import { RunDetailComponent } from './features/runs/run-detail/run-detail';
 import { RunFormComponent } from './features/runs/run-form/run-form';
@@ -47,7 +50,11 @@ export const routes: Routes = [
   { path: 'participants/:id/activities', component: ParticipantSeatsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/signups', component: ParticipantSignupsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/photo', component: ParticipantPhotoComponent, canActivate: [authGuard] },
-  { path: 'participants/:id/tickets', component: ParticipantTicketsComponent, canActivate: [authGuard] },
+  {
+    path: 'participants/:id/entrance-food-wear',
+    component: ParticipantEntranceFoodWearComponent,
+    canActivate: [authGuard],
+  },
   { path: 'id-card-templates', component: IdCardTemplatesComponent, canActivate: [authGuard] },
   { path: 'id-cards', component: IdCardsPrintComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
@@ -60,7 +67,11 @@ export const routes: Routes = [
   { path: 'runs/:id/edit', component: RunFormComponent, canActivate: [authGuard] },
   { path: 'hero-force', component: HeroForceComponent, canActivate: [authGuard] },
   { path: 'shop', component: ShopComponent, canActivate: [authGuard] },
-  { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },
+  { path: 'resources/food', component: FoodTypesComponent, canActivate: [authGuard] },
+  { path: 'resources/food/new', component: FoodTypeFormComponent, canActivate: [authGuard] },
+  { path: 'resources/food/stats', component: FoodStatsComponent, canActivate: [authGuard] },
+  { path: 'resources/food/:id', component: FoodTypeDetailComponent, canActivate: [authGuard] },
+  { path: 'resources/food/:id/edit', component: FoodTypeFormComponent, canActivate: [authGuard] },
   { path: 'resources/wear', component: WearComponent, canActivate: [authGuard] },
   { path: 'resources/rooms', component: RoomsComponent, canActivate: [authGuard] },
   { path: 'resources/tickets', component: TicketTypesComponent, canActivate: [authGuard] },

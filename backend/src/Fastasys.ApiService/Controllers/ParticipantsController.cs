@@ -180,10 +180,9 @@ public record ParticipantDetailsDto(
     string? SleepingNote,
     // The Wear box. null until wear is ported (see ParticipantWearOrderDto); then the participant's orders.
     IReadOnlyList<ParticipantWearOrderDto>? WearOrders,
-    // The Indgang/Mad box: the tickets (see ParticipantTicketDto) and the meals (null until food is ported, see
-    // ParticipantMealDto)
+    // The Indgang/Mad box: the tickets (see ParticipantTicketDto) and the meals (see ParticipantMealDto)
     IReadOnlyList<ParticipantTicketDto> Tickets,
-    IReadOnlyList<ParticipantMealDto>? Meals,
+    IReadOnlyList<ParticipantMealDto> Meals,
     // The Soveplads box. null until sleeping places are ported (see ParticipantSleepingPlaceDto).
     IReadOnlyList<ParticipantSleepingPlaceDto>? SleepingPlaces,
     // The IDkort box
@@ -269,12 +268,10 @@ public record ParticipantTicketDto(TicketLine Line, bool IsAllConvention, DateOn
 
 // One meal on the Mad list of the Indgang/Mad box:
 // "{short Danish name of Time's day} {Category} — (Udleveret|Ikke udleveret)".
-// To fill it when food is ported:
-// - The meals are the participant's deltagere_madtider rows, ordered by madtider.dato
-//   (DeltagereMadtider::getDeltagerMadtider).
-// - Time is madtider.dato (a UTC instant; the box shows its Copenhagen day). Category is mad.kategori of the meal's
-//   mad_id.
-// - IsReceived is deltagere_madtider.received = 1.
+// - The meals are the participant's meals, ordered by the meal time (DeltagereMadtider::getDeltagerMadtider).
+// - Time is the meal time (a UTC instant; the box shows its Copenhagen day). Category is the food type's Danish name
+//   (mad.kategori).
+// - IsReceived: the meal has been handed out.
 public record ParticipantMealDto(DateTime Time, string Category, bool IsReceived);
 
 // One row of the Soveplads box (visdeltager.phtml, #sleeping): Tidsrum "{Starts} -> {Ends}" and Sted (Room).
@@ -317,7 +314,9 @@ public record ParticipantOptionsDto(
     // The ID card templates, in id order (Infosys ParticipantModel::fetchTemplateSelectData)
     IReadOnlyList<IdCardTemplateOptionDto> IdCardTemplates,
     // The ticket types for the search box's Indgang section, in id order (Infosys ParticipantModel::getAllIndgang)
-    IReadOnlyList<TicketTypeOptionDto> TicketTypes
+    IReadOnlyList<TicketTypeOptionDto> TicketTypes,
+    // The food types with their meal times for the search box's Mad section (Infosys ParticipantModel::getAllMad)
+    IReadOnlyList<FoodTypeOptionDto> FoodTypes
 );
 
 // The fields of the Infosys create form (deltager/opret)
@@ -473,6 +472,7 @@ public class ParticipantsController : ControllerBase
             .Include(p => p.OrganizerArea)
             .Include(p => p.GameActivity)
             .Include(p => p.Tickets)
+            .Include(p => p.Meals)
             .OrderBy(p => p.Id)
             .ToListAsync();
         var year = CopenhagenNow().Year;
@@ -525,7 +525,9 @@ public class ParticipantsController : ControllerBase
         var ticketTypes = await _db.TicketTypes.AsNoTracking().OrderBy(t => t.Id)
             .Select(t => new TicketTypeOptionDto(t.Id, t.Name, t.Day, t.Kind, t.IsAllConvention)).ToListAsync();
 
-        return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates, ticketTypes));
+        var foodTypes = await ParticipantMealsController.LoadFoodTypeOptionsAsync(_db);
+
+        return Ok(new ParticipantOptionsDto(categories, areas, countries, games, idCardTemplates, ticketTypes, foodTypes));
     }
 
     // Infosys deltager/opret ("Opret deltager")
@@ -609,8 +611,8 @@ public class ParticipantsController : ControllerBase
     }
 
     // Infosys deltager/delete/:id: ("Slet for pokker"). Infosys only offers it for annulled participants; that is
-    // now checked here too. Their seats on runs, their signup wishes and their tickets are removed with them, as in
-    // Infosys.
+    // now checked here too. Their seats on runs, their signup wishes, their tickets and their meals are removed with
+    // them, as in Infosys.
     [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Delete(int id)
@@ -627,6 +629,7 @@ public class ParticipantsController : ControllerBase
         _db.ScheduleSignups.RemoveRange(_db.ScheduleSignups.Where(s => s.ParticipantId == id));
         _db.ParticipantPhotos.RemoveRange(_db.ParticipantPhotos.Where(s => s.ParticipantId == id));
         _db.ParticipantTickets.RemoveRange(_db.ParticipantTickets.Where(t => t.ParticipantId == id));
+        _db.ParticipantMeals.RemoveRange(_db.ParticipantMeals.Where(m => m.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -952,6 +955,16 @@ public class ParticipantsController : ControllerBase
             .ToList();
     }
 
+    // The Indgang/Mad box's meals, by meal time (DeltagereMadtider::getDeltagerMadtider)
+    private async Task<IReadOnlyList<ParticipantMealDto>> LoadMealsAsync(int participantId) =>
+        await _db.ParticipantMeals
+            .AsNoTracking()
+            .Where(m => m.ParticipantId == participantId)
+            .OrderBy(m => m.MealTime.Time)
+            .ThenBy(m => m.MealTimeId)
+            .Select(m => new ParticipantMealDto(m.MealTime.Time, m.MealTime.FoodType.NameDanish, m.IsReceived))
+            .ToListAsync();
+
     public static TicketLine TicketLineOf(TicketKind kind) => kind switch
     {
         TicketKind.Entrance => TicketLine.Entrance,
@@ -1005,8 +1018,7 @@ public class ParticipantsController : ControllerBase
                 // TODO when wear is ported: load the participant's orders here (see ParticipantWearOrderDto)
                 WearOrders: null,
                 Tickets: await LoadTicketsAsync(p.Id),
-                // TODO when food is ported: load the participant's meals here (see ParticipantMealDto)
-                Meals: null,
+                Meals: await LoadMealsAsync(p.Id),
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)
                 SleepingPlaces: null,
                 IdCard: await LoadIdCardAsync(p))

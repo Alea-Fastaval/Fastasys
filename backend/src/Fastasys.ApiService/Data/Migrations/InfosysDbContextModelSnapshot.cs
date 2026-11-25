@@ -1741,23 +1741,28 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("IsHidden")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("NameDanish")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("NameEnglish")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.ToTable("FoodTypes");
+                    b.HasIndex("NameDanish")
+                        .IsUnique();
+
+                    b.ToTable("food_types");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.HeroForceCategory", b =>
@@ -1935,6 +1940,38 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LoanItems");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.MealTime", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DescriptionDanish")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("DescriptionEnglish")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("FoodTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("Time")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FoodTypeId", "Time")
+                        .IsUnique();
+
+                    b.ToTable("meal_times");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Newsletter", b =>
@@ -2537,25 +2574,22 @@ namespace Fastasys.ApiService.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantMeal", b =>
                 {
                     b.Property<int>("ParticipantId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("FoodTypeId")
+                    b.Property<int>("MealTimeId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<bool>("IsReceived")
+                        .HasColumnType("boolean");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                    b.HasKey("ParticipantId", "MealTimeId");
 
-                    b.HasKey("ParticipantId", "FoodTypeId", "Date");
+                    b.HasIndex("MealTimeId");
 
-                    b.HasIndex("FoodTypeId");
-
-                    b.ToTable("ParticipantFoods");
+                    b.ToTable("participant_meals");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantPhoto", b =>
@@ -3335,6 +3369,17 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("Template");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.MealTime", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.FoodType", "FoodType")
+                        .WithMany("MealTimes")
+                        .HasForeignKey("FoodTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FoodType");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.ParticipantCategory", "Category")
@@ -3385,21 +3430,21 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("IdCardTemplate");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantFood", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantMeal", b =>
                 {
-                    b.HasOne("Fastasys.ApiService.Data.Entities.FoodType", "FoodType")
-                        .WithMany("ParticipantFoodOrders")
-                        .HasForeignKey("FoodTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Fastasys.ApiService.Data.Entities.MealTime", "MealTime")
+                        .WithMany()
+                        .HasForeignKey("MealTimeId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
-                        .WithMany("Foods")
+                        .WithMany("Meals")
                         .HasForeignKey("ParticipantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("FoodType");
+                    b.Navigation("MealTime");
 
                     b.Navigation("Participant");
                 });
@@ -3655,7 +3700,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.FoodType", b =>
                 {
-                    b.Navigation("ParticipantFoodOrders");
+                    b.Navigation("MealTimes");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.HeroForceCategory", b =>
@@ -3675,7 +3720,7 @@ namespace Fastasys.ApiService.Data.Migrations
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
                 {
-                    b.Navigation("Foods");
+                    b.Navigation("Meals");
 
                     b.Navigation("Payments");
 

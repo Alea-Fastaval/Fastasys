@@ -19,7 +19,14 @@ h4 {
   margin: 0 0 0.75rem;
 }
 
-// Infosys puts the select with "Tilføj" under it, next to the list of the participant's tickets
+// Infosys separates Indgang, Mad and Wear with a line
+section + section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+// The selects with "Tilføj" after them
 .choose {
   display: flex;
   flex-wrap: wrap;
@@ -29,9 +36,14 @@ h4 {
   mat-form-field {
     min-width: 320px;
   }
+
+  .narrow {
+    min-width: 140px;
+    width: 140px;
+  }
 }
 
-.ticket-list {
+.row-list {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;

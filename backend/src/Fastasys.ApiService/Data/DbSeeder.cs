@@ -252,9 +252,9 @@ public static class DbSeeder
 
             // Demo Food Types
             db.FoodTypes.AddRange(
-                new FoodType { Name = "Morgenmad", NameEnglish = "Breakfast", Price = 45.00m, IsActive = true },
-                new FoodType { Name = "Aftensmad (Kød)", NameEnglish = "Dinner (Meat)", Price = 85.00m, IsActive = true },
-                new FoodType { Name = "Aftensmad (Vegansk)", NameEnglish = "Dinner (Vegan)", Price = 85.00m, IsActive = true }
+                new FoodType { NameDanish = "Morgenmad", NameEnglish = "Breakfast", Price = 45 },
+                new FoodType { NameDanish = "Aftensmad (Kød)", NameEnglish = "Dinner (Meat)", Price = 85 },
+                new FoodType { NameDanish = "Aftensmad (Vegansk)", NameEnglish = "Dinner (Vegan)", Price = 85 }
             );
 
             // Demo Wear Items

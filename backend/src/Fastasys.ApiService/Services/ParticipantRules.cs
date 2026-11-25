@@ -45,7 +45,7 @@ public static partial class ParticipantRules
         signupEnd is DateOnly end && DanishDate(signedUpAt) > end;
 
     // The date in Denmark at a UTC instant
-    private static DateOnly DanishDate(DateTime utc) =>
+    public static DateOnly DanishDate(DateTime utc) =>
         DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.SpecifyKind(utc, DateTimeKind.Utc), "Europe/Copenhagen"));
 
     // Infosys Deltagere::isBusyBetween: whether the period overlaps one of the participant's busy periods. Infosys's

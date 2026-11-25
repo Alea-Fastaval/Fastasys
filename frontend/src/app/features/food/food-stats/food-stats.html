@@ -1,0 +1,23 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/food"><mat-icon>arrow_back</mat-icon> {{ 'food.allTitle' | translate }}</a>
+    <h1>{{ 'food.stats.heading' | translate }}</h1>
+  </header>
+
+  @if (failed()) {
+  <p class="flash error">{{ 'food.messages.loadFailed' | translate }}</p>
+  } @if (stats(); as list) {
+  <div class="groups">
+    @for (food of list; track food.id) {
+    <app-card [title]="food.nameDanish">
+      <p class="total">{{ 'food.stats.total' | translate: { count: food.total.toString() } }}</p>
+      <ul class="meal-times">
+        @for (mealTime of food.mealTimes; track mealTime.id) {
+        <li>{{ dayText(mealTime.time) }} &mdash; <strong>{{ countText(mealTime) }}</strong></li>
+        }
+      </ul>
+    </app-card>
+    }
+  </div>
+  }
+</div>

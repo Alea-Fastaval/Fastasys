@@ -9,6 +9,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { catchError, of, switchMap } from 'rxjs';
 import {
   CriteriaSearchStep,
+  FoodTypeOption,
   OrganizerArea,
   ParticipantCategory,
   ParticipantOptions,
@@ -88,6 +89,7 @@ export class ParticipantsComponent {
   public readonly categories = signal<ParticipantCategory[]>([]);
   public readonly organizerAreas = signal<OrganizerArea[]>([]);
   public readonly ticketTypes = signal<TicketTypeOption[]>([]);
+  public readonly foodTypes = signal<FoodTypeOption[]>([]);
 
   // The columns the user may add, by their name as Infosys lists them (asort)
   public readonly availableColumns = computed(() => {
@@ -220,6 +222,7 @@ export class ParticipantsComponent {
         this.categories.set(options.categories);
         this.organizerAreas.set(sortByDanish(options.organizerAreas, a => a.nameDanish));
         this.ticketTypes.set(options.ticketTypes);
+        this.foodTypes.set(options.foodTypes);
       },
       error: err => console.error('Failed to load participant options:', err),
     });

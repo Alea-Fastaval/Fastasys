@@ -43,8 +43,14 @@ public enum BirthDateRange
 public sealed record TicketChoice(int TicketTypeId, bool Has);
 
 /// <summary>
+/// One select of the Infosys search box's Mad section (mad_search[mt_{id}]): "ja" (Has) finds the participants who have
+/// ordered the meal time, "nej" those who haven't.
+/// </summary>
+public sealed record MealChoice(int MealTimeId, bool Has);
+
+/// <summary>
 /// The fields of the Infosys participant search box (ParticipantModel::searchParticipants). null or an empty text
-/// means the field is not used. The fields for removed columns and for features not ported yet (food) are left out.
+/// means the field is not used. The fields for removed columns are left out.
 /// </summary>
 public sealed record ParticipantCriteria
 {
@@ -82,13 +88,16 @@ public sealed record ParticipantCriteria
 
     // The Indgang section: only the rows set to "ja" or "nej"
     public IReadOnlyList<TicketChoice>? Tickets { get; init; }
+
+    // The Mad section: only the meal times set to "ja" or "nej"
+    public IReadOnlyList<MealChoice>? Meals { get; init; }
 }
 
 /// <summary>
 /// The participant searches of Infosys: the quick search in the page header (IndexController::main and
 /// ParticipantModel::miniWildCardSearch) and the search box (ParticipantModel::searchParticipants), and how a search
 /// is combined with the previous result. The participants are searched in memory; the participants passed in must
-/// have their category, country, game and tickets loaded.
+/// have their category, country, game, tickets and meals loaded.
 /// </summary>
 public static partial class ParticipantSearch
 {
@@ -269,6 +278,12 @@ public static partial class ParticipantSearch
         foreach (var choice in c.Tickets ?? [])
         {
             yield return p => p.Tickets.Any(t => t.TicketTypeId == choice.TicketTypeId) == choice.Has;
+        }
+
+        // Mad, the same way as Indgang (Infosys handleExtraChoices with deltagere_madtider)
+        foreach (var choice in c.Meals ?? [])
+        {
+            yield return p => p.Meals.Any(m => m.MealTimeId == choice.MealTimeId) == choice.Has;
         }
     }
 

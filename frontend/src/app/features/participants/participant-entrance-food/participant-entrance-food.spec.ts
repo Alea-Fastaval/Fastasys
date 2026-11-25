@@ -72,7 +72,7 @@ describe('mealText (a meal in the Infosys Indgang/Mad box)', () => {
 });
 
 describe('ParticipantEntranceFoodComponent', () => {
-  const render = async (tickets: ParticipantTicket[], meals: ParticipantMeal[] | null, canEditTickets = false) => {
+  const render = async (tickets: ParticipantTicket[], meals: ParticipantMeal[], canEdit = false) => {
     await TestBed.configureTestingModule({
       imports: [ParticipantEntranceFoodComponent],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
@@ -81,7 +81,7 @@ describe('ParticipantEntranceFoodComponent', () => {
     fixture.componentRef.setInput('tickets', tickets);
     fixture.componentRef.setInput('meals', meals);
     fixture.componentRef.setInput('participantId', 7);
-    fixture.componentRef.setInput('canEditTickets', canEditTickets);
+    fixture.componentRef.setInput('canEdit', canEdit);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
       .match('/assets/i18n/en.json')
@@ -92,17 +92,8 @@ describe('ParticipantEntranceFoodComponent', () => {
   const text = (element: HTMLElement, selector: string) =>
     element.querySelector(selector)?.textContent?.replace(/\s+/g, ' ').trim();
 
-  it('says that food is not ported yet while there are no meals', async () => {
-    const element = await render([], null);
-
-    expect(element.querySelector('.meals-not-ported')?.textContent).toContain(
-      'participants.entranceFood.mealsNotPorted',
-    );
-    expect(element.querySelector('.meal-list')).toBeNull();
-  });
-
   it('shows the tickets on the lines Indgang, Overnatning and Andet', async () => {
-    const element = await render([partout, sleepingWednesday, party], null);
+    const element = await render([partout, sleepingWednesday, party], []);
 
     // Without translations the keys are shown; the day names come from common.weekdaysShort
     expect(text(element, '.line.entrance')).toBe(
@@ -110,20 +101,20 @@ describe('ParticipantEntranceFoodComponent', () => {
     );
     expect(text(element, '.line.sleeping')).toBe('participants.entranceFood.sleeping: common.weekdaysShort.Wednesday');
     expect(text(element, '.line.other')).toBe('participants.entranceFood.other: Fest');
-    // Food may be ported on its own, so it can still say it is not ported
-    expect(element.querySelector('.meals-not-ported')).not.toBeNull();
   });
 
-  it('links "Ret/slet" to the ticket editor for users who may change tickets', async () => {
+  it('links "Ret/slet" to the entrance, food and wear editor for users who may change tickets or meals', async () => {
     const element = await render([], [], true);
 
-    expect(element.querySelector('a.edit-tickets')?.getAttribute('href')).toBe('/participants/7/tickets');
+    expect(element.querySelector('a.edit-entrance-food')?.getAttribute('href')).toBe(
+      '/participants/7/entrance-food-wear',
+    );
   });
 
   it('has no "Ret/slet" link for other users', async () => {
     const element = await render([], []);
 
-    expect(element.querySelector('a.edit-tickets')).toBeNull();
+    expect(element.querySelector('a.edit-entrance-food')).toBeNull();
   });
 
   it('shows every line, also the empty ones, like Infosys', async () => {
@@ -135,7 +126,6 @@ describe('ParticipantEntranceFoodComponent', () => {
     expect(text(element, '.line.meals')).toBe('participants.entranceFood.meals:');
     // Infosys shows no list when the participant has no meals
     expect(element.querySelector('.meal-list')).toBeNull();
-    expect(element.querySelector('.not-ported')).toBeNull();
   });
 
   it('lists the meals with whether each has been handed out', async () => {
@@ -146,6 +136,5 @@ describe('ParticipantEntranceFoodComponent', () => {
       'common.weekdaysShort.Wednesday Aftensmad — (participants.entranceFood.received)',
       'common.weekdaysShort.Thursday Morgenmad — (participants.entranceFood.notReceived)',
     ]);
-    expect(element.querySelector('.meals-not-ported')).toBeNull();
   });
 });

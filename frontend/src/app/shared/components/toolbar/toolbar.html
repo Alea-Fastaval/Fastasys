@@ -34,10 +34,12 @@
       </button>
       <mat-menu #resourcesMenu="matMenu" [hasBackdrop]="false">
         <div (mouseenter)="cancelClose()" (mouseleave)="closeMenu(resourcesTrigger)">
+          @if (authService.hasPrivilege('food_view', 'food_edit', 'food_stats_view')) {
           <a mat-menu-item routerLink="/resources/food">
             <mat-icon>restaurant</mat-icon>
             <span>{{ 'nav.food' | translate }}</span>
           </a>
+          }
           <a mat-menu-item routerLink="/resources/wear">
             <mat-icon>checkroom</mat-icon>
             <span>{{ 'nav.wear' | translate }}</span>

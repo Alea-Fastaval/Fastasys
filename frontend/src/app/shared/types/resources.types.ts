@@ -1,11 +1,3 @@
-export interface FoodType {
-  id: number;
-  name: string;
-  nameEnglish: string;
-  price: number;
-  isActive: boolean;
-}
-
 export interface WearItem {
   id: number;
   name: string;
@@ -22,13 +14,6 @@ export interface Room {
   capacity: number;
   description: string;
   size?: number;
-}
-
-export interface OrderFoodDto {
-  participantId: number;
-  foodTypeId: number;
-  date: string;
-  quantity?: number;
 }
 
 export interface OrderWearDto {

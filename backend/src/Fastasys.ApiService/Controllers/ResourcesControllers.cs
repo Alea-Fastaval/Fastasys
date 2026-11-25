@@ -6,43 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Controllers;
 
-public record OrderFoodDto(int ParticipantId, int FoodTypeId, DateTime Date, int Quantity = 1);
-
 public record OrderWearDto(int ParticipantId, int WearItemId, int Quantity = 1);
 
 public record CreateRoomDto(string Name, string Location, int Capacity, string Description);
-
-[ApiController]
-[Route("api/[controller]")]
-public class FoodController(InfosysDbContext db) : ControllerBase
-{
-    [HttpGet("types")]
-    public async Task<IActionResult> GetTypes()
-    {
-        var types = await db.FoodTypes.AsNoTracking().Where(f => f.IsActive).ToListAsync();
-        return Ok(types);
-    }
-
-    [HttpPost("order")]
-    public async Task<IActionResult> OrderFood([FromBody] OrderFoodDto dto)
-    {
-        var food = await db.FoodTypes.FindAsync(dto.FoodTypeId);
-        if (food == null)
-            return NotFound(new { message = "Food type not found" });
-
-        var participantFood = new ParticipantFood
-        {
-            ParticipantId = dto.ParticipantId,
-            FoodTypeId = dto.FoodTypeId,
-            Date = dto.Date.Date,
-            Quantity = dto.Quantity,
-        };
-
-        db.ParticipantFoods.Add(participantFood);
-        await db.SaveChangesAsync();
-        return Ok(new { message = "Food ordered successfully" });
-    }
-}
 
 [ApiController]
 [Route("api/[controller]")]

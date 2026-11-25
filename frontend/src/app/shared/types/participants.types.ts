@@ -1,4 +1,5 @@
 import { RunSeatRole } from './runs.types';
+import { FoodTypeOption, MealChoice } from './food.types';
 import { TicketChoice, TicketTypeOption } from './tickets.types';
 
 // Infosys deltagere.main_lang (da, en)
@@ -62,6 +63,8 @@ export interface ParticipantCriteria {
   notes?: string;
   // The Indgang section: only the rows set to "ja" or "nej"
   tickets?: TicketChoice[];
+  // The Mad section: only the meal times set to "ja" or "nej"
+  meals?: MealChoice[];
 }
 
 export interface QuickSearchStep {
@@ -187,9 +190,9 @@ export interface ParticipantDetails {
   sleepingNote: string | null;
   // The Wear box: null until wear is ported, then the participant's orders
   wearOrders: ParticipantWearOrder[] | null;
-  // The Indgang/Mad box: the participant's tickets, and their meals (null until food is ported)
+  // The Indgang/Mad box: the participant's tickets and meals
   tickets: ParticipantTicket[];
-  meals: ParticipantMeal[] | null;
+  meals: ParticipantMeal[];
   // The Soveplads box: null until sleeping places are ported, then where the participant sleeps
   sleepingPlaces: ParticipantSleepingPlace[] | null;
   // The IDkort box
@@ -350,6 +353,8 @@ export interface ParticipantOptions {
   idCardTemplates: IdCardTemplateOption[];
   // The ticket types for the search box's Indgang section, in id order
   ticketTypes: TicketTypeOption[];
+  // The food types with their meal times for the search box's Mad section, in id order
+  foodTypes: FoodTypeOption[];
 }
 
 export interface IdCardTemplateOption {

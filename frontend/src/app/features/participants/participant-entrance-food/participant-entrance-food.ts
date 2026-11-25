@@ -39,10 +39,8 @@ export function mealText(meal: ParticipantMeal, shortDay: (weekday: Weekday) => 
 // tickets on the lines Indgang, Overnatning and Andet, and a list of their meals with whether each has been handed
 // out. Each line is shown even when it is empty, like Infosys does.
 //
-// Food is not ported yet, so the page passes null for the meals and the box says so. When it is, the API fills
-// details.meals (see ParticipantMealDto in ParticipantsController) and this box shows them as is.
-// Infosys's "Ret/slet" link goes to its Indgang/Mad/Wear edit page (deltager/updatemadwear); its Indgang part is
-// /participants/:id/tickets, shown to users who may change a participant's tickets.
+// Infosys's "Ret/slet" link goes to its Indgang/Mad/Wear edit page (deltager/updatemadwear), here
+// /participants/:id/entrance-food-wear, shown to users who may change a participant's tickets or meals.
 @Component({
   selector: 'app-participant-entrance-food',
   imports: [RouterLink, MatButtonModule, MatIconModule, Card, TranslatePipe],
@@ -54,9 +52,9 @@ export class ParticipantEntranceFoodComponent {
 
   // Decorator inputs, like Card's: the unit tests run Angular in JIT mode, which doesn't know signal inputs
   @Input({ required: true }) public tickets: ParticipantTicket[] = [];
-  @Input({ required: true }) public meals: ParticipantMeal[] | null = null;
+  @Input({ required: true }) public meals: ParticipantMeal[] = [];
   @Input({ required: true }) public participantId = 0;
-  @Input() public canEditTickets = false;
+  @Input() public canEdit = false;
 
   public lineText(tickets: ParticipantTicket[], line: TicketLine): string {
     return ticketLineText(tickets, line, {

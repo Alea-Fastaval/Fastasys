@@ -1,7 +1,11 @@
 <app-card [title]="'participants.entranceFood.title' | translate">
-  @if (canEditTickets) {
+  @if (canEdit) {
   <div class="card-actions">
-    <a mat-stroked-button class="edit-tickets" [routerLink]="['/participants', participantId, 'tickets']">
+    <a
+      mat-stroked-button
+      class="edit-entrance-food"
+      [routerLink]="['/participants', participantId, 'entrance-food-wear']"
+    >
       <mat-icon>edit</mat-icon> {{ 'participants.activities.editDelete' | translate }}
     </a>
   </div>
@@ -21,9 +25,7 @@
 
   <div class="line meals">
     <strong>{{ 'participants.entranceFood.meals' | translate }}:</strong>
-    @if (meals === null) {
-    <p class="not-ported meals-not-ported">{{ 'participants.entranceFood.mealsNotPorted' | translate }}</p>
-    } @else if (meals.length) {
+    @if (meals.length) {
     <!-- Infosys shows no list for a participant without meals -->
     <ul class="meal-list">
       @for (meal of meals; track $index) {
