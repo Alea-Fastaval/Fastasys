@@ -63,8 +63,8 @@ public record ParticipantProgrammeDto(
     IReadOnlyList<ParticipantActivitySignupDto> ActivitySignups,
     // The Heltestyrke, Opgaver box. null until the hero force is ported (see ParticipantHeroTaskDto).
     IReadOnlyList<ParticipantHeroTaskDto>? HeroTasks,
-    // The Heltestyrken, Tilmeldinger box. null until the hero force is ported (see ParticipantHeroSignupDto).
-    IReadOnlyList<ParticipantHeroSignupDto>? HeroSignups
+    // The Heltestyrken, Tilmeldinger box: when the participant can help the hero force (see ParticipantHeroSignupDto)
+    IReadOnlyList<ParticipantHeroSignupDto> HeroSignups
 );
 
 // One row of the Heltestyrke, Opgaver box (visdeltager.phtml, .gdsbox): the hero force shifts the participant was put
@@ -80,15 +80,15 @@ public record ParticipantProgrammeDto(
 public record ParticipantHeroTaskDto(string Name, int ParticipantCount, int Capacity, DateTime Start, DateTime End);
 
 // One row of the Heltestyrken, Tilmeldinger box (visdeltager.phtml, .gdsbox): when the participant said they can help,
-// the category in bold (gdscategories.name_da) and the period, e.g. "Onsdag 7-12".
-// To fill it when the hero force is ported (Deltagere::getGDSTilmeldinger):
-// - The rows are the participant's deltagere_gdstilmeldinger rows. Infosys has no ORDER BY, so MySQL returns them in
-//   primary key order: by the period as text ("2027-03-24 12-17" before "2027-03-24 7-12"), then by category. Decide
-//   the order with the user then.
-// - The period is stored as "YYYY-MM-DD H-H" in Danish time. Infosys shows the day's Danish name and the hours
-//   (DeltagereGDSTilmeldinger::getMeaningfulPeriod with danishDayNames): Date is the date and Hours is "7-12".
-// Infosys's "Ret/slet" link (deltager/updategdstilmeldinger) is hidden from its Read-only roles.
-public record ParticipantHeroSignupDto(string Category, DateOnly Date, string Hours);
+// the category in bold (gdscategories.name_da) and the period, e.g. "Onsdag 7-12" (Deltagere::getGDSTilmeldinger).
+// - The rows are the participant's availability by day and time (HeroAvailabilityRules.Order); Infosys listed them in
+//   its primary key's text order, "12-17" before "7-12" (changed 2026-11-26).
+// - Category is null for any category (Infosys category 0, which the signup saves); the box shows "Alle". Infosys
+//   showed no name for it (fixed 2026-11-26).
+// - Infosys shows the day's Danish name and the hours (DeltagereGDSTilmeldinger::getMeaningfulPeriod with
+//   danishDayNames): Date is the day and Hours is "7-12".
+// The box's "Ret/slet" link (deltager/updategdstilmeldinger) goes to the edit page, for hero_force_participant_edit.
+public record ParticipantHeroSignupDto(string? Category, DateOnly Date, string Hours);
 
 // The Pris breakdown box of the Infosys participant page (visdeltager.phtml, #prisbreakdown), in whole DKK like
 // Infosys. Infosys shows it to its Read-only roles and in "Betalings mode" too, unlike the other boxes.
@@ -472,6 +472,7 @@ public class ParticipantsController : ControllerBase
             .Include(p => p.GameActivity)
             .Include(p => p.Tickets)
             .Include(p => p.Meals)
+            .Include(p => p.HeroAvailability)
             .OrderBy(p => p.Id)
             .ToListAsync();
         var year = CopenhagenNow().Year;
@@ -610,8 +611,8 @@ public class ParticipantsController : ControllerBase
     }
 
     // Infosys deltager/delete/:id: ("Slet for pokker"). Infosys only offers it for annulled participants; that is
-    // now checked here too. Their seats on runs, their signup wishes, their tickets, their meals and their wear are
-    // removed with them, as in Infosys.
+    // now checked here too. Their seats on runs, their signup wishes, their tickets, their meals, their wear and their
+    // hero force availability are removed with them, as in Infosys.
     [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Delete(int id)
@@ -629,8 +630,9 @@ public class ParticipantsController : ControllerBase
         _db.ParticipantPhotos.RemoveRange(_db.ParticipantPhotos.Where(s => s.ParticipantId == id));
         _db.ParticipantTickets.RemoveRange(_db.ParticipantTickets.Where(t => t.ParticipantId == id));
         _db.ParticipantMeals.RemoveRange(_db.ParticipantMeals.Where(m => m.ParticipantId == id));
-        // Deltagere::removeAllWear
+        // Deltagere::removeAllWear and removeDiySignup
         _db.ParticipantWearOrders.RemoveRange(_db.ParticipantWearOrders.Where(o => o.ParticipantId == id));
+        _db.ParticipantHeroAvailability.RemoveRange(_db.ParticipantHeroAvailability.Where(a => a.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -1039,8 +1041,9 @@ public class ParticipantsController : ControllerBase
                 (await ParticipantSignupRows.LoadAsync(_db, p.Id)).Select(s => s.ToDto()).ToList(),
                 // TODO when the hero force is ported: load the participant's shifts here (see ParticipantHeroTaskDto)
                 HeroTasks: null,
-                // TODO when the hero force is ported: load the participant's signups here (see ParticipantHeroSignupDto)
-                HeroSignups: null)
+                HeroSignups: (await ParticipantHeroAvailabilityController.LoadAsync(_db, p.Id))
+                    .Select(a => new ParticipantHeroSignupDto(a.CategoryName, a.Date, HeroAvailabilityRules.HoursText(a.Period)))
+                    .ToList())
             : null;
 
         return new ParticipantDto(

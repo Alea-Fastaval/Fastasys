@@ -219,8 +219,8 @@ export interface ParticipantProgramme {
   activitySignups: ParticipantActivitySignup[];
   // The Heltestyrke, Opgaver box: null until the hero force is ported
   heroTasks: ParticipantHeroTask[] | null;
-  // The Heltestyrken, Tilmeldinger box: null until the hero force is ported
-  heroSignups: ParticipantHeroSignup[] | null;
+  // The Heltestyrken, Tilmeldinger box: when the participant can help the hero force
+  heroSignups: ParticipantHeroSignup[];
 }
 
 // A hero force shift the participant was put on (see ParticipantHeroTaskDto in the API)
@@ -236,8 +236,8 @@ export interface ParticipantHeroTask {
 
 // When the participant said they can help the hero force (see ParticipantHeroSignupDto in the API)
 export interface ParticipantHeroSignup {
-  // The category's Danish name, e.g. "Forplejning"
-  category: string;
+  // The category's Danish name, e.g. "Forplejning", or null for any category ("Alle")
+  category: string | null;
   // yyyy-MM-dd, a day in Denmark
   date: string;
   // e.g. "7-12"

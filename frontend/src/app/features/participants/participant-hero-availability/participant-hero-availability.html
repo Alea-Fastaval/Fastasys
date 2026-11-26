@@ -1,0 +1,71 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button [routerLink]="['/participants', participantId]"
+      ><mat-icon>arrow_back</mat-icon> {{ 'participants.seats.backToParticipant' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  } @else if (page(); as p) {
+  <app-card [title]="'participants.heroAvailability.title' | translate">
+    <div class="choose">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.heroAvailability.category' | translate }}</mat-label>
+        <mat-select name="chosenCategory" [(ngModel)]="chosenCategory">
+          <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+          <mat-option [value]="anyCategory">{{ 'participants.heroSignups.anyCategory' | translate }}</mat-option>
+          @for (category of p.categories; track category.id) {
+          <mat-option [value]="category.id">{{ category.nameDanish }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'participants.heroAvailability.day' | translate }}</mat-label>
+        <mat-select name="chosenDay" [(ngModel)]="chosenDay">
+          <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+          @for (day of days(); track day) {
+          <mat-option [value]="day">{{ dayText(day) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="narrow">
+        <mat-label>{{ 'participants.heroAvailability.period' | translate }}</mat-label>
+        <mat-select name="chosenPeriod" [(ngModel)]="chosenPeriod">
+          <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+          @for (period of periods; track period) {
+          <mat-option [value]="period">{{ hours[period] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-stroked-button type="button" class="add-period" [disabled]="!canAdd()" (click)="add()">
+        <mat-icon>add</mat-icon> {{ 'participants.heroAvailability.add' | translate }}
+      </button>
+    </div>
+
+    <table class="row-list period-list">
+      <tbody>
+        @for (row of rows(); track row) {
+        <tr>
+          <td class="period">{{ rowText(row) }}</td>
+          <td class="actions">
+            <button mat-button type="button" color="warn" (click)="remove(row)">
+              {{ 'participants.seats.delete' | translate }}
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="form-actions">
+      <button mat-raised-button color="primary" type="button" class="update" [disabled]="busy()" (click)="submit()">
+        {{ 'participants.seats.update' | translate }}
+      </button>
+      <button mat-button type="button" class="cancel" (click)="cancel()">
+        {{ 'participants.heroAvailability.cancel' | translate }}
+      </button>
+    </div>
+  </app-card>
+  }
+</div>

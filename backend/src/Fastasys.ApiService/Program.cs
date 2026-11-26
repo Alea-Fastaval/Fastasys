@@ -107,6 +107,9 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("WearListView", "wear_list_view", "wear_distribute_edit")
     .AddPolicy("WearDistribution", "wear_distribute_edit")
     .AddPolicy("ParticipantWearManagement", "wear_participant_edit")
+    // Infosys: any role with ParticipantController/* may change when a participant can help the hero force (its
+    // Read-only roles don't see the link). Fastasys uses its privilege for a participant's hero force.
+    .AddPolicy("ParticipantHeroForceManagement", "hero_force_participant_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

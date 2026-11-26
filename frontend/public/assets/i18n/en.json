@@ -197,6 +197,7 @@
       "maxRulesGuideGames": "Max Rules Guide",
       "pronouns": "Pronouns",
       "sleepingAreas": "Desired sleeping areas",
+      "hasHeroSignup": "Hero force, signed up",
       "adminNote": "Admin note",
       "messageToParticipant": "Message from FV",
       "paymentNote": "Payment note",
@@ -378,7 +379,16 @@
       "title": "Hero Force, tasks"
     },
     "heroSignups": {
-      "title": "Hero Force, signups"
+      "title": "Hero Force, signups",
+      "anyCategory": "All"
+    },
+    "heroAvailability": {
+      "title": "Update Hero Force signups",
+      "category": "Category",
+      "day": "Day",
+      "period": "Time",
+      "add": "Add shift",
+      "cancel": "Cancel"
     },
     "heroForceNotPorted": "The Hero Force has not been moved to Fastasys yet.",
     "activities": {
@@ -442,7 +452,9 @@
       "signupNoGameMasters": "The activity has no game masters.",
       "signupUpdateFailed": "Could not update the participant.",
       "signupDeleteFailed": "Could not delete the signup",
-      "entranceFoodWearUpdateFailed": "Could not update the participant."
+      "entranceFoodWearUpdateFailed": "Could not update the participant.",
+      "heroAvailabilityUpdateFailed": "Could not update the participant.",
+      "heroAvailabilityNotUpdated": "The participant's hero task signups were not updated."
     },
     "seats": {
       "title": "Update activities",

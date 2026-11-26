@@ -356,10 +356,10 @@ public class ParticipantsControllerTests
         Assert.Null(participant.Price);
         // No photo and no template yet
         Assert.Equal(new ParticipantIdCardDto(null, null, null, null), participant.Details.IdCard);
-        // The hero force is not ported yet either
+        // The hero force tasks are not ported yet either; the participant hasn't said when they can help
         Assert.NotNull(participant.Programme);
         Assert.Null(participant.Programme.HeroTasks);
-        Assert.Null(participant.Programme.HeroSignups);
+        Assert.Empty(participant.Programme.HeroSignups);
     }
 
     // Wednesday 24 March 2027 at the given UTC hour (Copenhagen is UTC+1 that week until Sunday)
@@ -592,7 +592,7 @@ public class ParticipantsControllerTests
         Assert.Empty(participant.Programme.Activities);
         Assert.Equal(10, Assert.Single(participant.Programme.ActivitySignups).ScheduleId);
         Assert.Null(participant.Programme.HeroTasks);
-        Assert.Null(participant.Programme.HeroSignups);
+        Assert.Empty(participant.Programme.HeroSignups);
     }
 
     [Fact]
@@ -1098,6 +1098,64 @@ public class ParticipantsControllerTests
                 new ParticipantWearOrderDto(2, "T-shirt-Sort", "M", 100, true),
             ],
             participant.Details!.WearOrders);
+    }
+
+    [Fact]
+    public async Task Get_FillsTheHeltestyrkenTilmeldingerBoxByDayAndTime()
+    {
+        // Infosys visdeltager's .gdsbox: the category (none for "any", which the box shows as "Alle") and "Onsdag 7-12";
+        // by day and time instead of Infosys's text order (changed 2026-11-26)
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        db.ParticipantHeroAvailability.AddRange(
+            new ParticipantHeroAvailability { ParticipantId = 1, Date = new DateOnly(2027, 3, 24), Period = HeroPeriod.Afternoon, CategoryId = 5 },
+            new ParticipantHeroAvailability { ParticipantId = 1, Date = new DateOnly(2027, 3, 24), Period = HeroPeriod.Morning });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var participant = Ok(await CreateController(db).Get(1));
+
+        Assert.Equal(
+            [
+                new ParticipantHeroSignupDto(null, new DateOnly(2027, 3, 24), "7-12"),
+                new ParticipantHeroSignupDto("Brandvagt", new DateOnly(2027, 3, 24), "12-17"),
+            ],
+            participant.Programme!.HeroSignups);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsHeroAvailability()
+    {
+        // Infosys Deltagere::delete calls removeDiySignup
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        db.ParticipantHeroAvailability.AddRange(
+            new ParticipantHeroAvailability { ParticipantId = 1, Date = new DateOnly(2027, 3, 24), Period = HeroPeriod.Morning },
+            new ParticipantHeroAvailability { ParticipantId = 2, Date = new DateOnly(2027, 3, 24), Period = HeroPeriod.Morning });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        Assert.IsType<OkObjectResult>(await CreateController(db).Delete(1));
+
+        Assert.Equal([2], db.ParticipantHeroAvailability.Select(a => a.ParticipantId));
+    }
+
+    [Fact]
+    public async Task Search_TheHeltestyrkenTilmeldtColumnSaysWhetherTheParticipantCanHelp()
+    {
+        // Infosys has_hero_signup ("Heltestyrken, tilmeldt"): Ja when the participant has any period
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddAsync(db, 2);
+        db.ParticipantHeroAvailability.Add(
+            new ParticipantHeroAvailability { ParticipantId = 2, Date = new DateOnly(2027, 3, 24), Period = HeroPeriod.Evening, CategoryId = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var result = Ok(await CreateController(db).Search(new SearchParticipantsDto(null, ["hasHeroSignup"])));
+
+        Assert.Equal([false, true], result.Rows.Select(r => r.Values["hasHeroSignup"]));
     }
 
     [Fact]

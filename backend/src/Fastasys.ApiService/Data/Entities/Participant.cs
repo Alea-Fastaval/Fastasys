@@ -152,6 +152,8 @@ public class Participant
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public virtual ICollection<ParticipantMeal> Meals { get; set; } = new List<ParticipantMeal>();
     public virtual ICollection<ParticipantWearOrder> WearOrders { get; set; } = new List<ParticipantWearOrder>();
+    public virtual ICollection<ParticipantHeroAvailability> HeroAvailability { get; set; } =
+        new List<ParticipantHeroAvailability>();
 
     // The participant's chosen name. Fastasys shows this name everywhere; the legal name is only shown on the
     // participant page.

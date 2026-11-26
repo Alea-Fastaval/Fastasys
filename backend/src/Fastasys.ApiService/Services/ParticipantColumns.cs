@@ -3,7 +3,9 @@ using Fastasys.ApiService.Data.Entities;
 namespace Fastasys.ApiService.Services;
 
 /// <summary>A column that can be added to the participant list.</summary>
-/// <param name="Value">The value for a participant with category, country, organizer area and game loaded</param>
+/// <param name="Value">
+/// The value for a participant with category, country, organizer area, game and hero force availability loaded
+/// </param>
 /// <param name="EditorsOnly">
 /// Notes are hidden from users who may only view participants, as on the participant page. Infosys let its
 /// Read-only role add them to the list (missing access check, fixed).
@@ -13,7 +15,7 @@ public sealed record ParticipantColumn(Func<Participant, object?> Value, bool Ed
 /// <summary>
 /// The columns of the Infosys participant list ("Tilføj/fjern kolonne", ParticipantModel::getDisplayColumns):
 /// the columns with a readable name, minus the ones Infosys filters out and the removed ones, plus the signup
-/// notes. Columns for features not ported yet (sleeping rooms, hero force) come with those features.
+/// notes. Columns for features not ported yet (sleeping rooms, hero force tasks) come with those features.
 /// </summary>
 public static class ParticipantColumns
 {
@@ -55,6 +57,8 @@ public static class ParticipantColumns
         ["maxRulesGuideGames"] = new(p => p.MaxRulesGuideGames),
         ["pronouns"] = new(p => p.Pronouns),
         ["sleepingAreas"] = new(p => p.SleepingAreas),
+        // Infosys has_hero_signup ("Heltestyrken, tilmeldt"): whether the participant can help the hero force at all
+        ["hasHeroSignup"] = new(p => p.HeroAvailability.Count > 0),
         ["adminNote"] = new(p => p.AdminNote, EditorsOnly: true),
         ["messageToParticipant"] = new(p => p.MessageToParticipant, EditorsOnly: true),
         ["paymentNote"] = new(p => p.PaymentNote, EditorsOnly: true),

@@ -45,7 +45,7 @@ const existing: Participant = {
   nextId: null,
   canEdit: true,
   price: null,
-  programme: { activities: [], activitySignups: [], heroTasks: null, heroSignups: null },
+  programme: { activities: [], activitySignups: [], heroTasks: null, heroSignups: [] },
   details: {
     organizerAreaId: null,
     organizerAreaName: null,

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { describe, it, expect } from 'vitest';
 import { ParticipantHeroSignup } from '@shared/types';
 import { Weekday } from '@shared/utils';
@@ -38,13 +39,15 @@ describe('heroSignupPeriodText (a period in the Infosys Heltestyrken, Tilmelding
 });
 
 describe('ParticipantHeroSignupsComponent', () => {
-  const render = async (signups: ParticipantHeroSignup[] | null) => {
+  const render = async (signups: ParticipantHeroSignup[], canEdit = false) => {
     await TestBed.configureTestingModule({
       imports: [ParticipantHeroSignupsComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(ParticipantHeroSignupsComponent);
     fixture.componentRef.setInput('signups', signups);
+    fixture.componentRef.setInput('participantId', 7);
+    fixture.componentRef.setInput('canEdit', canEdit);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController)
       .match('/assets/i18n/en.json')
@@ -53,11 +56,19 @@ describe('ParticipantHeroSignupsComponent', () => {
     return fixture.nativeElement as HTMLElement;
   };
 
-  it('says that the hero force is not ported yet while there is no data', async () => {
-    const element = await render(null);
+  it('shows "Alle" for a period for any category (Infosys showed no name)', async () => {
+    const element = await render([{ category: null, date: '2027-03-24', hours: '12-17' }]);
 
-    expect(element.querySelector('.not-ported')?.textContent).toContain('participants.heroForceNotPorted');
-    expect(element.querySelector('.hero-table')).toBeNull();
+    expect(element.querySelector('.category strong')?.textContent?.trim()).toBe('participants.heroSignups.anyCategory');
+  });
+
+  it('links "Ret/slet" to the edit page for users who may change it', async () => {
+    // Infosys deltager/updategdstilmeldinger/:id:, hidden from its Read-only roles
+    expect((await render([kitchen], true)).querySelector('a.edit-hero-signups')?.getAttribute('href')).toBe(
+      '/participants/7/hero-availability',
+    );
+    TestBed.resetTestingModule();
+    expect((await render([kitchen])).querySelector('a.edit-hero-signups')).toBeNull();
   });
 
   it('shows one row per signup with the category in bold and the period', async () => {
@@ -70,14 +81,12 @@ describe('ParticipantHeroSignupsComponent', () => {
       ['Forplejning', 'Onsdag 7-12'],
       ['Rengøring', 'Søndag 17-22'],
     ]);
-    expect(element.querySelector('.category strong')?.textContent).toBe('Forplejning');
-    expect(element.querySelector('.not-ported')).toBeNull();
+    expect(element.querySelector('.category strong')?.textContent?.trim()).toBe('Forplejning');
   });
 
   it('shows no rows for a participant without signups, like Infosys', async () => {
     const element = await render([]);
 
     expect(element.querySelectorAll('.hero-table tr').length).toBe(0);
-    expect(element.querySelector('.not-ported')).toBeNull();
   });
 });

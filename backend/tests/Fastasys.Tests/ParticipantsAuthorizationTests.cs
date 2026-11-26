@@ -168,7 +168,7 @@ public class ParticipantsAuthorizationTests : IClassFixture<TestWebApplicationFa
         Assert.Equal(JsonValueKind.Array, programme.GetProperty("activities").ValueKind);
         Assert.Equal(JsonValueKind.Array, programme.GetProperty("activitySignups").ValueKind);
         Assert.Equal(JsonValueKind.Null, programme.GetProperty("heroTasks").ValueKind);
-        Assert.Equal(JsonValueKind.Null, programme.GetProperty("heroSignups").ValueKind);
+        Assert.Equal(JsonValueKind.Array, programme.GetProperty("heroSignups").ValueKind);
     }
 
     [Fact]

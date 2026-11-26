@@ -39,6 +39,7 @@ import { TicketTypeDetailComponent } from './features/tickets/ticket-type-detail
 import { TicketTypeFormComponent } from './features/tickets/ticket-type-form/ticket-type-form';
 import { TicketStatsComponent } from './features/tickets/ticket-stats/ticket-stats';
 import { ParticipantEntranceFoodWearComponent } from './features/participants/participant-entrance-food-wear/participant-entrance-food-wear';
+import { ParticipantHeroAvailabilityComponent } from './features/participants/participant-hero-availability/participant-hero-availability';
 import { SignupComponent } from './features/signup/signup';
 import { RunDetailComponent } from './features/runs/run-detail/run-detail';
 import { RunFormComponent } from './features/runs/run-form/run-form';
@@ -59,6 +60,11 @@ export const routes: Routes = [
   { path: 'participants/:id/activities', component: ParticipantSeatsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/signups', component: ParticipantSignupsComponent, canActivate: [authGuard] },
   { path: 'participants/:id/photo', component: ParticipantPhotoComponent, canActivate: [authGuard] },
+  {
+    path: 'participants/:id/hero-availability',
+    component: ParticipantHeroAvailabilityComponent,
+    canActivate: [authGuard],
+  },
   {
     path: 'participants/:id/entrance-food-wear',
     component: ParticipantEntranceFoodWearComponent,

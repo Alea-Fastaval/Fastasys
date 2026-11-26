@@ -3,6 +3,7 @@ export type { LoginDto, AuthResponse, User as AuthUser } from './auth.types';
 export * from './boardgames.types';
 export * from './communications.types';
 export * from './food.types';
+export * from './hero.types';
 export * from './hero-force.types';
 export * from './id-cards.types';
 export * from './participants.types';

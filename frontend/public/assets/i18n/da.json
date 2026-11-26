@@ -197,6 +197,7 @@
       "maxRulesGuideGames": "Max Regelformidler",
       "pronouns": "Pronomen",
       "sleepingAreas": "Ønskede soveområder",
+      "hasHeroSignup": "Heltestyrken, tilmeldt",
       "adminNote": "Admin note",
       "messageToParticipant": "Besked fra FV",
       "paymentNote": "Betalingsnote",
@@ -378,7 +379,16 @@
       "title": "Heltestyrke, Opgaver"
     },
     "heroSignups": {
-      "title": "Heltestyrken, Tilmeldinger"
+      "title": "Heltestyrken, Tilmeldinger",
+      "anyCategory": "Alle"
+    },
+    "heroAvailability": {
+      "title": "Opdater Heltestyrke Tilmeldinger",
+      "category": "Kategori",
+      "day": "Dag",
+      "period": "Tid",
+      "add": "Tilføj vagt",
+      "cancel": "Fortryd"
     },
     "heroForceNotPorted": "Heltestyrken er ikke flyttet til Fastasys endnu.",
     "activities": {
@@ -442,7 +452,9 @@
       "signupNoGameMasters": "Aktiviteten har ingen spilledere.",
       "signupUpdateFailed": "Kunne ikke opdatere deltageren.",
       "signupDeleteFailed": "Kunne ikke slette tilmeldingen",
-      "entranceFoodWearUpdateFailed": "Kunne ikke opdatere deltageren."
+      "entranceFoodWearUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "heroAvailabilityUpdateFailed": "Kunne ikke opdatere deltageren.",
+      "heroAvailabilityNotUpdated": "Deltagerens Heltetjanser-tilmeldinger blev ikke opdateret."
     },
     "seats": {
       "title": "Opdater Aktiviteter",

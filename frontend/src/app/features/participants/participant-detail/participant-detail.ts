@@ -137,6 +137,8 @@ export class ParticipantDetailComponent {
   );
   // The Wear box's "Ret/slet" link to the same page, for the participant's wear
   public readonly mayEditWear = inject(AuthService).hasPrivilege('wear_participant_edit');
+  // The Heltestyrken, Tilmeldinger box's "Ret/slet" link
+  public readonly mayEditHeroSignups = inject(AuthService).hasPrivilege('hero_force_participant_edit');
 
   public readonly flash = signal(this.flashService.take());
   public readonly participant = signal<Participant | null>(null);

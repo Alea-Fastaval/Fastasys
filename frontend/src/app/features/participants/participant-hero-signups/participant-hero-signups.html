@@ -1,19 +1,26 @@
 <app-card [title]="'participants.heroSignups.title' | translate">
-  @if (signups; as list) {
+  @if (canEdit) {
+  <div class="card-actions">
+    <a
+      mat-stroked-button
+      class="edit-hero-signups"
+      [routerLink]="['/participants', participantId, 'hero-availability']"
+    >
+      <mat-icon>edit</mat-icon> {{ 'participants.activities.editDelete' | translate }}
+    </a>
+  </div>
+  }
   <!-- Infosys shows no rows when the participant has no signups -->
   <table class="hero-table">
     <tbody>
-      @for (signup of list; track $index) {
+      @for (signup of signups; track $index) {
       <tr>
         <td class="category">
-          <strong>{{ signup.category }}</strong>
+          <strong>{{ signup.category ?? ('participants.heroSignups.anyCategory' | translate) }}</strong>
         </td>
         <td class="period">{{ periodText(signup) }}</td>
       </tr>
       }
     </tbody>
   </table>
-  } @else {
-  <p class="not-ported">{{ 'participants.heroForceNotPorted' | translate }}</p>
-  }
 </app-card>

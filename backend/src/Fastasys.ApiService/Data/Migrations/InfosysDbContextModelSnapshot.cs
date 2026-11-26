@@ -1844,6 +1844,74 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("HeroForceShiftParticipants");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.HeroTaskCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 8L, null, null, null, null, null);
+
+                    b.Property<string>("NameDanish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("hero_force_categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            NameDanish = "Forplejning",
+                            NameEnglish = "Food-handling"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            NameDanish = "Service",
+                            NameEnglish = "Service"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            NameDanish = "Rengøring",
+                            NameEnglish = "Cleaning"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            NameDanish = "Manuelt arbejde",
+                            NameEnglish = "Manual labor"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            NameDanish = "Brandvagt",
+                            NameEnglish = "Night watch"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            NameDanish = "James (Otto-fest tjener)",
+                            NameEnglish = "James (Otto-celebration waiter)"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            NameDanish = "Ungdomslounge",
+                            NameEnglish = "Youth lounge"
+                        });
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.IdCardTemplate", b =>
                 {
                     b.Property<int>("Id")
@@ -2572,6 +2640,39 @@ namespace Fastasys.ApiService.Data.Migrations
                             IsOrganizer = false,
                             Name = "Freeloader"
                         });
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantHeroAvailability", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ParticipantId", "Date", "Period", "CategoryId")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("ParticipantId", "Date", "Period", "CategoryId"), false);
+
+                    b.ToTable("participant_hero_availability");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantMeal", b =>
@@ -3756,6 +3857,24 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("IdCardTemplate");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantHeroAvailability", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.HeroTaskCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
+                        .WithMany("HeroAvailability")
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Participant");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantMeal", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.MealTime", "MealTime")
@@ -4129,6 +4248,8 @@ namespace Fastasys.ApiService.Data.Migrations
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Participant", b =>
                 {
+                    b.Navigation("HeroAvailability");
+
                     b.Navigation("Meals");
 
                     b.Navigation("Payments");

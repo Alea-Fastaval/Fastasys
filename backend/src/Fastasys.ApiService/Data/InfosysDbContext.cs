@@ -33,6 +33,8 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<HeroForceCategory> HeroForceCategories => Set<HeroForceCategory>();
     public DbSet<HeroForceShift> HeroForceShifts => Set<HeroForceShift>();
     public DbSet<HeroForceShiftParticipant> HeroForceShiftParticipants => Set<HeroForceShiftParticipant>();
+    public DbSet<HeroTaskCategory> HeroTaskCategories => Set<HeroTaskCategory>();
+    public DbSet<ParticipantHeroAvailability> ParticipantHeroAvailability => Set<ParticipantHeroAvailability>();
 
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<FoodType> FoodTypes => Set<FoodType>();
@@ -227,6 +229,42 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
         });
 
         modelBuilder.Entity<HeroForceShiftParticipant>().HasKey(gsp => new { gsp.ShiftId, gsp.ParticipantId });
+
+        // The 7 Infosys categories are seeded with ids 1-7, so new categories start after them
+        modelBuilder.Entity<HeroTaskCategory>(category =>
+        {
+            category.Property(c => c.Id).HasIdentityOptions(startValue: HeroTaskCategory.FirstNewId);
+            category.HasData(HeroSeed.Categories);
+        });
+
+        // Infosys deltagere_gdstilmeldinger: primary key (deltager_id, period, category_id), foreign keys without ON
+        // DELETE CASCADE. Deleting a participant removes their availability (Infosys's code does that,
+        // Deltagere::removeDiySignup); a category that is used can't be deleted. "Any category" (Infosys 0) is a missing
+        // category, unique like any other.
+        modelBuilder.Entity<ParticipantHeroAvailability>(availability =>
+        {
+            availability.Property(a => a.Period).HasConversion<string>();
+            availability
+                .HasOne(a => a.Participant)
+                .WithMany(p => p.HeroAvailability)
+                .HasForeignKey(a => a.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            availability
+                .HasOne(a => a.Category)
+                .WithMany()
+                .HasForeignKey(a => a.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            availability
+                .HasIndex(a => new
+                {
+                    a.ParticipantId,
+                    a.Date,
+                    a.Period,
+                    a.CategoryId,
+                })
+                .IsUnique()
+                .AreNullsDistinct(false);
+        });
 
         // Infosys mad: kategori is unique
         modelBuilder.Entity<FoodType>().HasIndex(f => f.NameDanish).IsUnique();

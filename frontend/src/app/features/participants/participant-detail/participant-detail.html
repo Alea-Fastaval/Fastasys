@@ -148,14 +148,10 @@
     <hr />
     <dl class="field-list">
       <!-- Infosys: Ja when the participant has hero force signups (Heltestyrken, Tilmeldinger), otherwise Nej. Not the
-           Super Heltetjanser setting. It comes with the hero force. -->
+           Super Heltetjanser setting. Editors always get the signups with the boxes below the notes. -->
       <div class="field in-hero-force">
         <dt>{{ 'participants.fields.inHeroForce' | translate }}:</dt>
-        @if (p.programme?.heroSignups; as signups) {
-        <dd>{{ (signups.length ? 'common.yes' : 'common.no') | translate }}</dd>
-        } @else {
-        <dd class="not-ported">{{ 'participants.notPortedShort' | translate }}</dd>
-        }
+        <dd>{{ (p.programme?.heroSignups?.length ? 'common.yes' : 'common.no') | translate }}</dd>
       </div>
       @for (def of preferenceFields; track def.field) {
       <ng-container *ngTemplateOutlet="cell; context: { $implicit: def, participant: p }" />
@@ -268,7 +264,8 @@
   <!-- Infosys shows two rows of boxes after the notes: Aktiviteter with Heltestyrke, Opgaver next to it, and
        Aktivitetstilmeldinger with Heltestyrken, Tilmeldinger. They are also shown, read-only, to users who may view
        participants and activities (Infosys's "Read-only activity" role). Changes need the right to edit participants
-       and are refused for an activity-locked participant. The hero force boxes get their data when it is ported. -->
+       and are refused for an activity-locked participant. Heltestyrke, Opgaver gets its data when the hero force is
+       ported; Heltestyrken, Tilmeldinger is real. -->
   @if (p.programme; as g) {
   <div class="activity-boxes">
     <app-participant-activities [activities]="g.activities" [participantId]="p.id" [canEdit]="canEditSeats(p)" />
@@ -279,7 +276,7 @@
       [canEdit]="canEditSignups(p)"
       (changed)="refresh()"
     />
-    <app-participant-hero-signups [signups]="g.heroSignups" />
+    <app-participant-hero-signups [signups]="g.heroSignups" [participantId]="p.id" [canEdit]="mayEditHeroSignups" />
   </div>
   }
 

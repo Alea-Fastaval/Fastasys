@@ -87,7 +87,7 @@ const programme: ParticipantProgramme = {
     },
   ],
   heroTasks: null,
-  heroSignups: null,
+  heroSignups: [],
 };
 
 const participant: Participant = {
@@ -266,9 +266,9 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(element.querySelector('app-participant-activities .activity-table tbody')?.textContent).toContain(
       'Andet spil',
     );
-    // The hero force boxes say that the hero force is not ported
+    // Heltestyrke, Opgaver says that the hero force is not ported; Heltestyrken, Tilmeldinger is real
     expect(element.querySelector('.activity-boxes app-participant-hero-tasks .not-ported')).not.toBeNull();
-    expect(element.querySelector('.activity-boxes app-participant-hero-signups .not-ported')).not.toBeNull();
+    expect(element.querySelector('.activity-boxes app-participant-hero-signups .hero-table')).not.toBeNull();
   });
 
   it("shows Infosys's buttons above the page, disabled until they are ported", async () => {
@@ -297,16 +297,15 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
     expect(actions).toContain('checkInAndPrint');
   });
 
-  it('shows "Med i Heltestyrken" and "Afregnet ved check-in" as not ported yet', async () => {
+  it('shows "Afregnet ved check-in" as not ported yet', async () => {
     const { element } = await setup();
 
-    expect(element.querySelector('.in-hero-force dd.not-ported')?.textContent).toContain('participants.notPortedShort');
     expect(element.querySelector('.checkin-balance dd.not-ported')?.textContent).toContain(
       'participants.notPortedShort',
     );
   });
 
-  it('shows "Med i Heltestyrken" from the hero force signups once they are ported', async () => {
+  it('shows "Med i Heltestyrken" from the hero force signups', async () => {
     const signup = { category: 'Forplejning', date: '2027-03-24', hours: '7-12' };
     const withSignups = await setup({ ...participant, programme: { ...programme, heroSignups: [signup] } });
     expect(withSignups.element.querySelector('.in-hero-force dd')?.textContent?.trim()).toBe('common.yes');
