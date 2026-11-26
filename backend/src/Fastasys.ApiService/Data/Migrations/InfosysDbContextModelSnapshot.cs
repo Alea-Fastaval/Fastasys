@@ -2638,22 +2638,48 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("participant_tickets");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWearOrder", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Amount")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsReceived")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("ParticipantId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("WearItemId")
+                    b.Property<int>("WearPriceId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Quantity")
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("WearPriceId");
+
+                    b.ToTable("participant_wear_orders");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWearOrderAttribute", b =>
+                {
+                    b.Property<int>("OrderId")
                         .HasColumnType("integer");
 
-                    b.HasKey("ParticipantId", "WearItemId");
+                    b.Property<int>("AttributeId")
+                        .HasColumnType("integer");
 
-                    b.HasIndex("WearItemId");
+                    b.HasKey("OrderId", "AttributeId");
 
-                    b.ToTable("ParticipantWears");
+                    b.HasIndex("AttributeId");
+
+                    b.ToTable("participant_wear_order_attributes");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Payment", b =>
@@ -3286,7 +3312,192 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.ToTable("user_roles");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearItem", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearAttribute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<int>("Id"), 20L, null, null, null, null, null);
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NameDanish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("wear_attributes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Kind = "Size",
+                            NameDanish = "Baby 56(0-1 md)",
+                            NameEnglish = "Baby 56(0-1 mo)",
+                            Position = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Kind = "Size",
+                            NameDanish = "Baby 62(2-3 md)",
+                            NameEnglish = "Baby 62(2-3 mo)",
+                            Position = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Kind = "Size",
+                            NameDanish = "Baby 68(3-6 md)",
+                            NameEnglish = "Baby 68(3-6 mo)",
+                            Position = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Kind = "Size",
+                            NameDanish = "Baby 74(6-9 md)",
+                            NameEnglish = "Baby 74(6-9 mo)",
+                            Position = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Kind = "Size",
+                            NameDanish = "Baby 80(9-12 md)",
+                            NameEnglish = "Baby 80(9-12 mo)",
+                            Position = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Kind = "Size",
+                            NameDanish = "Baby 86/92(1-2 år)",
+                            NameEnglish = "Baby 86/92(1-2 yr)",
+                            Position = 6
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Kind = "Size",
+                            NameDanish = "Barn 98/104(3-4 år)",
+                            NameEnglish = "Child 98/104(3-4 yr)",
+                            Position = 7
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Kind = "Size",
+                            NameDanish = "Barn 110/116(5-6 år)",
+                            NameEnglish = "Child 110/116(5-6 yr)",
+                            Position = 8
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Kind = "Size",
+                            NameDanish = "Barn 122/128(7-8 år)",
+                            NameEnglish = "Child 122/128(7-8 yr)",
+                            Position = 9
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Kind = "Size",
+                            NameDanish = "Barn 134/146(9-11 år)",
+                            NameEnglish = "Child 134/146(9-11 yr)",
+                            Position = 10
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Kind = "Size",
+                            NameDanish = "Barn 152/164(12-14 år)",
+                            NameEnglish = "Child 152/164(12-14 yr)",
+                            Position = 11
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Kind = "Size",
+                            NameDanish = "S",
+                            NameEnglish = "S",
+                            Position = 12
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Kind = "Size",
+                            NameDanish = "M",
+                            NameEnglish = "M",
+                            Position = 13
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Kind = "Size",
+                            NameDanish = "L",
+                            NameEnglish = "L",
+                            Position = 14
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Kind = "Size",
+                            NameDanish = "XL",
+                            NameEnglish = "XL",
+                            Position = 15
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Kind = "Size",
+                            NameDanish = "XXL",
+                            NameEnglish = "XXL",
+                            Position = 16
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Kind = "Size",
+                            NameDanish = "3XL",
+                            NameEnglish = "3XL",
+                            Position = 17
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Kind = "Size",
+                            NameDanish = "4XL",
+                            NameEnglish = "4XL",
+                            Position = 18
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Kind = "Size",
+                            NameDanish = "5XL",
+                            NameEnglish = "5XL",
+                            Position = 19
+                        });
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearImage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -3294,27 +3505,142 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
+                    b.Property<string>("ContentType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Name")
+                    b.Property<byte[]>("Data")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Size")
+                    b.Property<string>("FileName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
-                    b.Property<int>("Stock")
+                    b.HasKey("Id");
+
+                    b.HasIndex("FileName")
+                        .IsUnique();
+
+                    b.ToTable("wear_images");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearImageLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AttributeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WearImageId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WearTypeId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.ToTable("WearItems");
+                    b.HasIndex("AttributeId");
+
+                    b.HasIndex("WearTypeId");
+
+                    b.HasIndex("WearImageId", "WearTypeId", "AttributeId")
+                        .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("WearImageId", "WearTypeId", "AttributeId"), false);
+
+                    b.ToTable("wear_image_links");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearPrice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ParticipantCategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Price")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WearTypeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipantCategoryId");
+
+                    b.HasIndex("WearTypeId", "ParticipantCategoryId")
+                        .IsUnique();
+
+                    b.ToTable("wear_prices");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DescriptionDanish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DescriptionEnglish")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MaxOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("NameDanish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NameEnglish")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("wear_types");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearVariantAttribute", b =>
+                {
+                    b.Property<int>("WearTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Variant")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AttributeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("WearTypeId", "Variant", "AttributeId");
+
+                    b.HasIndex("AttributeId");
+
+                    b.ToTable("wear_variant_attributes");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.BoardgameLoan", b =>
@@ -3479,23 +3805,42 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("TicketType");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWear", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWearOrder", b =>
                 {
                     b.HasOne("Fastasys.ApiService.Data.Entities.Participant", "Participant")
-                        .WithMany("Wears")
+                        .WithMany("WearOrders")
                         .HasForeignKey("ParticipantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Fastasys.ApiService.Data.Entities.WearItem", "WearItem")
-                        .WithMany("ParticipantWearItems")
-                        .HasForeignKey("WearItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearPrice", "WearPrice")
+                        .WithMany()
+                        .HasForeignKey("WearPriceId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Participant");
 
-                    b.Navigation("WearItem");
+                    b.Navigation("WearPrice");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWearOrderAttribute", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearAttribute", "Attribute")
+                        .WithMany()
+                        .HasForeignKey("AttributeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.ParticipantWearOrder", "Order")
+                        .WithMany("Attributes")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attribute");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Payment", b =>
@@ -3688,6 +4033,70 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearImageLink", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearAttribute", "Attribute")
+                        .WithMany()
+                        .HasForeignKey("AttributeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearImage", "WearImage")
+                        .WithMany()
+                        .HasForeignKey("WearImageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearType", "WearType")
+                        .WithMany("ImageLinks")
+                        .HasForeignKey("WearTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attribute");
+
+                    b.Navigation("WearImage");
+
+                    b.Navigation("WearType");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearPrice", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.ParticipantCategory", "ParticipantCategory")
+                        .WithMany()
+                        .HasForeignKey("ParticipantCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearType", "WearType")
+                        .WithMany("Prices")
+                        .HasForeignKey("WearTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ParticipantCategory");
+
+                    b.Navigation("WearType");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearVariantAttribute", b =>
+                {
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearAttribute", "Attribute")
+                        .WithMany()
+                        .HasForeignKey("AttributeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fastasys.ApiService.Data.Entities.WearType", "WearType")
+                        .WithMany("VariantAttributes")
+                        .HasForeignKey("WearTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attribute");
+
+                    b.Navigation("WearType");
+                });
+
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Activity", b =>
                 {
                     b.Navigation("Schedules");
@@ -3728,7 +4137,12 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     b.Navigation("Tickets");
 
-                    b.Navigation("Wears");
+                    b.Navigation("WearOrders");
+                });
+
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.ParticipantWearOrder", b =>
+                {
+                    b.Navigation("Attributes");
                 });
 
             modelBuilder.Entity("Fastasys.ApiService.Data.Entities.Privilege", b =>
@@ -3780,9 +4194,13 @@ namespace Fastasys.ApiService.Data.Migrations
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearItem", b =>
+            modelBuilder.Entity("Fastasys.ApiService.Data.Entities.WearType", b =>
                 {
-                    b.Navigation("ParticipantWearItems");
+                    b.Navigation("ImageLinks");
+
+                    b.Navigation("Prices");
+
+                    b.Navigation("VariantAttributes");
                 });
 #pragma warning restore 612, 618
         }

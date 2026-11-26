@@ -1,0 +1,55 @@
+.page-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.scan {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+
+  input {
+    font-size: 1.25rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #9ca3af;
+    border-radius: 4px;
+  }
+}
+
+.registration {
+  margin-top: 1.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.registration-result {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #ecfdf5;
+  color: #065f46;
+  margin-bottom: 0.5rem;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ul {
+    margin: 0.5rem 0 0;
+  }
+}

@@ -43,6 +43,11 @@ section + section {
   }
 }
 
+// The wear section has more selects; they wrap onto more lines
+.wear .choose mat-form-field:not(.narrow) {
+  min-width: 240px;
+}
+
 .row-list {
   width: 100%;
   border-collapse: collapse;

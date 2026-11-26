@@ -53,7 +53,7 @@ const details: ParticipantDetails = {
   juniorContact: null,
   juniorComment: null,
   sleepingNote: null,
-  wearOrders: null,
+  wearOrders: [],
   tickets: [],
   meals: [],
   sleepingPlaces: null,
@@ -251,15 +251,15 @@ describe('ParticipantDetailComponent (Infosys deltager/visdeltager)', () => {
       'app-participant-wear',
       'app-participant-price',
     ]);
-    // Tickets and food are ported (the participant has none)
+    // Tickets, food and wear are ported (the participant has none)
     expect(element.querySelector('.info-boxes app-participant-entrance-food .line.entrance')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-entrance-food .line.meals')).not.toBeNull();
+    expect(element.querySelector('.info-boxes app-participant-wear .wear-orders')).not.toBeNull();
     // The IDkort box works: photo upload, the card, and the template
     expect(element.querySelector('.info-boxes app-participant-id-card a.photo-upload')?.getAttribute('href')).toBe(
       '/participants/7/photo',
     );
     expect(element.querySelector('.info-boxes app-participant-sleeping .not-ported')).not.toBeNull();
-    expect(element.querySelector('.info-boxes app-participant-wear .not-ported')).not.toBeNull();
     expect(element.querySelector('.info-boxes app-participant-price .not-ported')).not.toBeNull();
     // Aktiviteter comes after the notes, as in Infosys
     expect(element.querySelector('.notes + .activity-boxes app-participant-activities')).not.toBeNull();

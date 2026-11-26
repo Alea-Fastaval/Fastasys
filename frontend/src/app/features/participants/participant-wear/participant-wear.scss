@@ -2,6 +2,10 @@
   display: block;
 }
 
+.card-actions {
+  margin-bottom: 0.75rem;
+}
+
 // Infosys shows the orders in italics, one per line
 .wear-orders {
   list-style: none;
@@ -12,10 +16,4 @@
   li + li {
     margin-top: 0.3rem;
   }
-}
-
-.not-ported {
-  margin: 0;
-  color: #6b7280;
-  font-style: italic;
 }

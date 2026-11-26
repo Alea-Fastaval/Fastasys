@@ -257,11 +257,32 @@ public static class DbSeeder
                 new FoodType { NameDanish = "Aftensmad (Vegansk)", NameEnglish = "Dinner (Vegan)", Price = 85 }
             );
 
-            // Demo Wear Items
-            db.WearItems.AddRange(
-                new WearItem { Name = "Fastaval Hoodie", Description = "Warm hoodie with embroidered logo", Price = 350.00m, Size = "L", Stock = 25 },
-                new WearItem { Name = "Fastaval Cap", Description = "Adjustable snapback cap", Price = 120.00m, Size = "One Size", Stock = 40 }
-            );
+            // Demo Wear Types: a hoodie in the seeded sizes S-XL (attributes 12-15) and a cap without variants
+            var hoodie = new WearType
+            {
+                NameDanish = "Fastaval Hoodie",
+                NameEnglish = "Fastaval Hoodie",
+                DescriptionDanish = "Varm hoodie med broderet logo",
+                DescriptionEnglish = "Warm hoodie with embroidered logo",
+                Position = 1
+            };
+            hoodie.Prices.Add(new WearPrice { ParticipantCategoryId = ParticipantCategory.ParticipantId, Price = 350 });
+            hoodie.Prices.Add(new WearPrice { ParticipantCategoryId = ParticipantCategory.OrganizerId, Price = 300 });
+            foreach (var sizeId in new[] { 12, 13, 14, 15 })
+            {
+                hoodie.VariantAttributes.Add(new WearVariantAttribute { Variant = 0, AttributeId = sizeId });
+            }
+
+            var cap = new WearType
+            {
+                NameDanish = "Fastaval Kasket",
+                NameEnglish = "Fastaval Cap",
+                DescriptionDanish = "Justerbar kasket",
+                DescriptionEnglish = "Adjustable snapback cap",
+                Position = 2
+            };
+            cap.Prices.Add(new WearPrice { ParticipantCategoryId = ParticipantCategory.ParticipantId, Price = 120 });
+            db.WearTypes.AddRange(hoodie, cap);
 
             // Demo Rooms
             db.Rooms.AddRange(

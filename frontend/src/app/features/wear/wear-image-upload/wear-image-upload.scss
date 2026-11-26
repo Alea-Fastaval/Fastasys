@@ -1,0 +1,38 @@
+.page-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+
+  &.error {
+    background: #fef2f2;
+    color: #991b1b;
+  }
+}
+
+.uploaded-image {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  margin-bottom: 1rem;
+}
+
+.choose {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-actions {
+  margin-top: 1rem;
+}

@@ -1,0 +1,29 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear/breakdown"
+      ><mat-icon>arrow_back</mat-icon> {{ 'wear.breakdown.title' | translate }}</a
+    >
+  </header>
+
+  @if (unknownQueryValues(); as values) {
+  <p class="flash error unknown-query">{{ 'common.unknownQueryValues' | translate: { values } }}</p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'wear.messages.loadFailed' | translate }}</p>
+  } @if (list(); as l) {
+  <app-card [title]="'wear.orders.miniTitle' | translate: { name: heading(l) }">
+    @for (entry of l.orders; track entry.order.id) {
+    <div class="order">
+      <p class="participant">
+        {{ 'wear.orders.id' | translate }}: {{ entry.participantId }} {{ 'wear.orders.name' | translate }}:
+        <a [routerLink]="['/participants', entry.participantId]">{{ entry.participantName }}</a>
+      </p>
+      <p class="line">
+        {{ 'wear.orders.kind' | translate }}: {{ entry.order.name }}, {{ entry.order.priceCategoryName }} {{
+        'wear.orders.amount' | translate }}: {{ entry.order.amount }} @if (entry.order.size !== null) { {{
+        'wear.orders.size' | translate }}: {{ entry.order.size }} }
+      </p>
+    </div>
+    }
+  </app-card>
+  }
+</div>

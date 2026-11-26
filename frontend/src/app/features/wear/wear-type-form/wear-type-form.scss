@@ -1,0 +1,136 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0 1rem;
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.checkboxes {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.5rem 0 1rem;
+}
+
+h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+// A block per variant with a column per kind (Infosys .attribute-variant / .attribute-type-list)
+.variant {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  .kind {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.add-variant,
+.add-image {
+  margin-bottom: 1rem;
+}
+
+.image-dialog,
+.image-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.image-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 200px;
+
+  li {
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+
+    &.selected {
+      background: #e0e7ff;
+    }
+  }
+}
+
+.image-preview img {
+  max-width: 240px;
+  max-height: 240px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.image-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: flex-start;
+
+  .kind {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.prices {
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0 0.75rem 0 0;
+    text-align: left;
+    vertical-align: baseline;
+  }
+
+  .price {
+    width: 10rem;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

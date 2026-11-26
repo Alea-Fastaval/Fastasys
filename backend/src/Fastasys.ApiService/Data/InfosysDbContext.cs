@@ -38,8 +38,14 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
     public DbSet<FoodType> FoodTypes => Set<FoodType>();
     public DbSet<MealTime> MealTimes => Set<MealTime>();
     public DbSet<ParticipantMeal> ParticipantMeals => Set<ParticipantMeal>();
-    public DbSet<WearItem> WearItems => Set<WearItem>();
-    public DbSet<ParticipantWear> ParticipantWears => Set<ParticipantWear>();
+    public DbSet<WearType> WearTypes => Set<WearType>();
+    public DbSet<WearPrice> WearPrices => Set<WearPrice>();
+    public DbSet<WearAttribute> WearAttributes => Set<WearAttribute>();
+    public DbSet<WearVariantAttribute> WearVariantAttributes => Set<WearVariantAttribute>();
+    public DbSet<ParticipantWearOrder> ParticipantWearOrders => Set<ParticipantWearOrder>();
+    public DbSet<ParticipantWearOrderAttribute> ParticipantWearOrderAttributes => Set<ParticipantWearOrderAttribute>();
+    public DbSet<WearImage> WearImages => Set<WearImage>();
+    public DbSet<WearImageLink> WearImageLinks => Set<WearImageLink>();
     public DbSet<TicketType> TicketTypes => Set<TicketType>();
     public DbSet<ParticipantTicket> ParticipantTickets => Set<ParticipantTicket>();
 
@@ -253,6 +259,92 @@ public class InfosysDbContext(DbContextOptions<InfosysDbContext> options) : DbCo
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<ParticipantWear>().HasKey(pw => new { pw.ParticipantId, pw.WearItemId });
+        // Infosys wearpriser: unique (wear_id, brugerkategori_id), foreign keys without ON DELETE CASCADE; Infosys deleted
+        // a wear type's prices before the type. A price that participants have ordered can't be deleted.
+        modelBuilder.Entity<WearPrice>(price =>
+        {
+            price.HasOne(p => p.WearType)
+                .WithMany(w => w.Prices)
+                .HasForeignKey(p => p.WearTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            price.HasOne(p => p.ParticipantCategory)
+                .WithMany()
+                .HasForeignKey(p => p.ParticipantCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            price.HasIndex(p => new { p.WearTypeId, p.ParticipantCategoryId }).IsUnique();
+        });
+
+        // The 19 Infosys sizes are seeded with ids 1-19, so new attributes start after them
+        modelBuilder.Entity<WearAttribute>(attribute =>
+        {
+            attribute.Property(a => a.Kind).HasConversion<string>();
+            attribute.Property(a => a.Id).HasIdentityOptions(startValue: WearAttribute.FirstNewId);
+            attribute.HasData(WearSeed.Sizes);
+        });
+
+        // Infosys wear_attribute_available: primary key (wear_id, attribute_id, variant), both foreign keys ON DELETE
+        // CASCADE. Infosys has no way to delete an attribute, so the attribute side is RESTRICT here.
+        modelBuilder.Entity<WearVariantAttribute>(variant =>
+        {
+            variant.HasKey(v => new { v.WearTypeId, v.Variant, v.AttributeId });
+            variant.HasOne(v => v.WearType)
+                .WithMany(w => w.VariantAttributes)
+                .HasForeignKey(v => v.WearTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            variant.HasOne(v => v.Attribute)
+                .WithMany()
+                .HasForeignKey(v => v.AttributeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Infosys deltagere_wear_order: foreign keys without ON DELETE CASCADE. Deleting a participant removes their
+        // orders (Infosys's code does that, Deltagere::removeAllWear); an ordered price can't be deleted.
+        modelBuilder.Entity<ParticipantWearOrder>(order =>
+        {
+            order.HasOne(o => o.Participant)
+                .WithMany(p => p.WearOrders)
+                .HasForeignKey(o => o.ParticipantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            order.HasOne(o => o.WearPrice)
+                .WithMany()
+                .HasForeignKey(o => o.WearPriceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Infosys deltagere_wear_order_attributes: primary key (order_id, attribute_id), cascades with the order
+        modelBuilder.Entity<ParticipantWearOrderAttribute>(attribute =>
+        {
+            attribute.HasKey(a => new { a.OrderId, a.AttributeId });
+            attribute.HasOne(a => a.Order)
+                .WithMany(o => o.Attributes)
+                .HasForeignKey(a => a.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            attribute.HasOne(a => a.Attribute)
+                .WithMany()
+                .HasForeignKey(a => a.AttributeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Infosys refused to upload a second file with the same name
+        modelBuilder.Entity<WearImage>().HasIndex(i => i.FileName).IsUnique();
+
+        // Infosys wear_image_connection: primary key (image_id, wear_id, attribute_id), cascades with the image and the
+        // wear type. "Alle" was a special attribute row; here it is a missing attribute, unique like any other.
+        modelBuilder.Entity<WearImageLink>(link =>
+        {
+            link.HasOne(l => l.WearImage)
+                .WithMany()
+                .HasForeignKey(l => l.WearImageId)
+                .OnDelete(DeleteBehavior.Cascade);
+            link.HasOne(l => l.WearType)
+                .WithMany(w => w.ImageLinks)
+                .HasForeignKey(l => l.WearTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            link.HasOne(l => l.Attribute)
+                .WithMany()
+                .HasForeignKey(l => l.AttributeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            link.HasIndex(l => new { l.WearImageId, l.WearTypeId, l.AttributeId }).IsUnique().AreNullsDistinct(false);
+        });
     }
 }

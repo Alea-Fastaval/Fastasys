@@ -98,6 +98,15 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("FoodManagement", "food_edit")
     .AddPolicy("FoodStatsView", "food_stats_view", "food_view", "food_edit")
     .AddPolicy("ParticipantFoodManagement", "food_participant_edit")
+    // Infosys: the Read-only role may see the wear types, Bestillings-oversigt and the order lists; the roles with
+    // WearController/* do the rest, and only admin may create, change and delete wear types. Only Infonaut and admin
+    // may change a participant's wear. Fastasys uses its wear privileges; the order lists show participants, so they
+    // take the full wear list privilege (or the right to hand wear out, which marks orders on them).
+    .AddPolicy("WearView", "wear_view", "wear_edit")
+    .AddPolicy("WearManagement", "wear_edit")
+    .AddPolicy("WearListView", "wear_list_view", "wear_distribute_edit")
+    .AddPolicy("WearDistribution", "wear_distribute_edit")
+    .AddPolicy("ParticipantWearManagement", "wear_participant_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

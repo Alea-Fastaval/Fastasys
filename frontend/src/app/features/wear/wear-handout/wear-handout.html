@@ -1,0 +1,47 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+  </header>
+
+  <app-card [title]="'wear.handout.title' | translate">
+    <label for="user-id">{{ 'wear.handout.scan' | translate }}</label>
+    <div class="scan">
+      <input
+        #userId
+        id="user-id"
+        type="text"
+        name="userId"
+        autocomplete="off"
+        [(ngModel)]="userId"
+        (keyup.enter)="markHandedOut()"
+      />
+      <button mat-raised-button color="primary" type="button" class="mark-done" (click)="markHandedOut()">
+        {{ 'wear.handout.mark' | translate }}
+      </button>
+    </div>
+
+    @if (result(); as r) {
+    <fieldset class="registration">
+      <legend>{{ 'wear.handout.result' | translate }}</legend>
+      <div class="registration-result" [class.error]="r.type === 'error'">
+        <p>{{ r.text }}</p>
+        @if (r.items.length > 0) {
+        <ul>
+          @for (item of r.items; track $index) {
+          <li>
+            <strong>{{ item.text }}</strong>
+            @if (item.category) { ({{ item.category }}) }
+          </li>
+          }
+        </ul>
+        }
+      </div>
+      @if (showUndo()) {
+      <button mat-stroked-button type="button" class="undo" (click)="undo()">
+        {{ 'wear.handout.undo' | translate }}
+      </button>
+      }
+    </fieldset>
+    }
+  </app-card>
+</div>

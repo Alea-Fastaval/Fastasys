@@ -1,0 +1,54 @@
+<div class="page-container">
+  <header class="page-header print-hidden">
+    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+    <button mat-stroked-button type="button" class="print-link" (click)="print()">
+      <mat-icon>print</mat-icon> {{ 'wear.orders.print' | translate }}
+    </button>
+  </header>
+
+  <h1>{{ (unfilled ? 'wear.orders.unfilledTitle' : 'wear.orders.title') | translate }}</h1>
+
+  @if (failed()) {
+  <p class="flash error">{{ 'wear.messages.loadFailed' | translate }}</p>
+  } @if (markFailed()) {
+  <p class="flash error mark-failed print-hidden">{{ 'wear.messages.markFailed' | translate }}</p>
+  } @for (participant of participants() ?? []; track participant.participantId) {
+  <div class="participant-orders">
+    <p class="participant">
+      {{ 'wear.orders.id' | translate }}: <b>{{ participant.participantId }}</b> &mdash; {{ 'wear.orders.name' |
+      translate }}:
+      <a [routerLink]="['/participants', participant.participantId]"><b>{{ participant.name }}</b></a>
+      &mdash; {{ participant.categoryName }}
+    </p>
+    <table class="orders">
+      <tbody>
+        @for (order of participant.orders; track order.id) {
+        <tr>
+          <td class="wear-name">{{ 'wear.orders.kind' | translate }}: {{ order.name }}</td>
+          <td>{{ order.priceCategoryName }}</td>
+          <td>{{ 'wear.orders.amount' | translate }}: {{ order.amount }}</td>
+          <td class="size">@if (order.size !== null) { {{ 'wear.orders.size' | translate }}: {{ order.size }} }</td>
+          <td class="status print-hidden">
+            {{ 'wear.orders.status' | translate }}: {{ (order.isReceived ? 'wear.orders.received' :
+            'wear.orders.notReceived') | translate }}
+          </td>
+          @if (mayMark) {
+          <td class="print-hidden">
+            <button
+              mat-stroked-button
+              type="button"
+              class="hand-out"
+              [class.handed-out]="order.isReceived"
+              (click)="toggle(order)"
+            >
+              {{ (order.isReceived ? 'wear.orders.undoReceived' : 'wear.orders.markReceived') | translate }}
+            </button>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

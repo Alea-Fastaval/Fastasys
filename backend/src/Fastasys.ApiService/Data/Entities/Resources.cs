@@ -10,24 +10,3 @@ public class Room
 
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 }
-
-public class WearItem
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public decimal Price { get; set; }
-    public string Size { get; set; } = string.Empty;
-    public int Stock { get; set; }
-
-    public virtual ICollection<ParticipantWear> ParticipantWearItems { get; set; } = new List<ParticipantWear>();
-}
-
-public class ParticipantWear
-{
-    public int ParticipantId { get; set; }
-    public virtual Participant Participant { get; set; } = null!;
-    public int WearItemId { get; set; }
-    public virtual WearItem WearItem { get; set; } = null!;
-    public int Quantity { get; set; } = 1;
-}

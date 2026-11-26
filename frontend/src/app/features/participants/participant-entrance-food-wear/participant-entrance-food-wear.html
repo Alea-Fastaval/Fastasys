@@ -98,6 +98,72 @@
           </tbody>
         </table>
       </section>
+      } @if (wearPage(); as p) {
+      <section class="wear">
+        <h4>{{ 'participants.entranceFoodWear.wear' | translate }}</h4>
+        <div class="choose">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'participants.entranceFoodWear.wearType' | translate }}</mat-label>
+            <mat-select name="chosenWearTypeId" [(ngModel)]="chosenWearTypeId" (ngModelChange)="wearTypeChanged()">
+              <mat-option [value]="null">{{ 'participants.entranceFoodWear.choose' | translate }}</mat-option>
+              @for (type of p.wearTypes; track type.id) {
+              <mat-option [value]="type.id">{{ type.nameDanish }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          @if (chosenWearType(); as type) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'participants.entranceFoodWear.price' | translate }}</mat-label>
+            <mat-select name="chosenPriceId" [(ngModel)]="chosenPriceId">
+              @for (price of type.prices; track price.id) {
+              <mat-option [value]="price.id">{{ priceOptionText(price) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          @for (choice of wearChoices(); track choice.kind; let i = $index) {
+          <mat-form-field appearance="outline" class="narrow attribute-select">
+            <mat-label>{{ kindKey(choice.kind) | translate }}</mat-label>
+            <mat-select
+              [name]="'attribute' + i"
+              [(ngModel)]="chosenAttributeIds[i]"
+              (ngModelChange)="attributeChanged()"
+            >
+              @for (option of attributeOptions(i); track option.attribute.id) {
+              <mat-option [value]="option.attribute.id">{{ option.attribute.nameDanish }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          } }
+          <mat-form-field appearance="outline" class="narrow">
+            <mat-label>{{ 'participants.entranceFoodWear.amount' | translate }}</mat-label>
+            <input matInput type="number" min="1" step="1" name="wearAmount" [(ngModel)]="wearAmount" />
+          </mat-form-field>
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-wear"
+            [disabled]="chosenPriceId === null"
+            (click)="addWear()"
+          >
+            <mat-icon>add</mat-icon> {{ 'participants.entranceFoodWear.add' | translate }}
+          </button>
+        </div>
+
+        <table class="row-list wear-list">
+          <tbody>
+            @for (row of wearRows(); track row) {
+            <tr>
+              <td class="wear-order">{{ wearRowText(row) }}</td>
+              <td class="actions">
+                <button mat-button type="button" color="warn" (click)="removeWear(row)">
+                  {{ 'participants.seats.delete' | translate }}
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </section>
       }
 
       <div class="form-actions">

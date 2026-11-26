@@ -1,0 +1,73 @@
+<div class="page-container">
+  <header class="page-header">
+    <h1>{{ 'wear.typesTitle' | translate }}</h1>
+    @if (mayEdit) {
+    <a mat-raised-button color="primary" routerLink="/resources/wear/types/new">
+      <mat-icon>add</mat-icon> {{ 'wear.create' | translate }}
+    </a>
+    }
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">
+    {{ 'wear.messages.' + flash.key | translate: flash.params }}
+  </p>
+  } @if (failed()) {
+  <p class="flash error">{{ 'wear.messages.loadFailed' | translate }}</p>
+  } @if (moveFailed()) {
+  <p class="flash error move-failed">{{ 'wear.messages.moveFailed' | translate }}</p>
+  } @if (types(); as list) { @if (list.length === 0) {
+  <!-- Infosys's noResults page -->
+  <p class="flash error">{{ 'wear.messages.notFound' | translate }}</p>
+  } @else {
+  <app-card>
+    <table class="wear-table">
+      <thead>
+        <tr>
+          <th class="id">{{ 'wear.fields.id' | translate }}</th>
+          <th>{{ 'wear.fields.nameDanish' | translate }}</th>
+          <th>{{ 'wear.fields.descriptionDanish' | translate }}</th>
+          @if (mayEdit) {
+          <th class="buttons">{{ 'wear.fields.position' | translate }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (type of list; track type.id; let first = $first, last = $last) {
+        <tr>
+          <td class="id">{{ type.id }}</td>
+          <td>
+            <a [routerLink]="['/resources/wear/types', type.id]">{{ type.nameDanish }}</a>
+          </td>
+          <td class="description">{{ type.descriptionDanish }}</td>
+          @if (mayEdit) {
+          <td class="buttons">
+            <button
+              mat-icon-button
+              type="button"
+              class="move-up"
+              [disabled]="first || busy()"
+              [title]="'wear.moveUp' | translate"
+              (click)="move(type, 'Up')"
+            >
+              <mat-icon>arrow_upward</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              class="move-down"
+              [disabled]="last || busy()"
+              [title]="'wear.moveDown' | translate"
+              (click)="move(type, 'Down')"
+            >
+              <mat-icon>arrow_downward</mat-icon>
+            </button>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </app-card>
+  } }
+</div>

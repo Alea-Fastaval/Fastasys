@@ -1,0 +1,244 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear/types"
+      ><mat-icon>arrow_back</mat-icon> {{ 'wear.typesTitle' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'wear.messages.notFound' | translate }}</p>
+  } @if (confirmingDelete()) {
+  <app-card [title]="'wear.deleteConfirmTitle' | translate: { name: form()?.nameDanish ?? '' }">
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" [disabled]="busy()" (click)="confirmDelete()">
+        {{ 'wear.buttons.delete' | translate }}
+      </button>
+      <button mat-button type="button" (click)="cancelDelete()">{{ 'wear.buttons.cancel' | translate }}</button>
+    </div>
+  </app-card>
+  } @else if (form(); as f) {
+  <app-card [title]="(wearId() === null ? 'wear.createTitle' : 'wear.editTitle') | translate">
+    @if (errorKey(); as key) {
+    <p class="flash error">{{ 'wear.messages.' + key | translate: errorParams() }}</p>
+    }
+
+    <form (ngSubmit)="submit()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'wear.fields.nameDanish' | translate }}</mat-label>
+          <input matInput name="nameDanish" required [maxlength]="maxNameLength" [(ngModel)]="f.nameDanish" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'wear.fields.descriptionDanish' | translate }}</mat-label>
+          <textarea matInput rows="3" name="descriptionDanish" [(ngModel)]="f.descriptionDanish"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'wear.fields.nameEnglish' | translate }}</mat-label>
+          <input matInput name="nameEnglish" [maxlength]="maxNameLength" [(ngModel)]="f.nameEnglish" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="wide">
+          <mat-label>{{ 'wear.fields.descriptionEnglish' | translate }}</mat-label>
+          <textarea matInput rows="3" name="descriptionEnglish" [(ngModel)]="f.descriptionEnglish"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'wear.fields.maxOrder' | translate }}</mat-label>
+          <input matInput type="number" name="maxOrder" min="0" step="1" [(ngModel)]="f.maxOrder" />
+        </mat-form-field>
+        <div class="checkboxes">
+          <mat-checkbox name="isRequired" [(ngModel)]="f.isRequired"
+            >{{ 'wear.fields.isRequired' | translate }}</mat-checkbox
+          >
+        </div>
+      </div>
+
+      <hr />
+      <h3>{{ 'wear.fields.variants' | translate }}</h3>
+      @for (variant of f.variants; track $index; let variantIndex = $index) {
+      <div class="variant">
+        @for (group of attributeGroups(); track group.kind) {
+        <div class="kind">
+          <h4>{{ kindKey(group.kind) | translate }}</h4>
+          @for (attribute of group.attributes; track attribute.id) {
+          <mat-checkbox
+            class="attribute"
+            [checked]="isTicked(variant, attribute)"
+            (change)="toggleAttribute(f, variantIndex, attribute, $event.checked)"
+            >{{ attribute.nameDanish }}</mat-checkbox
+          >
+          }
+        </div>
+        }
+      </div>
+      }
+      <button mat-stroked-button type="button" class="add-variant" (click)="addVariant(f)">
+        <mat-icon>add</mat-icon> {{ 'wear.buttons.addVariant' | translate }}
+      </button>
+
+      <hr />
+      <h3>{{ 'wear.fields.images' | translate }}</h3>
+      <button mat-stroked-button type="button" class="add-image" (click)="openImageDialog()">
+        <mat-icon>add_photo_alternate</mat-icon> {{ 'wear.buttons.addImage' | translate }}
+      </button>
+      @if (dialogOpen()) {
+      <div class="image-dialog">
+        <ul class="image-list">
+          @for (image of availableImages(); track image.id) {
+          <li [class.selected]="dialogImageId() === image.id" (click)="previewInDialog(image.id)">
+            {{ image.fileName }}
+          </li>
+          }
+        </ul>
+        <div class="image-preview">
+          @if (dialogImageId(); as id) { @if (previewUrls()[id]; as url) {
+          <img [src]="url" [alt]="imageName(id)" />
+          } }
+          <div class="image-dialog-buttons">
+            <button mat-button type="button" class="cancel-image" (click)="closeImageDialog(false)">
+              {{ 'wear.buttons.cancelImage' | translate }}
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              class="confirm-image"
+              [disabled]="dialogImageId() === null"
+              (click)="closeImageDialog(true)"
+            >
+              {{ 'wear.buttons.confirmImage' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+      } @if (addedImageIds().length > 0) {
+      <div class="image-settings">
+        <div>
+          <h4>{{ 'wear.fields.chooseImage' | translate }}</h4>
+          <ul class="image-list added-images">
+            @for (id of addedImageIds(); track id) {
+            <li [class.selected]="selectedImageId() === id" (click)="selectImage(id)">{{ imageName(id) }}</li>
+            }
+          </ul>
+        </div>
+        @if (selectedImageId(); as imageId) {
+        <div class="image-preview">
+          @if (previewUrls()[imageId]; as url) {
+          <img [src]="url" [alt]="imageName(imageId)" />
+          }
+        </div>
+        <div class="image-attributes">
+          <mat-checkbox
+            class="link-all"
+            [checked]="isLinked(f, imageId, null)"
+            (change)="toggleLink(f, imageId, null, $event.checked)"
+            >{{ 'wear.fields.all' | translate }}</mat-checkbox
+          >
+          @for (group of imageAttributeGroups(f, imageId); track group.kind) {
+          <div class="kind">
+            <h4>{{ kindKey(group.kind) | translate }}</h4>
+            @for (attribute of group.attributes; track attribute.id) {
+            <mat-checkbox
+              class="link-attribute"
+              [checked]="isLinked(f, imageId, attribute.id)"
+              (change)="toggleLink(f, imageId, attribute.id, $event.checked)"
+              >{{ attribute.nameDanish }}</mat-checkbox
+            >
+            }
+          </div>
+          }
+        </div>
+        }
+      </div>
+      }
+
+      <hr />
+      <h3>{{ 'wear.fields.prices' | translate }}</h3>
+      <table class="prices">
+        <thead>
+          <tr>
+            <th>{{ 'wear.fields.category' | translate }}</th>
+            <th>{{ 'wear.fields.price' | translate }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of f.prices; track row.participantCategoryId) {
+          <tr class="price-row">
+            <td>{{ row.categoryName }}</td>
+            <td>
+              <mat-form-field appearance="outline" class="price">
+                <input
+                  matInput
+                  type="number"
+                  min="0"
+                  step="1"
+                  required
+                  [name]="'price' + row.participantCategoryId"
+                  [(ngModel)]="row.price"
+                />
+                <span matTextSuffix>DKK</span>
+              </mat-form-field>
+            </td>
+            <td>
+              <button
+                mat-button
+                color="warn"
+                type="button"
+                class="remove-price"
+                [disabled]="row.orderCount > 0"
+                [title]="row.orderCount > 0 ? ('wear.orderedHint' | translate: { count: row.orderCount.toString() }) : ''"
+                (click)="removePrice(f, row)"
+              >
+                {{ 'wear.buttons.removePrice' | translate }}
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'wear.fields.category' | translate }}</mat-label>
+                <mat-select name="newCategoryId" [(ngModel)]="newCategoryId">
+                  @for (category of freeCategories(f); track category.id) {
+                  <mat-option [value]="category.id">{{ category.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </td>
+            <td>
+              <mat-form-field appearance="outline" class="price">
+                <input matInput type="number" min="0" step="1" name="newPrice" [(ngModel)]="newPrice" />
+                <span matTextSuffix>DKK</span>
+              </mat-form-field>
+            </td>
+            <td>
+              <button
+                mat-stroked-button
+                type="button"
+                class="add-price"
+                [disabled]="newCategoryId === null"
+                (click)="addPrice(f)"
+              >
+                {{ 'wear.buttons.addPrice' | translate }}
+              </button>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <hr />
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="!canSubmit(f)">
+          {{ (wearId() === null ? 'wear.buttons.create' : 'wear.buttons.update') | translate }}
+        </button>
+        <button mat-button type="button" (click)="cancel()">{{ 'wear.buttons.cancel' | translate }}</button>
+        @if (wearId() !== null) {
+        <button mat-button color="warn" type="button" (click)="askDelete()">
+          {{ 'wear.buttons.delete' | translate }}
+        </button>
+        }
+      </div>
+    </form>
+  </app-card>
+  }
+</div>

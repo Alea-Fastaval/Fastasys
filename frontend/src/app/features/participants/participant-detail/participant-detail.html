@@ -214,7 +214,7 @@
       (changed)="refresh()"
     />
     <app-participant-sleeping [places]="d.sleepingPlaces" />
-    <app-participant-wear [orders]="d.wearOrders" />
+    <app-participant-wear [orders]="d.wearOrders" [participantId]="p.id" [canEdit]="mayEditWear" />
     }
     <app-participant-price [price]="p.price" [amountPaid]="p.amountPaid" />
   </div>

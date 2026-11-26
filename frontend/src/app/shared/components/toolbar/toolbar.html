@@ -39,11 +39,12 @@
             <mat-icon>restaurant</mat-icon>
             <span>{{ 'nav.food' | translate }}</span>
           </a>
-          }
+          } @if (authService.hasPrivilege('wear_view', 'wear_edit', 'wear_list_view', 'wear_distribute_edit')) {
           <a mat-menu-item routerLink="/resources/wear">
             <mat-icon>checkroom</mat-icon>
             <span>{{ 'nav.wear' | translate }}</span>
           </a>
+          }
           <a mat-menu-item routerLink="/resources/rooms">
             <mat-icon>meeting_room</mat-icon>
             <span>{{ 'nav.rooms' | translate }}</span>

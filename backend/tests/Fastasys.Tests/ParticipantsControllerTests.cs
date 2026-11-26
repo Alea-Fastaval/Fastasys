@@ -347,9 +347,9 @@ public class ParticipantsControllerTests
         Assert.Equal("Fra tilmeldingen", participant.Details.CommentNote);
         Assert.Null(participant.Details.SleepingNote);
         Assert.Equal("Brætspilsdesigner", participant.Details.OrganizerAreaName);
-        // Wear, sleeping places and prices are not ported yet; the participant page shows that while these are null.
-        // The participant has no tickets or meals.
-        Assert.Null(participant.Details.WearOrders);
+        // Sleeping places and prices are not ported yet; the participant page shows that while these are null.
+        // The participant has no wear, tickets or meals.
+        Assert.Empty(participant.Details.WearOrders);
         Assert.Empty(participant.Details.Tickets);
         Assert.Empty(participant.Details.Meals);
         Assert.Null(participant.Details.SleepingPlaces);
@@ -1060,6 +1060,63 @@ public class ParticipantsControllerTests
         Assert.IsType<OkObjectResult>(await CreateController(db).Delete(1));
 
         Assert.Equal([2], db.ParticipantMeals.Select(m => m.ParticipantId));
+    }
+
+    // A T-shirt (wear type 1) with a Deltager price 100 (price 1) and the attribute 100 "Sort" (color); the seeded size
+    // 13 is "M"
+    private static async Task AddWearAsync(InfosysDbContext db)
+    {
+        var shirt = new WearType { Id = 1, NameDanish = "T-shirt" };
+        shirt.Prices.Add(new WearPrice { Id = 1, ParticipantCategoryId = ParticipantCategory.ParticipantId, Price = 100 });
+        db.WearTypes.Add(shirt);
+        db.WearAttributes.Add(new WearAttribute { Id = 100, Kind = WearAttributeKind.Color, NameDanish = "Sort", Position = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task Get_FillsTheWearBoxInOrderIdOrder()
+    {
+        // Infosys visdeltager's Wear box: deltagere_wear_order without ORDER BY, the name with the non-size attributes
+        // (getWearName('da', false)), the size, the order's own price and "Udleveret"
+        using var db = CreateDbContext();
+        await AddAsync(db, 1);
+        await AddWearAsync(db);
+        var withAttributes = new ParticipantWearOrder { Id = 2, ParticipantId = 1, WearPriceId = 1, Amount = 2, IsReceived = true };
+        withAttributes.Attributes.Add(new ParticipantWearOrderAttribute { AttributeId = 100 });
+        withAttributes.Attributes.Add(new ParticipantWearOrderAttribute { AttributeId = 13 });
+        db.ParticipantWearOrders.AddRange(
+            withAttributes,
+            new ParticipantWearOrder { Id = 1, ParticipantId = 1, WearPriceId = 1, Amount = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        var participant = Ok(await CreateController(db).Get(1));
+
+        Assert.Equal(
+            [
+                new ParticipantWearOrderDto(1, "T-shirt", null, 100, false),
+                new ParticipantWearOrderDto(2, "T-shirt-Sort", "M", 100, true),
+            ],
+            participant.Details!.WearOrders);
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheParticipantsWearOrders()
+    {
+        // Infosys Deltagere::delete calls removeAllWear
+        using var db = CreateDbContext();
+        await AddAsync(db, 1, p => p.IsAnnulled = true);
+        await AddAsync(db, 2);
+        await AddWearAsync(db);
+        db.ParticipantWearOrders.AddRange(
+            new ParticipantWearOrder { ParticipantId = 1, WearPriceId = 1, Amount = 1 },
+            new ParticipantWearOrder { ParticipantId = 2, WearPriceId = 1, Amount = 1 });
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        db.ChangeTracker.Clear();
+
+        Assert.IsType<OkObjectResult>(await CreateController(db).Delete(1));
+
+        Assert.Equal([2], db.ParticipantWearOrders.Select(o => o.ParticipantId));
     }
 
     [Fact]

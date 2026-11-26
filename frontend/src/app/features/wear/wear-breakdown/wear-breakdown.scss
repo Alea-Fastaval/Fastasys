@@ -1,0 +1,60 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 1rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.wear-breakdown {
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 0.25rem 0.4rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .wear-header {
+    text-align: center;
+  }
+
+  // Infosys turns the size headings on their side
+  .wear-subheader span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+  }
+
+  // The first row of each variant gets a line above it
+  tr.first td {
+    border-top: 1px solid #9ca3af;
+  }
+
+  .wear-type {
+    white-space: nowrap;
+  }
+
+  .count,
+  .total {
+    text-align: right;
+  }
+
+  // An amount above 0
+  .alt {
+    font-weight: 600;
+  }
+}

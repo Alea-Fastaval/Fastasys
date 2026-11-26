@@ -1,0 +1,23 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+  </header>
+
+  @if (uploaded(); as image) {
+  <p class="flash uploaded">{{ 'wear.messages.uploaded' | translate: { name: image.fileName } }}</p>
+  @if (imageUrl(); as url) {
+  <img class="uploaded-image" [src]="url" [alt]="image.fileName" />
+  } } @if (errorKey(); as key) {
+  <p class="flash error">{{ 'wear.messages.' + key | translate }}</p>
+  }
+
+  <app-card [title]="'wear.uploadTitle' | translate">
+    <label class="choose" for="wear-image-file">{{ 'wear.fields.chooseImage' | translate }}</label>
+    <input id="wear-image-file" type="file" accept="image/*" (change)="choose($event)" />
+    <div class="form-actions">
+      <button mat-raised-button color="primary" type="button" [disabled]="!file() || busy()" (click)="upload()">
+        {{ 'wear.buttons.upload' | translate }}
+      </button>
+    </div>
+  </app-card>
+</div>

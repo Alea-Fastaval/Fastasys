@@ -6,44 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fastasys.ApiService.Controllers;
 
-public record OrderWearDto(int ParticipantId, int WearItemId, int Quantity = 1);
-
 public record CreateRoomDto(string Name, string Location, int Capacity, string Description);
-
-[ApiController]
-[Route("api/[controller]")]
-public class WearController(InfosysDbContext db) : ControllerBase
-{
-    [HttpGet("items")]
-    public async Task<IActionResult> GetItems()
-    {
-        var items = await db.WearItems.AsNoTracking().ToListAsync();
-        return Ok(items);
-    }
-
-    [HttpPost("order")]
-    public async Task<IActionResult> OrderWear([FromBody] OrderWearDto dto)
-    {
-        var wear = await db.WearItems.FindAsync(dto.WearItemId);
-        if (wear == null)
-            return NotFound(new { message = "Wear item not found" });
-
-        if (wear.Stock < dto.Quantity)
-            return BadRequest(new { message = "Insufficient wear stock" });
-
-        wear.Stock -= dto.Quantity;
-        var participantWear = new ParticipantWear
-        {
-            ParticipantId = dto.ParticipantId,
-            WearItemId = dto.WearItemId,
-            Quantity = dto.Quantity,
-        };
-
-        db.ParticipantWears.Add(participantWear);
-        await db.SaveChangesAsync();
-        return Ok(new { message = "Wear ordered successfully" });
-    }
-}
 
 [ApiController]
 [Route("api/[controller]")]

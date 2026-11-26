@@ -1,0 +1,57 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+  </header>
+
+  @if (failed()) {
+  <p class="flash error">{{ 'wear.messages.loadFailed' | translate }}</p>
+  } @if (saveFailed()) {
+  <p class="flash error save-failed">{{ 'wear.messages.attributeSaveFailed' | translate }}</p>
+  } @if (rows()) {
+  <app-card [title]="'wear.attributesTitle' | translate">
+    <div class="kinds">
+      @for (kind of kinds; track kind) {
+      <div class="kind" [attr.data-kind]="kind">
+        <h2>{{ kindKey(kind) | translate }}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'wear.fields.danish' | translate }}</th>
+              <th>{{ 'wear.fields.english' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rowsOf(kind); track row; let i = $index) {
+            <tr class="attribute-row">
+              <td>
+                <input class="name-danish" [name]="kind + 'Danish' + i" [maxlength]="64" [(ngModel)]="row.nameDanish" />
+              </td>
+              <td>
+                <input
+                  class="name-english"
+                  [name]="kind + 'English' + i"
+                  [maxlength]="64"
+                  [(ngModel)]="row.nameEnglish"
+                />
+              </td>
+              <td class="button-cell">
+                @if (isChanged(row)) {
+                <button mat-stroked-button type="button" class="save" [disabled]="busy()" (click)="save(row)">
+                  {{ 'wear.buttons.saveAttribute' | translate }}
+                </button>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        <button mat-button type="button" class="add-item" (click)="addRow(kind)">
+          <mat-icon>add</mat-icon> {{ 'wear.buttons.addAttribute' | translate }}
+        </button>
+      </div>
+      }
+    </div>
+  </app-card>
+  }
+</div>

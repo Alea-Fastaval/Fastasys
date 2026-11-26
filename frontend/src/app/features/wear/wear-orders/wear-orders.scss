@@ -1,0 +1,61 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.participant-orders {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  break-inside: avoid;
+
+  .participant {
+    margin: 0 0 0.25rem;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+.orders {
+  border-collapse: collapse;
+
+  td {
+    padding: 0.15rem 1rem 0.15rem 0;
+    vertical-align: middle;
+  }
+
+  .handed-out {
+    opacity: 0.7;
+  }
+}
+
+@media print {
+  .print-hidden {
+    display: none;
+  }
+
+  .page-container {
+    padding: 0;
+  }
+}

@@ -178,8 +178,8 @@ public record ParticipantDetailsDto(
     string? JuniorContact,
     string? JuniorComment,
     string? SleepingNote,
-    // The Wear box. null until wear is ported (see ParticipantWearOrderDto); then the participant's orders.
-    IReadOnlyList<ParticipantWearOrderDto>? WearOrders,
+    // The Wear box: the participant's orders (see ParticipantWearOrderDto)
+    IReadOnlyList<ParticipantWearOrderDto> WearOrders,
     // The Indgang/Mad box: the tickets (see ParticipantTicketDto) and the meals (see ParticipantMealDto)
     IReadOnlyList<ParticipantTicketDto> Tickets,
     IReadOnlyList<ParticipantMealDto> Meals,
@@ -286,8 +286,7 @@ public record ParticipantSleepingPlaceDto(DateTime Starts, DateTime Ends, string
 
 // One line of the Wear box on the Infosys participant page (visdeltager.phtml, #wear_info):
 // "{Amount} stk. {Name}, str. {Size} — {UnitPrice × Amount},- ({UnitPrice},-) — (Udleveret|Ikke udleveret)".
-// To fill it when wear is ported:
-// - The orders are deltagere_wear_order for the participant, in id order (Infosys has no ORDER BY).
+// - The orders are the participant's wear orders, in id order (Infosys has no ORDER BY).
 // - Name is DeltagereWear::getWearName('da', false): the wear's navn, then "-" + desc_da of each non-size
 //   attribute (deltagere_wear_order_attributes → wear_attributes) in the order model, design, color.
 // - Size is desc_da of the order's attribute of type "size", or null when it has none.
@@ -611,8 +610,8 @@ public class ParticipantsController : ControllerBase
     }
 
     // Infosys deltager/delete/:id: ("Slet for pokker"). Infosys only offers it for annulled participants; that is
-    // now checked here too. Their seats on runs, their signup wishes, their tickets and their meals are removed with
-    // them, as in Infosys.
+    // now checked here too. Their seats on runs, their signup wishes, their tickets, their meals and their wear are
+    // removed with them, as in Infosys.
     [HttpDelete("{id:int}")]
     [Authorize(Policy = "ParticipantManagement")]
     public async Task<IActionResult> Delete(int id)
@@ -630,6 +629,8 @@ public class ParticipantsController : ControllerBase
         _db.ParticipantPhotos.RemoveRange(_db.ParticipantPhotos.Where(s => s.ParticipantId == id));
         _db.ParticipantTickets.RemoveRange(_db.ParticipantTickets.Where(t => t.ParticipantId == id));
         _db.ParticipantMeals.RemoveRange(_db.ParticipantMeals.Where(m => m.ParticipantId == id));
+        // Deltagere::removeAllWear
+        _db.ParticipantWearOrders.RemoveRange(_db.ParticipantWearOrders.Where(o => o.ParticipantId == id));
         _db.Participants.Remove(participant);
         try
         {
@@ -955,6 +956,12 @@ public class ParticipantsController : ControllerBase
             .ToList();
     }
 
+    // The Wear box: the participant's orders in id order (see ParticipantWearOrderDto)
+    private async Task<IReadOnlyList<ParticipantWearOrderDto>> LoadWearOrdersAsync(int participantId) =>
+        (await WearOrderLoader.LoadAsync(_db.ParticipantWearOrders.Where(o => o.ParticipantId == participantId)))
+            .Select(o => new ParticipantWearOrderDto(o.Amount, o.Name, o.Size, o.UnitPrice, o.IsReceived))
+            .ToList();
+
     // The Indgang/Mad box's meals, by meal time (DeltagereMadtider::getDeltagerMadtider)
     private async Task<IReadOnlyList<ParticipantMealDto>> LoadMealsAsync(int participantId) =>
         await _db.ParticipantMeals
@@ -1015,8 +1022,7 @@ public class ParticipantsController : ControllerBase
                 p.JuniorContact,
                 p.JuniorComment,
                 p.SleepingNote,
-                // TODO when wear is ported: load the participant's orders here (see ParticipantWearOrderDto)
-                WearOrders: null,
+                WearOrders: await LoadWearOrdersAsync(p.Id),
                 Tickets: await LoadTicketsAsync(p.Id),
                 Meals: await LoadMealsAsync(p.Id),
                 // TODO when sleeping places are ported: load them here (see ParticipantSleepingPlaceDto)

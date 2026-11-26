@@ -1,0 +1,57 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+  </header>
+
+  @if (failed()) {
+  <p class="flash error">{{ 'wear.messages.loadFailed' | translate }}</p>
+  } @if (breakdown(); as b) {
+  <app-card [title]="'wear.breakdown.title' | translate">
+    <div class="table-scroll">
+      <table class="wear-breakdown">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="wear-header" [attr.colspan]="b.sizes.length + 2">{{ 'wear.breakdown.ordered' | translate }}</th>
+          </tr>
+          <tr>
+            <th></th>
+            <th class="wear-subheader">
+              <span>{{ 'wear.breakdown.total' | translate }}</span>
+            </th>
+            <th class="wear-subheader">
+              <span>{{ 'wear.breakdown.noSize' | translate }}</span>
+            </th>
+            @for (size of b.sizes; track size.id) {
+            <th class="wear-subheader">
+              <span>{{ size.nameDanish }}</span>
+            </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of b.rows; track $index) {
+          <tr [class.first]="row.startsVariant">
+            <td class="wear-type">{{ rowText(row) }}</td>
+            <td class="alt total">{{ row.total }}</td>
+            @for (cell of cells(row, b); track cell.sizeId) { @if (cell.count > 0) {
+            <td class="alt count">
+              @if (mayList) {
+              <a
+                [routerLink]="['/resources/wear/types', row.wearTypeId, 'orders']"
+                [queryParams]="query(row, cell.sizeId)"
+                >{{ cell.count }}</a
+              >
+              } @else { {{ cell.count }} }
+            </td>
+            } @else {
+            <td class="count">0</td>
+            } }
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+  }
+</div>

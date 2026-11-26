@@ -188,8 +188,8 @@ export interface ParticipantDetails {
   juniorContact: string | null;
   juniorComment: string | null;
   sleepingNote: string | null;
-  // The Wear box: null until wear is ported, then the participant's orders
-  wearOrders: ParticipantWearOrder[] | null;
+  // The Wear box: the participant's orders
+  wearOrders: ParticipantWearOrder[];
   // The Indgang/Mad box: the participant's tickets and meals
   tickets: ParticipantTicket[];
   meals: ParticipantMeal[];

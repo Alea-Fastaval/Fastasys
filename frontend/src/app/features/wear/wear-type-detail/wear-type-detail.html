@@ -1,0 +1,90 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/resources/wear/types"
+      ><mat-icon>arrow_back</mat-icon> {{ 'wear.typesTitle' | translate }}</a
+    >
+  </header>
+
+  @if (flash) {
+  <p class="flash" [class.error]="flash.type === 'error'">
+    {{ 'wear.messages.' + flash.key | translate: flash.params }}
+  </p>
+  } @if (notFound()) {
+  <p class="flash error">{{ 'wear.messages.notFound' | translate }}</p>
+  } @if (wear(); as w) {
+  <app-card [title]="('wear.detailTitle' | translate) + ': ' + w.nameDanish">
+    @if (mayEdit) {
+    <div class="card-actions">
+      <a mat-stroked-button [routerLink]="['/resources/wear/types', w.id, 'edit']">
+        <mat-icon>edit</mat-icon> {{ 'wear.editDelete' | translate }}
+      </a>
+    </div>
+    }
+
+    <dl class="field-list">
+      <div>
+        <dt>{{ 'wear.fields.id' | translate }}:</dt>
+        <dd class="id">{{ w.id }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.nameDanish' | translate }}:</dt>
+        <dd class="name-danish">{{ w.nameDanish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.nameEnglish' | translate }}:</dt>
+        <dd class="name-english">{{ w.nameEnglish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.descriptionDanish' | translate }}:</dt>
+        <dd class="description-danish">{{ w.descriptionDanish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.descriptionEnglish' | translate }}:</dt>
+        <dd class="description-english">{{ w.descriptionEnglish }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.maxOrder' | translate }}:</dt>
+        <dd class="max-order">{{ w.maxOrder }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'wear.fields.isRequired' | translate }}:</dt>
+        <dd class="is-required">{{ (w.isRequired ? 'common.yes' : 'common.no') | translate }}</dd>
+      </div>
+    </dl>
+
+    <hr />
+    @for (variant of w.variants; track $index) {
+    <div class="variant">
+      @for (group of groups(variant); track group.kind) {
+      <div class="kind">
+        <h3>{{ kindKey(group.kind) | translate }}</h3>
+        @for (attribute of group.attributes; track attribute.id) {
+        <span class="attribute">{{ attribute.nameDanish }}</span>
+        }
+      </div>
+      }
+    </div>
+    }
+    <hr />
+
+    <table class="prices">
+      <thead>
+        <tr>
+          <th>{{ 'wear.fields.id' | translate }}</th>
+          <th>{{ 'wear.fields.category' | translate }}</th>
+          <th>{{ 'wear.fields.price' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (price of w.prices; track price.id) {
+        <tr>
+          <td>{{ price.id }}</td>
+          <td>{{ price.categoryName }}</td>
+          <td>{{ priceText(price.price) }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </app-card>
+  }
+</div>

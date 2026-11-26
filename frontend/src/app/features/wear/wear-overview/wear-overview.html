@@ -1,0 +1,12 @@
+<div class="page-container">
+  <app-card [title]="'wear.title' | translate">
+    <p>{{ 'wear.youCan' | translate }}</p>
+    <ul class="wear-links">
+      @for (link of links; track link.key) {
+      <li>
+        <a [routerLink]="link.path">{{ 'wear.links.' + link.key | translate }}</a>
+      </li>
+      }
+    </ul>
+  </app-card>
+</div>

@@ -14,3 +14,4 @@ export * from './signup.types';
 export * from './signup-settings.types';
 export * from './tickets.types';
 export * from './users.types';
+export * from './wear.types';

@@ -23,7 +23,16 @@ import { FoodTypeDetailComponent } from './features/food/food-type-detail/food-t
 import { FoodTypeFormComponent } from './features/food/food-type-form/food-type-form';
 import { FoodStatsComponent } from './features/food/food-stats/food-stats';
 import { RoomsComponent } from './features/resources/rooms/rooms';
-import { WearComponent } from './features/resources/wear/wear';
+import { WearOverviewComponent } from './features/wear/wear-overview/wear-overview';
+import { WearTypesComponent } from './features/wear/wear-types/wear-types';
+import { WearTypeDetailComponent } from './features/wear/wear-type-detail/wear-type-detail';
+import { WearTypeFormComponent } from './features/wear/wear-type-form/wear-type-form';
+import { WearMiniListComponent } from './features/wear/wear-mini-list/wear-mini-list';
+import { WearAttributesComponent } from './features/wear/wear-attributes/wear-attributes';
+import { WearImageUploadComponent } from './features/wear/wear-image-upload/wear-image-upload';
+import { WearBreakdownComponent } from './features/wear/wear-breakdown/wear-breakdown';
+import { WearOrdersComponent } from './features/wear/wear-orders/wear-orders';
+import { WearHandoutComponent } from './features/wear/wear-handout/wear-handout';
 import { ShopComponent } from './features/shop/shop';
 import { TicketTypesComponent } from './features/tickets/ticket-types/ticket-types';
 import { TicketTypeDetailComponent } from './features/tickets/ticket-type-detail/ticket-type-detail';
@@ -72,7 +81,23 @@ export const routes: Routes = [
   { path: 'resources/food/stats', component: FoodStatsComponent, canActivate: [authGuard] },
   { path: 'resources/food/:id', component: FoodTypeDetailComponent, canActivate: [authGuard] },
   { path: 'resources/food/:id/edit', component: FoodTypeFormComponent, canActivate: [authGuard] },
-  { path: 'resources/wear', component: WearComponent, canActivate: [authGuard] },
+  { path: 'resources/wear', component: WearOverviewComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/types', component: WearTypesComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/types/new', component: WearTypeFormComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/types/:id', component: WearTypeDetailComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/types/:id/edit', component: WearTypeFormComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/types/:id/orders', component: WearMiniListComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/attributes', component: WearAttributesComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/images/upload', component: WearImageUploadComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/breakdown', component: WearBreakdownComponent, canActivate: [authGuard] },
+  { path: 'resources/wear/orders', component: WearOrdersComponent, canActivate: [authGuard] },
+  {
+    path: 'resources/wear/orders/unfilled',
+    component: WearOrdersComponent,
+    canActivate: [authGuard],
+    data: { unfilled: true },
+  },
+  { path: 'resources/wear/handout', component: WearHandoutComponent, canActivate: [authGuard] },
   { path: 'resources/rooms', component: RoomsComponent, canActivate: [authGuard] },
   { path: 'resources/tickets', component: TicketTypesComponent, canActivate: [authGuard] },
   { path: 'resources/tickets/new', component: TicketTypeFormComponent, canActivate: [authGuard] },
