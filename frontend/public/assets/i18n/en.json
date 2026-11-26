@@ -925,6 +925,7 @@
         "noId": "the user id is missing",
         "notFound": "no user with that id",
         "noShow": "the participant isn't checked in yet",
+        "annulled": "the participant (ID: {{id}}) is annulled.",
         "notCheckedIn": "the participant (ID: {{id}}) isn't checked in.",
         "noWear": "the participant (ID: {{id}}) hasn't ordered wear.",
         "alreadyReceived": "the participant (ID: {{id}}) has already been handed some of their wear.",

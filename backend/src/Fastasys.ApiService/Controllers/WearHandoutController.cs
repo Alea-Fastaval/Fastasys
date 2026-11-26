@@ -28,8 +28,9 @@ public record WearHandoutResultDto(
 // hands out all their wear at once, and Undo takes it back. Infosys marked the orders one by one and stopped at the
 // first that was already handed out, so the ones before it stayed changed; now nothing changes when it is refused
 // (agreed 2026-11-26). Infosys meant to refuse a participant who isn't checked in, but its check of
-// '0000-00-00 00:00:00' never fired; it is enforced here (agreed 2026-11-26). Like Infosys, an annulled participant
-// isn't refused. The page took WearController/* in Infosys; here it takes wear_distribute_edit.
+// '0000-00-00 00:00:00' never fired; it is enforced here (agreed 2026-11-26). An annulled participant is refused too,
+// which Infosys didn't do (changed 2026-11-26); Undo isn't, so a handout can still be taken back. The page took
+// WearController/* in Infosys; here it takes wear_distribute_edit.
 [ApiController]
 [Route("api/wear-handout")]
 [Authorize(Policy = "WearDistribution")]
@@ -42,6 +43,9 @@ public class WearHandoutController(InfosysDbContext db, ILogger<WearHandoutContr
         var (participant, refusal) = await FindParticipantAsync(dto.Input);
         if (participant == null)
             return refusal!;
+
+        if (participant.IsAnnulled)
+            return Refused("annulled", "The participant is annulled", participant.Id);
 
         // Infosys: "deltageren (ID: {id}) er ikke tjekket ind."
         if (participant.CheckedInAt == null)

@@ -92,6 +92,19 @@ describe('WearHandoutComponent (Infosys wear/handout)', () => {
     expect(element.querySelector('.undo')).toBeNull();
   });
 
+  it('refuses an annulled participant', async () => {
+    const { component } = await render();
+
+    component.userId = '9';
+    component.markHandedOut();
+    http
+      .expectOne('/api/wear-handout')
+      .flush({ reason: 'annulled', participantId: 9 }, { status: 409, statusText: 'Conflict' });
+
+    expect(component.result()?.text).toBe('wear.handout.error wear.handout.errors.annulled');
+    expect(component.showUndo()).toBe(false);
+  });
+
   it('shows the same message whatever made "Undo" fail, like Infosys', async () => {
     const { component } = await render();
 

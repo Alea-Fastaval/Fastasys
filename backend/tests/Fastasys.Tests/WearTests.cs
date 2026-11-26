@@ -747,9 +747,11 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
     }
 
     [Fact]
-    public async Task OrderList_ListsParticipantsWithAllTheirOrders_UnfilledOnlyThoseWithOneNotHandedOut()
+    public async Task OrderList_ListsParticipantsWithTheirOrders_UnfilledOnlyTheOrdersNotHandedOut()
     {
-        // Infosys wear/detailed and wear/unfilled; annulled participants are left out (agreed 2026-11-26)
+        // Infosys wear/detailed and wear/unfilled; annulled participants are left out (agreed 2026-11-26), and the
+        // unfilled list shows only the orders not handed out (Infosys showed all orders of those participants; changed
+        // 2026-11-26)
         using var db = CreateDbContext();
         await SeedAsync(db);
         (await db.Participants.SingleAsync(p => p.Id == 2, Ct)).Nickname = "Kaptajnen";
@@ -771,9 +773,9 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
             all.Select(p => (p.ParticipantId, p.Name, p.CategoryName, string.Join(",", p.Orders.Select(o => o.Name))))
         );
         Assert.Equal(new WearOrderLineDto(2, "T-shirt-Herre-Sort", "Deltager", 2, "S", true), all[0].Orders[0]);
-        // Participant 1 has an order not handed out, and all of their orders are shown
+        // Only participant 1 has an order not handed out, and only that order is shown
         Assert.Equal([1], unfilled.Select(p => p.ParticipantId));
-        Assert.Equal(2, unfilled[0].Orders.Count);
+        Assert.Equal([3], unfilled[0].Orders.Select(o => o.Id));
     }
 
     [Fact]
@@ -872,13 +874,26 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
     {
         // Infosys stopped at the first order already handed out and kept the ones before it changed (fixed
         // 2026-11-26). It meant to refuse a participant who isn't checked in; that is enforced (agreed 2026-11-26).
+        // It didn't refuse an annulled participant; that is refused too (changed 2026-11-26).
         using var db = CreateDbContext();
         await SeedAsync(db);
+        db.Participants.Add(
+            new Participant
+            {
+                Id = 4,
+                FirstName = "Deltager",
+                LastName = "4",
+            }
+        );
+        await db.SaveChangesAsync(Ct);
         await AddOrderAsync(db, 1, 1, 1, 1, false, Herre, Sort, S);
         await AddOrderAsync(db, 2, 1, 3, 1, true);
         await AddOrderAsync(db, 3, 3, 3, 1, false);
+        await AddOrderAsync(db, 4, 4, 3, 1, false);
         var participant2 = await db.Participants.SingleAsync(p => p.Id == 2, Ct);
         participant2.IsNoShow = true;
+        var participant3 = await db.Participants.SingleAsync(p => p.Id == 3, Ct);
+        participant3.CheckedInAt = new DateTime(2027, 3, 24, 10, 0, 0, DateTimeKind.Utc);
         await db.SaveChangesAsync(Ct);
         db.ChangeTracker.Clear();
 
@@ -888,7 +903,10 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
         Assert.Equal("alreadyReceived", await Reason("1"));
         Assert.False((await db.ParticipantWearOrders.AsNoTracking().SingleAsync(o => o.Id == 1, Ct)).IsReceived);
         Assert.Equal("noShow", await Reason("2"));
-        Assert.Equal("notCheckedIn", await Reason("3"));
+        // Participant 3 is annulled, though checked in
+        Assert.Equal("annulled", await Reason("3"));
+        Assert.False((await db.ParticipantWearOrders.AsNoTracking().SingleAsync(o => o.Id == 3, Ct)).IsReceived);
+        Assert.Equal("notCheckedIn", await Reason("4"));
         Assert.Equal("notFound", await Reason("99"));
         Assert.Equal("noInput", await Reason(""));
         Assert.Equal("noInput", await Reason("0"));
@@ -909,7 +927,8 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
     [Fact]
     public async Task Undo_TakesBackAllTheWear_OnlyWhenAllIsHandedOut()
     {
-        // WearModel::undoReceiveWear doesn't check the check-in
+        // WearModel::undoReceiveWear doesn't check the check-in, and an annulled participant (3) isn't refused, so a
+        // handout can be taken back
         using var db = CreateDbContext();
         await SeedAsync(db);
         await AddOrderAsync(db, 1, 1, 1, 1, true, Herre, Sort, S);

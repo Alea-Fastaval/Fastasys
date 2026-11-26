@@ -10,8 +10,9 @@ import { AuthService } from '@shared/services';
 // Infosys wear/detailed ("Alle bestillinger") and wear/unfilled ("Alle ikke-udleverede", route data unfilled): each
 // participant with orders, by id: "ID: {id} — Navn: {navn} — {kategori}", then their orders with Kategori (the wear's
 // name), the price's category, Antal, Str., Status and "Marker udleveret" / "Fortryd udlevering". The unfilled list
-// shows the participants with an order not handed out, with all their orders, like Infosys. "Print version" prints the
-// list without Status and the buttons (Infosys's wear/detailed/print/). Annulled participants are left out (agreed
+// shows only the orders not handed out (Infosys showed all orders of those participants; changed 2026-11-26); an order
+// marked on the page stays until the page is loaded again, so a mistake can be undone. "Print version" prints the list
+// without Status and the buttons (Infosys's wear/detailed/print/). Annulled participants are left out (agreed
 // 2026-11-26).
 @Component({
   selector: 'app-wear-orders',

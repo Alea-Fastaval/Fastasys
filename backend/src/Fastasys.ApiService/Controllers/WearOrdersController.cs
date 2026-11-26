@@ -139,18 +139,15 @@ public class WearOrdersController(InfosysDbContext db, ILogger<WearOrdersControl
     }
 
     // Infosys wear/detailed (unfilled false) and wear/unfilled (unfilled true): the participants with orders, by id.
-    // "Alle ikke-udleverede" lists the participants with an order that isn't handed out, and like Infosys it shows
-    // all their orders.
+    // "Alle ikke-udleverede" lists only the orders that aren't handed out; Infosys listed every order of a participant
+    // with one of them (changed 2026-11-26).
     [HttpGet]
     [Authorize(Policy = "WearListView")]
     public async Task<ActionResult<IEnumerable<WearOrderListParticipantDto>>> GetAll([FromQuery] bool unfilled = false)
     {
         var participantOrders = db.ParticipantWearOrders.Where(o => !o.Participant.IsAnnulled);
         if (unfilled)
-        {
-            var participantIds = db.ParticipantWearOrders.Where(o => !o.IsReceived).Select(o => o.ParticipantId);
-            participantOrders = participantOrders.Where(o => participantIds.Contains(o.ParticipantId));
-        }
+            participantOrders = participantOrders.Where(o => !o.IsReceived);
 
         var orders = await WearOrderLoader.LoadAsync(participantOrders);
         var ids = orders.Select(o => o.ParticipantId).Distinct().ToList();

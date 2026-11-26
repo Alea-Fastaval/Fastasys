@@ -23,6 +23,7 @@ const ERROR_KEYS: Record<string, string> = {
   noInput: 'noId',
   notFound: 'notFound',
   noShow: 'noShow',
+  annulled: 'annulled',
   notCheckedIn: 'notCheckedIn',
   noWear: 'noWear',
   alreadyReceived: 'alreadyReceived',

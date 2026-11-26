@@ -925,6 +925,7 @@
         "noId": "bruger id mangler",
         "notFound": "ingen bruger med det id",
         "noShow": "deltageren er ikke tjekket ind endnu",
+        "annulled": "deltageren (ID: {{id}}) er annulleret.",
         "notCheckedIn": "deltageren (ID: {{id}}) er ikke tjekket ind.",
         "noWear": "deltageren (ID: {{id}}) har ikke bestilt wear.",
         "alreadyReceived": "deltageren (ID: {{id}}) har allerede fået udleveret noget af sit wear.",
