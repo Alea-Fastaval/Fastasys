@@ -12,7 +12,8 @@ namespace Fastasys.ApiService.Controllers;
 // A row of Infosys's "Mad-typer" (mad/foodtypes): Id, Skjult, Kategori and Pris
 public record FoodTypeSummaryDto(int Id, string NameDanish, string NameEnglish, int Price, bool IsHidden);
 
-// Infosys mad/show/:id: a food type with its meal times, in id order (Mad::getMadtider has no order)
+// Infosys mad/show/:id: a food type with its meal times by day and time. Mad::getMadtider has no order, so Infosys
+// listed them in the order they were added (changed 2026-11-26).
 public record FoodTypeDto(
     int Id,
     string NameDanish,
@@ -117,7 +118,11 @@ public class FoodTypesController(
             {
                 f.Id,
                 f.NameDanish,
-                MealTimes = f.MealTimes.OrderBy(m => m.Id).Select(m => new { m.Id, m.Time }).ToList(),
+                MealTimes = f
+                    .MealTimes.OrderBy(m => m.Time)
+                    .ThenBy(m => m.Id)
+                    .Select(m => new { m.Id, m.Time })
+                    .ToList(),
             })
             .ToListAsync();
         var counts = await db
@@ -367,7 +372,8 @@ public class FoodTypesController(
             food.NameEnglish,
             food.Price,
             food.IsHidden,
-            food.MealTimes.OrderBy(m => m.Id)
+            food.MealTimes.OrderBy(m => m.Time)
+                .ThenBy(m => m.Id)
                 .Select(m => new MealTimeDto(
                     m.Id,
                     m.Time,

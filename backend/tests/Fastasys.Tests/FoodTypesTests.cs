@@ -136,6 +136,32 @@ public class FoodTypesTests(TestWebApplicationFactory factory) : IClassFixture<T
     }
 
     [Fact]
+    public async Task MealTimesAreListedByDayAndTime_NotInTheOrderTheyWereAdded()
+    {
+        // Infosys listed them in the order they were added (Mad::getMadtider has no order); changed 2026-11-26
+        using var db = CreateDbContext();
+        var lunch = new FoodType { Id = 5, NameDanish = "Frokost" };
+        lunch.MealTimes.Add(new MealTime { Id = 30, Time = Utc(26, 11) });
+        lunch.MealTimes.Add(new MealTime { Id = 31, Time = Utc(24, 11) });
+        lunch.MealTimes.Add(new MealTime { Id = 32, Time = Utc(25, 11) });
+        db.FoodTypes.Add(lunch);
+        db.Participants.Add(
+            new Participant
+            {
+                Id = 1,
+                FirstName = "Deltager",
+                LastName = "1",
+            }
+        );
+        await db.SaveChangesAsync(Ct);
+        db.ChangeTracker.Clear();
+
+        Assert.Equal([31, 32, 30], Value(await Foods(db).Get(5)).MealTimes.Select(m => m.Id));
+        Assert.Equal([31, 32, 30], Value(await Foods(db).GetStats()).Single().MealTimes.Select(m => m.Id));
+        Assert.Equal([31, 32, 30], Value(await Meals(db).Get(1)).FoodTypes.Single().MealTimes.Select(m => m.Id));
+    }
+
+    [Fact]
     public async Task Create_StoresTheTypeAndItsMealTimes()
     {
         using var db = CreateDbContext();

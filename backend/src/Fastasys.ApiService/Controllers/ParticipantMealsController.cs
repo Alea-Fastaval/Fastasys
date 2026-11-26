@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Fastasys.ApiService.Controllers;
 
 // A food type with its meal times, for the Mad selects of the participant's edit page and the participant search's Mad
-// section. Every food type, hidden ones too, in id order; its meal times in id order (Mad::getMadtider has no order).
+// section. Every food type, hidden ones too, in id order; its meal times by day and time (Mad::getMadtider has no
+// order, so Infosys listed them in the order they were added; changed 2026-11-26).
 public record FoodTypeOptionDto(int Id, string NameDanish, IReadOnlyList<MealTimeOptionDto> MealTimes);
 
 // A meal time in a select: the page shows its Danish day name ("Ons"), as Infosys's mad/ajaxgetmadtider/:id: did
@@ -109,7 +110,10 @@ public class ParticipantMealsController(InfosysDbContext db, ILogger<Participant
             .Select(f => new FoodTypeOptionDto(
                 f.Id,
                 f.NameDanish,
-                f.MealTimes.OrderBy(m => m.Id).Select(m => new MealTimeOptionDto(m.Id, m.Time)).ToList()
+                f.MealTimes.OrderBy(m => m.Time)
+                    .ThenBy(m => m.Id)
+                    .Select(m => new MealTimeOptionDto(m.Id, m.Time))
+                    .ToList()
             ))
             .ToListAsync();
 
