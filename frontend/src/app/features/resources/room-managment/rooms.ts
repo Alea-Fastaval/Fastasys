@@ -24,5 +24,17 @@ export class RoomsComponent implements OnInit {
     this.http.get<Room[]>('/api/rooms').subscribe(data => this.rooms.set(data));
   }
 
+  private createRoom(): void {}
+
+  private deleteRoom(id: number): void {}
+
+  private updateRoom(): void {}
+
+  //todo:
+  // Display a list of all rooms, with their "static" information
+  // Make a create room display
+  // Make a delete room display, with some sort of accident protection
+  // Make an edit room display
+
   // Additional room‑specific actions can be added here
 }

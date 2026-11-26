@@ -20,6 +20,15 @@ public record CreateRoomDto(
     string Description
 );
 
+public record UpdateRoomDto(
+    string? Name,
+    string? Location,
+    int? Capacity,
+    bool? IsSleepingRoom,
+    bool? CanBook,
+    string? Description
+);
+
 [ApiController]
 [Route("api/[controller]")]
 public class FoodController(InfosysDbContext db) : ControllerBase
@@ -123,5 +132,21 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
         db.Rooms.Add(room);
         await db.SaveChangesAsync();
         return Ok(room);
+    }
+
+    [HttpPatch("update/{id: int}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateRoom(int id, [FromBody] UpdateRoomDto dto)
+    {
+        // todo : implement this
+        return Ok();
+    }
+
+    [HttpDelete("delete/{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteRoom(int id)
+    {
+        await db.Rooms.Where(room => room.Id == id).ExecuteDeleteAsync();
+        return Ok();
     }
 }

@@ -10,7 +10,7 @@ import { HeroForceComponent } from './features/hero-force/hero-force';
 import { LoginComponent } from './features/login/login';
 import { ParticipantsComponent } from './features/participants/participants';
 import { FoodComponent } from './features/resources/food/food';
-import { RoomsComponent } from './features/resources/rooms/rooms';
+import { RoomsComponent } from './features/resources/room-managment/rooms';
 import { WearComponent } from './features/resources/wear/wear';
 import { ShopComponent } from './features/shop/shop';
 import { SignupComponent } from './features/signup/signup';
