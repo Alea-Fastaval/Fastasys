@@ -782,7 +782,7 @@
     "orderedHint": "Kan ikke slettes: {{count}} deltagere har bestilt den.",
     "fields": {
       "id": "Id",
-      "nameDanish": "Dansk navn",
+      "nameDanish": "Dansk",
       "nameEnglish": "Engelsk",
       "price": "Pris",
       "isHidden": "Skjult",
