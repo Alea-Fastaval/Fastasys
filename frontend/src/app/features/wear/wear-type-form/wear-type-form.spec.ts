@@ -163,7 +163,7 @@ describe('WearTypeFormComponent', () => {
     request.flush({ ...existing, id: 9 });
 
     expect(flash.take()).toEqual({ type: 'success', key: 'created', params: undefined });
-    expect(navigate).toHaveBeenCalledWith(['/resources/wear/types', 9]);
+    expect(navigate).toHaveBeenCalledWith(['/wear/types', 9]);
   });
 
   it("won't remove an ordered price, and shows why an update was refused", async () => {
@@ -212,7 +212,7 @@ describe('WearTypeFormComponent', () => {
     component.cancel();
 
     expect(flash.take()).toEqual({ type: 'error', key: 'notUpdated', params: undefined });
-    expect(navigate).toHaveBeenCalledWith(['/resources/wear/types', 1]);
+    expect(navigate).toHaveBeenCalledWith(['/wear/types', 1]);
   });
 
   it('"Fortryd" on the create form reports "Wear typen blev ikke oprettet."', async () => {
@@ -221,7 +221,7 @@ describe('WearTypeFormComponent', () => {
     component.cancel();
 
     expect(flash.take()).toEqual({ type: 'error', key: 'notCreated', params: undefined });
-    expect(navigate).toHaveBeenCalledWith(['/resources/wear']);
+    expect(navigate).toHaveBeenCalledWith(['/wear']);
   });
 
   it('deletes after the confirmation, and shows the number of orders when refused', async () => {
@@ -234,11 +234,11 @@ describe('WearTypeFormComponent', () => {
       .flush({ reason: 'inUse', orderCount: 2 }, { status: 409, statusText: 'Conflict' });
 
     expect(flash.take()).toEqual({ type: 'error', key: 'inUse', params: { count: '2' } });
-    expect(navigate).toHaveBeenCalledWith(['/resources/wear/types', 1]);
+    expect(navigate).toHaveBeenCalledWith(['/wear/types', 1]);
 
     component.confirmDelete();
     http.expectOne('/api/wear-types/1').flush({});
     expect(flash.take()).toEqual({ type: 'success', key: 'deleted', params: undefined });
-    expect(navigate).toHaveBeenCalledWith(['/resources/wear']);
+    expect(navigate).toHaveBeenCalledWith(['/wear']);
   });
 });

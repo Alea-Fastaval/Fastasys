@@ -713,8 +713,14 @@ public class WearTests(TestWebApplicationFactory factory) : IClassFixture<TestWe
         var taken = (await images.Create(new CreateWearImageDto("shirt.png", DataUrl(Png)))).Result!;
         Value(await images.Create(new CreateWearImageDto("cap.png", DataUrl(Png))));
 
+        // Over 10 MB: refused as too large, not as "not an image"
+        var huge = new byte[ImageFiles.MaxBytes + 1];
+        Png.CopyTo(huge, 0);
+        var tooLarge = (await images.Create(new CreateWearImageDto("huge.png", DataUrl(huge)))).Result!;
+
         Assert.Equal("shirt.png", created.FileName);
         Assert.Equal("notImage", Field(notImage, "reason"));
+        Assert.Equal("tooLarge", Field(tooLarge, "reason"));
         Assert.IsType<ConflictObjectResult>(taken);
         Assert.Equal("nameTaken", Field(taken, "reason"));
         Assert.Equal(["cap.png", "shirt.png"], Value(await images.GetAll()).Select(i => i.FileName));

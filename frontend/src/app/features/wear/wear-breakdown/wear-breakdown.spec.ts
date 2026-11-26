@@ -83,10 +83,7 @@ describe('WearBreakdownComponent (Infosys wear/breakdown)', () => {
       ['(1) T-shirt - Sort', '3', '0', '0', '3'],
     ]);
     const links = [...element.querySelectorAll('tbody a')].map(a => a.getAttribute('href'));
-    expect(links).toEqual([
-      '/resources/wear/types/2/orders?size=none',
-      '/resources/wear/types/1/orders?size=13&attributes=111',
-    ]);
+    expect(links).toEqual(['/wear/types/2/orders?size=none', '/wear/types/1/orders?size=13&attributes=111']);
   });
 
   it("doesn't link the amounts for users who can't see the lists", async () => {

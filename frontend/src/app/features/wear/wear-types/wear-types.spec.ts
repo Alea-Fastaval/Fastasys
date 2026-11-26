@@ -56,9 +56,9 @@ describe('WearTypesComponent (Infosys wear/showwear)', () => {
       ['2', 'Kasket', 'Sort kasket'],
       ['1', 'T-shirt', ''],
     ]);
-    expect(element.querySelector('tbody a')?.getAttribute('href')).toBe('/resources/wear/types/2');
+    expect(element.querySelector('tbody a')?.getAttribute('href')).toBe('/wear/types/2');
     expect(element.querySelector('.move-up')).toBeNull();
-    expect(element.querySelector('a[href="/resources/wear/types/new"]')).toBeNull();
+    expect(element.querySelector('a[href="/wear/types/new"]')).toBeNull();
   });
 
   it('moves a type with the arrows and reloads the list (wearlist.js switch_row)', () => {
@@ -103,6 +103,6 @@ describe('WearTypesComponent (Infosys wear/showwear)', () => {
     const { element } = render(['wear_edit'], []);
 
     expect(element.textContent).toContain('wear.messages.notFound');
-    expect(element.querySelector('a[href="/resources/wear/types/new"]')).not.toBeNull();
+    expect(element.querySelector('a[href="/wear/types/new"]')).not.toBeNull();
   });
 });

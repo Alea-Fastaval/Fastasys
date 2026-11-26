@@ -1,8 +1,6 @@
 <div class="page-container">
   <header class="page-header">
-    <a mat-button routerLink="/resources/wear/types"
-      ><mat-icon>arrow_back</mat-icon> {{ 'wear.typesTitle' | translate }}</a
-    >
+    <a mat-button routerLink="/wear/types"><mat-icon>arrow_back</mat-icon> {{ 'wear.typesTitle' | translate }}</a>
   </header>
 
   @if (flash) {
@@ -15,7 +13,7 @@
   <app-card [title]="('wear.detailTitle' | translate) + ': ' + w.nameDanish">
     @if (mayEdit) {
     <div class="card-actions">
-      <a mat-stroked-button [routerLink]="['/resources/wear/types', w.id, 'edit']">
+      <a mat-stroked-button [routerLink]="['/wear/types', w.id, 'edit']">
         <mat-icon>edit</mat-icon> {{ 'wear.editDelete' | translate }}
       </a>
     </div>

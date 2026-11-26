@@ -1,6 +1,6 @@
 <div class="page-container">
   <header class="page-header">
-    <a mat-button routerLink="/resources/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
+    <a mat-button routerLink="/wear"><mat-icon>arrow_back</mat-icon> {{ 'wear.title' | translate }}</a>
   </header>
 
   @if (failed()) {
@@ -37,9 +37,7 @@
             @for (cell of cells(row, b); track cell.sizeId) { @if (cell.count > 0) {
             <td class="alt count">
               @if (mayList) {
-              <a
-                [routerLink]="['/resources/wear/types', row.wearTypeId, 'orders']"
-                [queryParams]="query(row, cell.sizeId)"
+              <a [routerLink]="['/wear/types', row.wearTypeId, 'orders']" [queryParams]="query(row, cell.sizeId)"
                 >{{ cell.count }}</a
               >
               } @else { {{ cell.count }} }

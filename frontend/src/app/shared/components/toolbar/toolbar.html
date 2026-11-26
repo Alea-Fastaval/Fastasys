@@ -39,11 +39,6 @@
             <mat-icon>restaurant</mat-icon>
             <span>{{ 'nav.food' | translate }}</span>
           </a>
-          } @if (authService.hasPrivilege('wear_view', 'wear_edit', 'wear_list_view', 'wear_distribute_edit')) {
-          <a mat-menu-item routerLink="/resources/wear">
-            <mat-icon>checkroom</mat-icon>
-            <span>{{ 'nav.wear' | translate }}</span>
-          </a>
           }
           <a mat-menu-item routerLink="/resources/rooms">
             <mat-icon>meeting_room</mat-icon>
@@ -58,6 +53,34 @@
         </div>
       </mat-menu>
     </div>
+
+    <!-- Wear Dropdown Submenu: Infosys's Wear menu -->
+    @if (mayUseWear()) {
+    <div class="menu-hover-wrapper" (mouseenter)="openMenu(wearTrigger)" (mouseleave)="closeMenu(wearTrigger)">
+      <button
+        mat-button
+        class="wear-menu"
+        [matMenuTriggerFor]="wearMenu"
+        [class.active-link]="isWearActive()"
+        #wearTrigger="matMenuTrigger"
+      >
+        <mat-icon>checkroom</mat-icon> {{ 'nav.wear' | translate }}
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #wearMenu="matMenu" [hasBackdrop]="false">
+        <div (mouseenter)="cancelClose()" (mouseleave)="closeMenu(wearTrigger)">
+          <a mat-menu-item routerLink="/wear">
+            <span>{{ 'wear.menu.overview' | translate }}</span>
+          </a>
+          @for (link of wearLinks(); track link.key) {
+          <a mat-menu-item [routerLink]="link.path">
+            <span>{{ 'wear.menu.' + link.key | translate }}</span>
+          </a>
+          }
+        </div>
+      </mat-menu>
+    </div>
+    }
 
     <a mat-button routerLink="/boardgames" routerLinkActive="active-link">
       <mat-icon>sports_esports</mat-icon> {{ 'nav.boardgames' | translate }}

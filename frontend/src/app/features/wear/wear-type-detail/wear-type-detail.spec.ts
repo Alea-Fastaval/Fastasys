@@ -90,13 +90,13 @@ describe('WearTypeDetailComponent (Infosys wear/viswear/:id:)', () => {
       ['5', 'Arrangør', '100 DKK'],
     ]);
     // Only wear_edit may change it
-    expect(element.querySelector('a[href="/resources/wear/types/1/edit"]')).toBeNull();
+    expect(element.querySelector('a[href="/wear/types/1/edit"]')).toBeNull();
   });
 
   it('links "ret/slet" for wear_edit', async () => {
     const element = await render(['wear_edit'], shirt);
 
-    expect(element.querySelector('a[href="/resources/wear/types/1/edit"]')).not.toBeNull();
+    expect(element.querySelector('a[href="/wear/types/1/edit"]')).not.toBeNull();
   });
 
   it("shows Infosys's noResults text for an unknown type", async () => {

@@ -335,10 +335,10 @@ export class WearTypeFormComponent implements OnInit, OnDestroy {
     const id = this.wearId();
     if (id === null) {
       this.flash.set('error', 'notCreated');
-      void this.router.navigate(['/resources/wear']);
+      void this.router.navigate(['/wear']);
     } else {
       this.flash.set('error', 'notUpdated');
-      void this.router.navigate(['/resources/wear/types', id]);
+      void this.router.navigate(['/wear/types', id]);
     }
   }
 
@@ -355,7 +355,7 @@ export class WearTypeFormComponent implements OnInit, OnDestroy {
     this.http.delete(`/api/wear-types/${id}`).subscribe({
       next: () => {
         this.flash.set('success', 'deleted');
-        void this.router.navigate(['/resources/wear']);
+        void this.router.navigate(['/wear']);
       },
       error: (err: HttpErrorResponse) => {
         if (err.error?.reason === 'inUse') {
@@ -363,21 +363,21 @@ export class WearTypeFormComponent implements OnInit, OnDestroy {
         } else {
           this.flash.set('error', 'deleteFailed');
         }
-        void this.router.navigate(['/resources/wear/types', id]);
+        void this.router.navigate(['/wear/types', id]);
       },
     });
   }
 
   // Infosys "Fortryd" on the delete confirmation goes back to the type, without a message
   public cancelDelete(): void {
-    void this.router.navigate(['/resources/wear/types', this.wearId()]);
+    void this.router.navigate(['/wear/types', this.wearId()]);
   }
 
   private create(dto: WearTypeFieldsDto): void {
     this.http.post<WearTypeDetail>('/api/wear-types', dto).subscribe({
       next: created => {
         this.flash.set('success', 'created');
-        void this.router.navigate(['/resources/wear/types', created.id]);
+        void this.router.navigate(['/wear/types', created.id]);
       },
       error: () => this.fail('createFailed'),
     });
@@ -387,7 +387,7 @@ export class WearTypeFormComponent implements OnInit, OnDestroy {
     this.http.put<WearTypeDetail>(`/api/wear-types/${id}`, dto).subscribe({
       next: () => {
         this.flash.set('success', 'updated');
-        void this.router.navigate(['/resources/wear/types', id]);
+        void this.router.navigate(['/wear/types', id]);
       },
       error: (err: HttpErrorResponse) => {
         if (err.error?.reason === 'priceOrdered') {

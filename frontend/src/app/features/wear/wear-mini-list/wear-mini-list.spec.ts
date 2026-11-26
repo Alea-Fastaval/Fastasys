@@ -50,7 +50,7 @@ describe('WearMiniListComponent (Infosys wear/detailed/:id:)', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'resources/wear/types/:id/orders', component: WearMiniListComponent }]),
+        provideRouter([{ path: 'wear/types/:id/orders', component: WearMiniListComponent }]),
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -61,7 +61,7 @@ describe('WearMiniListComponent (Infosys wear/detailed/:id:)', () => {
   };
 
   it('shows the orders behind a number', async () => {
-    const { harness, component } = await open('/resources/wear/types/1/orders?attributes=111&size=13');
+    const { harness, component } = await open('/wear/types/1/orders?attributes=111&size=13');
 
     http.expectOne('/api/wear-orders/by-type/1?attributeIds=111&attributeIds=13').flush(list);
     harness.detectChanges();
@@ -75,7 +75,7 @@ describe('WearMiniListComponent (Infosys wear/detailed/:id:)', () => {
   });
 
   it('removes an unknown query value and says so', async () => {
-    const { harness } = await open('/resources/wear/types/1/orders?size=big');
+    const { harness } = await open('/wear/types/1/orders?size=big');
 
     // The unknown size is left out of the first request and removed from the URL
     http.expectOne('/api/wear-orders/by-type/1').flush(list);
@@ -84,7 +84,7 @@ describe('WearMiniListComponent (Infosys wear/detailed/:id:)', () => {
     http.match('/api/wear-orders/by-type/1').forEach(request => request.flush(list));
     harness.detectChanges();
 
-    expect(TestBed.inject(Router).url).toBe('/resources/wear/types/1/orders');
+    expect(TestBed.inject(Router).url).toBe('/wear/types/1/orders');
     expect((harness.routeNativeElement as HTMLElement).querySelector('.unknown-query')).not.toBeNull();
   });
 });

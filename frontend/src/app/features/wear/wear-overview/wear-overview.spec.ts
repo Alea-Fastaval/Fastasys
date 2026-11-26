@@ -37,20 +37,20 @@ describe('WearOverviewComponent (Infosys wear/)', () => {
     const element = await render(['wear_edit', 'wear_list_view', 'wear_distribute_edit']);
 
     expect(links(element)).toEqual([
-      '/resources/wear/breakdown',
-      '/resources/wear/orders',
-      '/resources/wear/orders/unfilled',
-      '/resources/wear/types',
-      '/resources/wear/types/new',
-      '/resources/wear/attributes',
-      '/resources/wear/images/upload',
-      '/resources/wear/handout',
+      '/wear/breakdown',
+      '/wear/orders',
+      '/wear/orders/unfilled',
+      '/wear/types',
+      '/wear/types/new',
+      '/wear/attributes',
+      '/wear/images/upload',
+      '/wear/handout',
     ]);
   });
 
   it('lists only the pages the user may open', async () => {
     const element = await render(['wear_view']);
 
-    expect(links(element)).toEqual(['/resources/wear/breakdown', '/resources/wear/types']);
+    expect(links(element)).toEqual(['/wear/breakdown', '/wear/types']);
   });
 });

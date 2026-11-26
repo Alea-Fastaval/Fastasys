@@ -7,7 +7,7 @@
     "shop": "Shop",
     "resources": "Resources",
     "food": "Food & Catering",
-    "wear": "Wear & Merchandise",
+    "wear": "Wear",
     "rooms": "Rooms & Locations",
     "tickets": "Entrance",
     "boardgames": "Boardgames",
@@ -833,6 +833,17 @@
       "uploadImage": "Upload wear image",
       "handout": "open the wear handout"
     },
+    "menu": {
+      "overview": "Overview",
+      "breakdown": "Order overview",
+      "orders": "All orders",
+      "unfilled": "All not handed out",
+      "types": "Wear types",
+      "create": "Create wear type",
+      "attributes": "Edit wear attributes",
+      "uploadImage": "Upload wear image",
+      "handout": "Wear handout"
+    },
     "typesTitle": "Wear types",
     "create": "Create wear type",
     "detailTitle": "Wear",
@@ -951,6 +962,7 @@
       "uploaded": "The image {{name}} was uploaded.",
       "notImage": "Infosys couldn't recognise the file as an image",
       "nameTaken": "There is already a file with the same name",
+      "tooLarge": "The image is too large. It can be at most 10 MB.",
       "uploadFailed": "An unknown error happened during the upload",
       "markFailed": "Couldn't change the marking"
     }

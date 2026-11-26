@@ -9,6 +9,7 @@ import { AuthService, TranslationService, SupportedLang } from '@shared/services
 import { TranslatePipe } from '@shared/pipes';
 // Infosys has the participant search field in its page header
 import { ParticipantQuickSearchComponent } from '../../../features/participants/participant-quick-search/participant-quick-search';
+import { WEAR_LINKS, WEAR_PRIVILEGES, WearLink } from '../../../features/wear/wear-links';
 
 @Component({
   selector: 'app-toolbar',
@@ -36,6 +37,21 @@ export class Toolbar {
 
   public isResourcesActive(): boolean {
     return this.router.url.startsWith('/resources');
+  }
+
+  // The Wear menu (Infosys has Wear as its own menu): shown with any wear privilege
+  public mayUseWear(): boolean {
+    return this.authService.hasPrivilege(...WEAR_PRIVILEGES);
+  }
+
+  // The wear pages the user may open, after "Oversigt"
+  public wearLinks(): WearLink[] {
+    return WEAR_LINKS.filter(link => this.authService.hasPrivilege(...link.privileges));
+  }
+
+  public isWearActive(): boolean {
+    const url = this.router.url;
+    return url === '/wear' || url.startsWith('/wear/') || url.startsWith('/wear?');
   }
 
   public isManagementActive(): boolean {

@@ -2,7 +2,7 @@
   <header class="page-header">
     <h1>{{ 'wear.typesTitle' | translate }}</h1>
     @if (mayEdit) {
-    <a mat-raised-button color="primary" routerLink="/resources/wear/types/new">
+    <a mat-raised-button color="primary" routerLink="/wear/types/new">
       <mat-icon>add</mat-icon> {{ 'wear.create' | translate }}
     </a>
     }
@@ -37,7 +37,7 @@
         <tr>
           <td class="id">{{ type.id }}</td>
           <td>
-            <a [routerLink]="['/resources/wear/types', type.id]">{{ type.nameDanish }}</a>
+            <a [routerLink]="['/wear/types', type.id]">{{ type.nameDanish }}</a>
           </td>
           <td class="description">{{ type.descriptionDanish }}</td>
           @if (mayEdit) {

@@ -31,6 +31,8 @@ public class WearImagesController(InfosysDbContext db, ILogger<WearImagesControl
         reason = "notImage",
     };
 
+    private static readonly object TooLarge = new { message = "The image can be at most 10 MB", reason = "tooLarge" };
+
     private static readonly object NameTaken = new
     {
         message = "There is already an image with that file name",
@@ -59,9 +61,12 @@ public class WearImagesController(InfosysDbContext db, ILogger<WearImagesControl
     }
 
     // "Upload". Infosys refused a file name that was already uploaded ("Der findes allerede en fil med samme navn").
+    // The request may be as large as nginx lets through (32 MB, the ID photo's limit too), so an image of up to about
+    // 24 MB gets the "too large" answer below; Kestrel's own 413 for a larger request becomes a 500 in the exception
+    // handler.
     [HttpPost]
     [Authorize(Policy = "WearManagement")]
-    [RequestSizeLimit(16 * 1024 * 1024)]
+    [RequestSizeLimit(32 * 1024 * 1024)]
     public async Task<ActionResult<WearImageDto>> Create([FromBody] CreateWearImageDto dto)
     {
         var fileName = FileNameOf(dto.FileName);
@@ -69,6 +74,9 @@ public class WearImagesController(InfosysDbContext db, ILogger<WearImagesControl
             return BadRequest(new { message = $"The file name must be 1 to {WearImage.MaxFileNameLength} characters" });
 
         var data = ImageFiles.FromDataUrl(dto.Data);
+        if (data != null && data.Length > ImageFiles.MaxBytes)
+            return BadRequest(TooLarge);
+
         var info = data == null ? null : ImageFiles.Inspect(data);
         if (info == null)
             return BadRequest(NotImage);

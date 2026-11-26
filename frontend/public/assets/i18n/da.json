@@ -7,7 +7,7 @@
     "shop": "Kiosk & Salg",
     "resources": "Ressourcer",
     "food": "Mad & Forplejning",
-    "wear": "Wear & Merchandise",
+    "wear": "Wear",
     "rooms": "Lokaler & Rum",
     "tickets": "Indgang",
     "boardgames": "Brætspiludlån",
@@ -833,6 +833,17 @@
       "uploadImage": "Upload billede til wear",
       "handout": "åbne wearuddelings-interfacet"
     },
+    "menu": {
+      "overview": "Oversigt",
+      "breakdown": "Bestillings-oversigt",
+      "orders": "Alle bestillinger",
+      "unfilled": "Alle ikke-udleverede",
+      "types": "Wear-typer",
+      "create": "Opret wear-type",
+      "attributes": "Rediger wear egenskaber",
+      "uploadImage": "Upload billede til wear",
+      "handout": "Wear-udlevering"
+    },
     "typesTitle": "Wear-typer",
     "create": "Opret wear-type",
     "detailTitle": "Wear",
@@ -951,6 +962,7 @@
       "uploaded": "Billedet {{name}} blev uploaded.",
       "notImage": "Infosys kunne ikke genkende filen som et billede",
       "nameTaken": "Der findes allerede en fil med samme navn",
+      "tooLarge": "Billedet er for stort. Det må højst fylde 10 MB.",
       "uploadFailed": "Der skete en ukendt fejl under upload",
       "markFailed": "Kunne ikke ændre markeringen"
     }

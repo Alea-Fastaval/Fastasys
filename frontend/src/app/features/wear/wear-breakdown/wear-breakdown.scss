@@ -32,11 +32,15 @@
     text-align: center;
   }
 
-  // Infosys turns the size headings on their side
-  .wear-subheader span {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    white-space: nowrap;
+  // The size headings read left to right (Infosys turned them on their side; changed 2026-11-26). A long size name
+  // wraps onto more lines, so the columns stay narrow; the headings line up with the amounts below them.
+  .wear-subheader {
+    min-width: 3rem;
+    max-width: 6rem;
+    text-align: right;
+    vertical-align: bottom;
+    white-space: normal;
+    font-weight: 600;
   }
 
   // The first row of each variant gets a line above it

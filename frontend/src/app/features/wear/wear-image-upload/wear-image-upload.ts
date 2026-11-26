@@ -7,6 +7,17 @@ import { CreateWearImageDto, WearImage } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 
+// The largest image the API takes (ImageFiles.MaxBytes)
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+// Why an upload failed, as a key under wear.messages. A request too large for the API is refused with 413 before
+// it is read.
+export function uploadErrorKey(err: HttpErrorResponse): string {
+  if (err.status === 413) return 'tooLarge';
+  const reason = String(err.error?.reason ?? '');
+  return ['notImage', 'nameTaken', 'tooLarge'].includes(reason) ? reason : 'uploadFailed';
+}
+
 // The file as a data URL, for the API
 export function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -18,7 +29,8 @@ export function readAsDataUrl(file: Blob): Promise<string> {
 }
 
 // Infosys wear/upload-image ("Upload billede til wear"): "Vælg billede" and "Upload". After an upload it says
-// "Billedet {navn} blev uploaded." and shows the image. Infosys's messages are kept, "Infosys" included.
+// "Billedet {navn} blev uploaded." and shows the image. Infosys's messages are kept, "Infosys" included. An image over
+// 10 MB is refused before it is sent (Infosys had no limit of its own).
 @Component({
   selector: 'app-wear-image-upload',
   imports: [RouterLink, MatButtonModule, MatIconModule, Card, TranslatePipe],
@@ -47,8 +59,13 @@ export class WearImageUploadComponent implements OnDestroy {
     const file = this.file();
     if (!file || this.busy()) return;
 
-    this.busy.set(true);
     this.errorKey.set(null);
+    if (file.size > MAX_IMAGE_BYTES) {
+      this.fail('tooLarge');
+      return;
+    }
+
+    this.busy.set(true);
     let data: string;
     try {
       data = await readAsDataUrl(file);
@@ -65,10 +82,7 @@ export class WearImageUploadComponent implements OnDestroy {
         this.imageUrl.set(URL.createObjectURL(file));
         this.busy.set(false);
       },
-      error: (err: HttpErrorResponse) => {
-        const reason = String(err.error?.reason ?? '');
-        this.fail(reason === 'notImage' || reason === 'nameTaken' ? reason : 'uploadFailed');
-      },
+      error: (err: HttpErrorResponse) => this.fail(uploadErrorKey(err)),
     });
   }
 
