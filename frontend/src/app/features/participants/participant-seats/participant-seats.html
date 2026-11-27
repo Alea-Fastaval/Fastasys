@@ -1,0 +1,120 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button [routerLink]="['/participants', participantId]"
+      ><mat-icon>arrow_back</mat-icon> {{ 'participants.seats.backToParticipant' | translate }}</a
+    >
+  </header>
+
+  @if (notFound()) {
+  <p class="flash error">{{ 'participants.messages.notFound' | translate }}</p>
+  } @if (page(); as p) {
+  <app-card [title]="'participants.seats.title' | translate">
+    <form (ngSubmit)="submit()">
+      <div class="choose">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.activities.activity' | translate }}</mat-label>
+          <mat-select name="activityId" [(ngModel)]="activityId" (ngModelChange)="activityChanged()">
+            @for (activity of p.activities; track activity.id) {
+            <mat-option [value]="activity.id">{{ activity.title }} / {{ activity.titleEnglish }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (activity(); as a) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'participants.activities.time' | translate }}</mat-label>
+          <mat-select name="scheduleId" [(ngModel)]="scheduleId" (ngModelChange)="scheduleChanged()">
+            @for (schedule of a.schedules; track schedule.id) {
+            <mat-option [value]="schedule.id" [disabled]="schedule.isBusy"
+              >{{ schedule.start | timeSpan: schedule.end }}</mat-option
+            >
+            } @empty {
+            <mat-option [value]="null" disabled>{{ 'participants.seats.noSchedules' | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        } @if (schedule(); as s) {
+        <mat-form-field appearance="outline" class="narrow">
+          <mat-label>{{ 'participants.activities.run' | translate }}</mat-label>
+          <mat-select name="runId" [(ngModel)]="runId" (ngModelChange)="runChanged()">
+            @for (run of s.runs; track run.id) {
+            <mat-option [value]="run.id" [disabled]="runOptionDisabled(run)">{{ run.number }}</mat-option>
+            } @empty {
+            <mat-option [value]="null" disabled>{{ 'participants.seats.noRuns' | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        } @if (run(); as r) {
+        <mat-form-field appearance="outline" class="narrow">
+          <mat-label>{{ 'participants.activities.role' | translate }}</mat-label>
+          <mat-select name="role" [(ngModel)]="role">
+            <mat-option value="Player" [disabled]="roleOptionDisabled(r, 'Player')"
+              >{{ 'runs.roleOptions.Player' | translate }}</mat-option
+            >
+            <mat-option value="GameMaster" [disabled]="roleOptionDisabled(r, 'GameMaster')"
+              >{{ 'runs.roleOptions.GameMaster' | translate }}</mat-option
+            >
+          </mat-select>
+        </mat-form-field>
+        }
+
+        <button mat-stroked-button type="button" class="add" [disabled]="!canAdd()" (click)="add()">
+          <mat-icon>add</mat-icon> {{ 'participants.seats.add' | translate }}
+        </button>
+      </div>
+
+      <table class="seat-list">
+        <tbody>
+          @for (seat of seats(); track seat.runId) {
+          <tr>
+            <td class="seat">
+              {{ seat.title }} / {{ seat.titleEnglish }} — {{ 'participants.activities.roles.' + seat.role | translate
+              }}, {{ 'participants.seats.run' | translate }} {{ seat.runNumber }}, {{ seat.start | timeSpan: seat.end }}
+            </td>
+            <td class="actions">
+              <button mat-button type="button" color="warn" (click)="remove(seat)">
+                {{ 'participants.seats.delete' | translate }}
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="form-actions">
+        <button mat-raised-button color="primary" type="submit" [disabled]="busy()">
+          {{ 'participants.seats.update' | translate }}
+        </button>
+      </div>
+    </form>
+
+    @if (p.wishes.length) {
+    <table class="wish-list">
+      <thead>
+        <tr>
+          <th colspan="2">{{ 'participants.seats.wishesTitle' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (wish of p.wishes; track wish.scheduleId + wish.role) {
+        <tr>
+          <td class="wish">
+            {{ wish.title }} / {{ wish.titleEnglish }} — {{ wish.start | timeSpan: wish.end }}, {{
+            'participants.activities.roles.' + wish.role | translate }}, {{ 'participants.signups.priorityText' |
+            translate: { priority: wish.priority.toString() } }}
+          </td>
+          <td class="actions">
+            @if (wish.runId !== null) {
+            <button mat-stroked-button type="button" [disabled]="!canAddWish(wish)" (click)="addWish(wish)">
+              {{ 'participants.seats.addWish' | translate }}
+            </button>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
+  </app-card>
+  }
+</div>

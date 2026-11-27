@@ -1,0 +1,102 @@
+:host {
+  display: block;
+}
+
+.card-actions {
+  margin-bottom: 0.75rem;
+}
+
+.error {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+// The table can be wider than the card on a phone; it scrolls instead of the page
+app-card {
+  overflow-x: auto;
+}
+
+.signup-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  th,
+  td {
+    padding: 0.35rem 1rem 0.35rem 0;
+    vertical-align: top;
+  }
+
+  // Infosys centres the priority
+  .priority {
+    text-align: center;
+  }
+
+  .time,
+  .role {
+    white-space: nowrap;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  input[type='number'] {
+    width: 3.5rem;
+  }
+
+  .editor-actions td {
+    display: flex;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
+// Clicking a row opens its editor
+.signup-table.editable tr.signup {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #f9fafb;
+  }
+}
+
+.conflict-sort {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+
+  h4 {
+    margin: 0 0 0.5rem;
+  }
+
+  ol {
+    margin: 0 0 0.75rem;
+    padding-left: 1.5rem;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  .handle {
+    cursor: move;
+    color: #6b7280;
+  }
+}

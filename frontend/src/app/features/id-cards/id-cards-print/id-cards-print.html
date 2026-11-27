@@ -1,0 +1,32 @@
+<div class="page-container">
+  <header class="page-header no-print">
+    <h1>{{ 'idCards.title' | translate }}</h1>
+    @if (cards()?.length) {
+    <button mat-flat-button color="primary" type="button" class="print" (click)="print()">
+      <mat-icon>print</mat-icon> {{ 'idCards.print' | translate }}
+    </button>
+    }
+  </header>
+
+  @if (failed()) {
+  <p class="flash error no-print">{{ 'idCards.failed' | translate }}</p>
+  } @else if (cards(); as list) { @if (list.length) {
+  <!-- At their printed size; the borders are the cut lines -->
+  <div class="cards">
+    @for (card of list; track $index) {
+    <img
+      class="card"
+      [src]="card.src"
+      [style.width.mm]="card.widthMm"
+      [style.height.mm]="card.heightMm"
+      [attr.data-participant]="card.participantId"
+      alt=""
+    />
+    }
+  </div>
+  } @else {
+  <p class="none">{{ 'idCards.none' | translate }}</p>
+  } } @else {
+  <p class="loading no-print">{{ 'idCards.loading' | translate }}</p>
+  }
+</div>

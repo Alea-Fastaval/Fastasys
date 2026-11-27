@@ -22,6 +22,17 @@ export function parseOneOf<T extends string>(param: string, value: string | null
   return known;
 }
 
+// A comma-separated list of values from a fixed list, e.g. "email,city". A missing parameter gives null and an
+// empty one an empty list; any unknown item throws an UnknownQueryParamError for the whole value.
+export function parseListOf<T extends string>(param: string, value: string | null, allowed: readonly T[]): T[] | null {
+  if (value === null) return null;
+  if (value === '') return [];
+  const items = value.split(',');
+  if (items.some(item => !(allowed as readonly string[]).includes(item)))
+    throw new UnknownQueryParamError(param, value);
+  return [...new Set(items as T[])];
+}
+
 interface Parsed<T> {
   value: T | null;
   error: UnknownQueryParamError | null;
@@ -57,9 +68,27 @@ export class QueryParamsService {
 
   // The parameter's value; null when it is missing or unknown
   public oneOf<T extends string>(param: string, allowed: readonly T[]): Signal<T | null> {
+    return this.parsed(param, value => parseOneOf(param, value, allowed));
+  }
+
+  // The parameter's items; null when it is missing or has an unknown item
+  public listOf<T extends string>(param: string, allowed: readonly T[]): Signal<T[] | null> {
+    return this.parsed(param, value => parseListOf(param, value, allowed));
+  }
+
+  // Free text, which is never unknown; null when it is missing
+  public text(param: string): Signal<string | null> {
+    return this.parsed(param, value => value);
+  }
+
+  // The parameter read by the page's own parser, which throws an UnknownQueryParamError for a value it doesn't
+  // understand; null when the parameter is missing or not understood
+  public parsed<T>(param: string, parse: (value: string) => T): Signal<T | null> {
     const parsed = computed<Parsed<T>>(() => {
+      const raw = this.params().get(param);
+      if (raw === null) return { value: null, error: null };
       try {
-        return { value: parseOneOf(param, this.params().get(param), allowed), error: null };
+        return { value: parse(raw), error: null };
       } catch (error) {
         if (error instanceof UnknownQueryParamError) return { value: null, error };
         throw error;

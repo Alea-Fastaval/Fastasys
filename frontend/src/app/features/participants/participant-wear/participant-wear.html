@@ -1,0 +1,14 @@
+<app-card [title]="'participants.wear.title' | translate">
+  @if (orders; as list) {
+  <ul class="wear-orders">
+    @for (order of list; track $index) {
+    <li>
+      {{ wearOrderText(order, 'participants.wear.pieces' | translate, 'participants.wear.size' | translate) }} — ({{
+      (order.isReceived ? 'participants.wear.received' : 'participants.wear.notReceived') | translate }})
+    </li>
+    }
+  </ul>
+  } @else {
+  <p class="not-ported">{{ 'participants.wear.notPorted' | translate }}</p>
+  }
+</app-card>

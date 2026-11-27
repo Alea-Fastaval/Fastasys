@@ -3,7 +3,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { describe, beforeEach, afterEach, it, expect, vi } from 'vitest';
-import { Activity, ActivitySchedule, Run } from '@shared/types';
+import { Activity, ActivitySchedule, Run, ScheduleSignups, SignupPoolRow } from '@shared/types';
+import { AuthService } from '@shared/services';
 import { ActivityDetailComponent } from './activity-detail';
 
 const activity: Activity = {
@@ -49,6 +50,7 @@ const emptyRun: Run = {
   roomName: 'Lokale 1',
   needsPlayers: true,
   needsGameMasters: true,
+  isCancelled: false,
   canUsePlayers: true,
   seats: [],
 };
@@ -58,7 +60,8 @@ const fullRun: Run = {
   id: 21,
   number: 2,
   needsGameMasters: false,
-  seats: [{ seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: null, role: 'GameMaster' }],
+  isCancelled: false,
+  seats: [{ seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: 0, role: 'GameMaster' }],
 };
 
 const schedule: ActivitySchedule = {
@@ -69,12 +72,17 @@ const schedule: ActivitySchedule = {
   roomId: null,
   roomName: null,
   runs: [emptyRun, fullRun],
+  isCancelled: false,
+  cancelledAt: null,
 };
 
 describe('ActivityDetailComponent', () => {
   let httpMock: HttpTestingController;
+  // Whether the user may edit activities (and so drag participants onto runs)
+  let mayPlace: boolean;
 
   beforeEach(async () => {
+    mayPlace = true;
     await TestBed.configureTestingModule({
       imports: [ActivityDetailComponent],
       providers: [
@@ -90,28 +98,112 @@ describe('ActivityDetailComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
+    vi.restoreAllMocks();
   });
 
   const render = () => {
+    vi.spyOn(TestBed.inject(AuthService), 'hasPrivilege').mockReturnValue(mayPlace);
     const fixture = TestBed.createComponent(ActivityDetailComponent);
     fixture.detectChanges();
     httpMock.match('/assets/i18n/en.json').forEach(req => req.flush({}));
     return fixture;
   };
 
-  const renderLoaded = (schedules: ActivitySchedule[] = [schedule]) => {
+  // The page loads the schedules and their signup tables together
+  const flushSchedules = (schedules: ActivitySchedule[], signups: ScheduleSignups[] = []) => {
+    httpMock.expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'GET').flush(schedules);
+    httpMock.expectOne('/api/activities/5/signups').flush(signups);
+  };
+
+  const renderLoaded = (schedules: ActivitySchedule[] = [schedule], signups: ScheduleSignups[] = []) => {
     const fixture = render();
     httpMock.expectOne('/api/activities/5').flush(activity);
-    httpMock.expectOne('/api/activities/5/schedules').flush(schedules);
+    flushSchedules(schedules, signups);
     fixture.detectChanges();
     return fixture;
   };
+
+  it('cancels an occurrence and reloads every visible run with updated karma', () => {
+    const fixture = renderLoaded();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(schedule);
+    const request = httpMock.expectOne('/api/activities/5/schedules/9/cancellation');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ isCancelled: true });
+    const updatedRun = { ...fullRun, isCancelled: true, seats: [{ ...fullRun.seats[0], karma: -12 }] };
+    const cancelled = { ...schedule, isCancelled: true, cancelledAt: '2026-11-19T12:00:00Z', runs: [updatedRun] };
+    request.flush(cancelled);
+    flushSchedules([cancelled, { ...schedule, id: 10, runs: [{ ...updatedRun, id: 22, isCancelled: false }] }]);
+    expect(fixture.componentInstance.schedules()).toHaveLength(2);
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(true);
+    expect(
+      fixture.componentInstance
+        .schedules()
+        .flatMap(s => s.runs)
+        .flatMap(r => r.seats)
+        .map(s => s.karma),
+    ).toEqual([-12, -12]);
+    expect(fixture.componentInstance.busy()).toBe(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('activities.messages.cancelledHelp');
+    fixture.componentInstance.createRun(cancelled);
+    httpMock.expectNone('/api/runs');
+  });
+
+  it('hides stale schedules and karma if reloading after cancellation fails', () => {
+    const fixture = renderLoaded();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush({ ...schedule, isCancelled: true });
+    httpMock.expectOne('/api/activities/5/schedules').flush({}, { status: 500, statusText: 'Server error' });
+    httpMock.expectOne('/api/activities/5/signups').flush([]);
+    expect(fixture.componentInstance.schedules()).toEqual([]);
+    expect(fixture.componentInstance.message()).toEqual({
+      type: 'error',
+      key: 'activities.messages.scheduleLoadFailed',
+    });
+    expect(fixture.componentInstance.busy()).toBe(false);
+  });
+
+  it('restores an occurrence and keeps its cancelled state visible when a room conflict is rejected', () => {
+    const cancelled = { ...schedule, isCancelled: true };
+    const fixture = renderLoaded([cancelled]);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(cancelled);
+    const request = httpMock.expectOne('/api/activities/5/schedules/9/cancellation');
+    expect(request.request.body).toEqual({ isCancelled: false });
+    request.flush({}, { status: 409, statusText: 'Conflict' });
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(true);
+    expect(fixture.componentInstance.message()?.key).toBe('activities.messages.scheduleRestoreFailed');
+    fixture.componentInstance.setCancellation(cancelled);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush(schedule);
+    flushSchedules([schedule]);
+    expect(fixture.componentInstance.schedules()[0].isCancelled).toBe(false);
+  });
+
+  it('does not send a cancellation when edit access is missing', () => {
+    mayPlace = false;
+    const fixture = renderLoaded();
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+    expect(confirm).not.toHaveBeenCalled();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('activities.cancelSchedule');
+  });
+
+  it('does not send a cancellation when confirmation is declined', () => {
+    const fixture = renderLoaded();
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    fixture.componentInstance.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+  });
 
   it('loads and shows the activity', () => {
     const fixture = render();
 
     httpMock.expectOne('/api/activities/5').flush(activity);
-    httpMock.expectOne('/api/activities/5/schedules').flush([]);
+    flushSchedules([]);
     fixture.detectChanges();
 
     const text: string = fixture.nativeElement.textContent;
@@ -166,7 +258,7 @@ describe('ActivityDetailComponent', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ scheduleId: 9 });
     req.flush({ ...emptyRun, id: 22, number: 3 });
-    httpMock.expectOne('/api/activities/5/schedules').flush([schedule]);
+    flushSchedules([schedule]);
 
     expect(component.message()).toBeNull();
     expect(component.busy()).toBe(false);
@@ -191,7 +283,7 @@ describe('ActivityDetailComponent', () => {
     const req = httpMock.expectOne(r => r.url === '/api/runs/20' && r.method === 'DELETE');
     expect(req.request.params.get('removeParticipants')).toBe('false');
     req.flush({ message: 'Run deleted successfully' });
-    httpMock.expectOne('/api/activities/5/schedules').flush([]);
+    flushSchedules([]);
     expect(confirm).not.toHaveBeenCalled();
     confirm.mockRestore();
   });
@@ -206,7 +298,7 @@ describe('ActivityDetailComponent', () => {
     const req = httpMock.expectOne(r => r.url === '/api/runs/21' && r.method === 'DELETE');
     expect(req.request.params.get('removeParticipants')).toBe('true');
     req.flush({ message: 'Run deleted successfully' });
-    httpMock.expectOne('/api/activities/5/schedules').flush([]);
+    flushSchedules([]);
     confirm.mockRestore();
   });
 
@@ -242,10 +334,34 @@ describe('ActivityDetailComponent', () => {
       roomId: 4,
     });
     req.flush({ ...schedule, runs: [] });
-    httpMock.expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'GET').flush([schedule]);
+    flushSchedules([schedule]);
 
     expect(component.scheduleForm()).toBeNull();
     expect(component.message()).toEqual({ type: 'success', key: 'activities.messages.scheduleCreated' });
+  });
+
+  it('waits for current schedules before allowing cancellation after creating an occurrence', () => {
+    const fixture = renderLoaded();
+    const component = fixture.componentInstance;
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    component.scheduleForm.set({ start: '2027-03-25T10:00', end: '2027-03-25T14:00', roomId: null });
+    component.createSchedule();
+    httpMock
+      .expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'POST')
+      .flush({ ...schedule, id: 10 });
+    const reload = httpMock.expectOne(r => r.url === '/api/activities/5/schedules' && r.method === 'GET');
+
+    expect(component.busy()).toBe(true);
+    component.setCancellation(schedule);
+    httpMock.expectNone('/api/activities/5/schedules/9/cancellation');
+
+    reload.flush([schedule]);
+    httpMock.expectOne('/api/activities/5/signups').flush([]);
+    expect(component.busy()).toBe(false);
+    component.setCancellation(schedule);
+    httpMock.expectOne('/api/activities/5/schedules/9/cancellation').flush({ ...schedule, isCancelled: true });
+    flushSchedules([{ ...schedule, isCancelled: true }]);
+    expect(component.schedules()[0].isCancelled).toBe(true);
   });
 
   it('shows the Infosys error when the schedule cannot be created', () => {
@@ -260,5 +376,178 @@ describe('ActivityDetailComponent', () => {
 
     expect(component.scheduleForm()).not.toBeNull();
     expect(component.message()).toEqual({ type: 'error', key: 'activities.messages.scheduleCreateFailed' });
+  });
+
+  // --- The "Tilmeldinger" table and dragging (Infosys visaktivitet.phtml and activity.js) ---
+
+  const row = (overrides: Partial<SignupPoolRow>): SignupPoolRow => ({
+    participantId: 30,
+    name: 'Anna Spiller',
+    role: 'Player',
+    priority: 1,
+    karma: 0,
+    age: 23,
+    language: null,
+    activityLanguages: ['Danish'],
+    desiredActivities: 0,
+    desiredActivitiesReached: null,
+    note: null,
+    isOnTeam: false,
+    isBusy: false,
+    isLocked: false,
+    isDoubleBooked: false,
+    ...overrides,
+  });
+  const signups: ScheduleSignups[] = [
+    {
+      scheduleId: 9,
+      signups: [
+        // Test Spilleder is on run 21 as game master, so the rows are hidden; having a row lets them be dragged off it
+        row({ participantId: 11, name: 'Test Spilleder', role: 'GameMaster', priority: 0, isOnTeam: true }),
+        row({
+          participantId: 30,
+          desiredActivities: 2,
+          desiredActivitiesReached: false,
+          language: 'dk',
+          note: 'Glæder mig',
+        }),
+        row({ participantId: 31, name: 'Bo Optaget', priority: 2, isBusy: true }),
+        row({ participantId: 32, name: 'Carl Låst', priority: 3, isLocked: true, isDoubleBooked: true }),
+        row({ participantId: 11, name: 'Test Spilleder', priority: 4, isOnTeam: true }),
+      ],
+    },
+  ];
+  const dragEvent = () =>
+    ({
+      preventDefault: vi.fn(),
+      dataTransfer: { setData: vi.fn(), effectAllowed: '', dropEffect: '' },
+    }) as unknown as DragEvent;
+  const rows = (element: HTMLElement) => [...element.querySelectorAll<HTMLTableRowElement>('.signup-pool tbody tr')];
+
+  it('shows the signups of each schedule, without those already on a team', () => {
+    const fixture = renderLoaded([schedule], signups);
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('fieldset.signups legend')?.textContent).toContain('activities.signups.title');
+    const shown = rows(element);
+    expect(shown.map(tr => tr.querySelector('td.name')?.textContent?.trim())).toEqual([
+      'Anna Spiller',
+      'Bo Optaget',
+      'Carl Låst',
+    ]);
+    const anna = shown[0];
+    expect(anna.querySelector('a')?.getAttribute('href')).toBe('/participants/30');
+    expect(anna.querySelector('.heart')?.textContent).toBe('favorite_border');
+    expect(anna.querySelector('.flag')?.textContent).toBe('DK');
+    expect(anna.getAttribute('title')).toContain('participants.notes.commentNote: Glæder mig');
+    expect(anna.getAttribute('draggable')).toBe('true');
+    // Busy: grey and not draggable, with Infosys's title on the name
+    expect(shown[1].classList).toContain('busy');
+    expect(shown[1].getAttribute('draggable')).toBeNull();
+    expect(shown[1].querySelector('a')?.getAttribute('title')).toBe('activities.signups.busy');
+    // Activity-locked and double-booked
+    expect(shown[2].classList).toContain('locked');
+    expect(shown[2].classList).toContain('double-booked');
+    expect(shown[2].getAttribute('draggable')).toBeNull();
+  });
+
+  it('places a dragged row on the run it is dropped on, with the role of the wish', () => {
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+    const anna = signups[0].signups[1];
+
+    component.startRowDrag(dragEvent(), 9, anna);
+    const over = dragEvent();
+    component.dragOverRun(over, 9, emptyRun);
+    expect(over.preventDefault).toHaveBeenCalled();
+    expect(component.hoveredRunId()).toBe(20);
+    component.dropOnRun(dragEvent(), 9, emptyRun);
+    component.endDrag();
+
+    const req = httpMock.expectOne(r => r.url === '/api/runs/20/seats' && r.method === 'POST');
+    expect(req.request.body).toEqual({ participantId: 30, role: 'Player' });
+    req.flush(emptyRun);
+    flushSchedules([schedule], signups);
+    expect(component.dragging()).toBeNull();
+  });
+
+  it('moves a participant dragged from one run to another', () => {
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+
+    component.startSeatDrag(dragEvent(), 9, fullRun, fullRun.seats[0]);
+    component.dropOnRun(dragEvent(), 9, emptyRun);
+    component.endDrag();
+
+    httpMock.expectOne(r => r.url === '/api/runs/21/seats/11' && r.method === 'DELETE').flush(fullRun);
+    // They keep the role of their seat (agreed 2026-11-14; Infosys gave them the role of their last row: player)
+    const req = httpMock.expectOne(r => r.url === '/api/runs/20/seats' && r.method === 'POST');
+    expect(req.request.body).toEqual({ participantId: 11, role: 'GameMaster' });
+    req.flush(emptyRun);
+    flushSchedules([schedule], signups);
+  });
+
+  it('takes a participant dragged off a run and dropped elsewhere off the run', () => {
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+
+    component.startSeatDrag(dragEvent(), 9, fullRun, fullRun.seats[0]);
+    component.endDrag();
+
+    httpMock.expectOne(r => r.url === '/api/runs/21/seats/11' && r.method === 'DELETE').flush(fullRun);
+    flushSchedules([schedule], signups);
+  });
+
+  it('does nothing with a row dropped elsewhere, or with rows that may not be dragged', () => {
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+
+    component.startRowDrag(dragEvent(), 9, signups[0].signups[1]);
+    component.endDrag();
+    // Busy and activity-locked rows
+    component.startRowDrag(dragEvent(), 9, signups[0].signups[2]);
+    expect(component.dragging()).toBeNull();
+    // A participant on a run without a wish on the schedule can't be dragged off it (Infosys has no row for them)
+    expect(component.canDragSeat(9, 99)).toBe(false);
+
+    httpMock.expectNone(r => r.url.startsWith('/api/runs'));
+  });
+
+  it("doesn't take a drop on another schedule's run", () => {
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+
+    component.startRowDrag(dragEvent(), 9, signups[0].signups[1]);
+    const over = dragEvent();
+    component.dragOverRun(over, 10, { ...emptyRun, id: 40, scheduleId: 10 });
+
+    expect(over.preventDefault).not.toHaveBeenCalled();
+    expect(component.hoveredRunId()).toBeNull();
+  });
+
+  it('flashes the row red when the run refuses the participant', () => {
+    vi.useFakeTimers();
+    const fixture = renderLoaded([schedule], signups);
+    const component = fixture.componentInstance;
+
+    component.startRowDrag(dragEvent(), 9, signups[0].signups[1]);
+    component.dropOnRun(dragEvent(), 9, fullRun);
+    httpMock
+      .expectOne(r => r.url === '/api/runs/21/seats' && r.method === 'POST')
+      .flush({ message: 'The run cannot use more players' }, { status: 409, statusText: 'Conflict' });
+
+    expect(component.isFailed(9, 30)).toBe(true);
+    flushSchedules([schedule], signups);
+    vi.advanceTimersByTime(700);
+    expect(component.isFailed(9, 30)).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('lets only users who may edit activities drag', () => {
+    mayPlace = false;
+    const fixture = renderLoaded([schedule], signups);
+
+    expect(rows(fixture.nativeElement as HTMLElement)[0].getAttribute('draggable')).toBeNull();
+    expect(fixture.componentInstance.canDragSeat(9, 11)).toBe(false);
   });
 });

@@ -9,6 +9,14 @@ import { CommunicationsComponent } from './features/communications/communication
 import { HeroForceComponent } from './features/hero-force/hero-force';
 import { LoginComponent } from './features/login/login';
 import { ParticipantsComponent } from './features/participants/participants';
+import { ActivitySettingsComponent } from './features/management/activity-settings/activity-settings';
+import { ParticipantDetailComponent } from './features/participants/participant-detail/participant-detail';
+import { ParticipantFormComponent } from './features/participants/participant-form/participant-form';
+import { ParticipantSeatsComponent } from './features/participants/participant-seats/participant-seats';
+import { ParticipantSignupsComponent } from './features/participants/participant-signups/participant-signups';
+import { ParticipantPhotoComponent } from './features/participants/participant-photo/participant-photo';
+import { IdCardTemplatesComponent } from './features/id-cards/id-card-templates/id-card-templates';
+import { IdCardsPrintComponent } from './features/id-cards/id-cards-print/id-cards-print';
 import { FoodComponent } from './features/resources/food/food';
 import { RoomsComponent } from './features/resources/room-managment/rooms';
 import { WearComponent } from './features/resources/wear/wear';
@@ -25,6 +33,15 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   { path: 'participants', component: ParticipantsComponent, canActivate: [authGuard] },
+  { path: 'management/activity-settings', component: ActivitySettingsComponent, canActivate: [authGuard] },
+  { path: 'participants/new', component: ParticipantFormComponent, canActivate: [authGuard] },
+  { path: 'participants/:id', component: ParticipantDetailComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/edit', component: ParticipantFormComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/activities', component: ParticipantSeatsComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/signups', component: ParticipantSignupsComponent, canActivate: [authGuard] },
+  { path: 'participants/:id/photo', component: ParticipantPhotoComponent, canActivate: [authGuard] },
+  { path: 'id-card-templates', component: IdCardTemplatesComponent, canActivate: [authGuard] },
+  { path: 'id-cards', component: IdCardsPrintComponent, canActivate: [authGuard] },
   { path: 'activities', component: ActivitiesComponent, canActivate: [authGuard] },
   { path: 'activities/new', component: ActivityFormComponent, canActivate: [authGuard] },
   { path: 'activities/:id', component: ActivityDetailComponent, canActivate: [authGuard] },

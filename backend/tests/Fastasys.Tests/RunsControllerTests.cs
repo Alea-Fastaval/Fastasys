@@ -1,3 +1,4 @@
+using Fastasys.ApiService.Services;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
@@ -28,7 +29,7 @@ public class RunsControllerTests
     }
 
     private static RunsController CreateController(InfosysDbContext db) =>
-        new(db, NullLogger<RunsController>.Instance);
+        new(db, NullLogger<RunsController>.Instance, new KarmaService(db));
 
     private static Activity NewActivity(string title = "Testscenarie", bool fillsRoom = true) => new()
     {
@@ -267,21 +268,21 @@ public class RunsControllerTests
             seat =>
             {
                 Assert.Equal(player.Id, seat.ParticipantId);
-                // Infosys shows fornavn and efternavn, not the nickname
-                Assert.Equal("Anna Spiller", seat.ParticipantName);
+                // The chosen name (agreed 2026-11-21); Infosys shows fornavn and efternavn
+                Assert.Equal("Kaldenavn", seat.ParticipantName);
                 Assert.Equal(RunSeatRole.Player, seat.Role);
             });
     }
 
     [Fact]
-    public async Task Get_KarmaIsBlankUntilKarmaIsPorted()
+    public async Task Get_KarmaIsZeroWithoutContributingInputs()
     {
         using var db = CreateDbContext();
         var run = await AddRunWithSeatsAsync(db, players: 1, gameMasters: 0);
 
         var dto = Value(await CreateController(db).Get(run.Id));
 
-        Assert.Null(Assert.Single(dto.Seats).Karma);
+        Assert.Equal(0, Assert.Single(dto.Seats).Karma);
     }
 
     [Theory]

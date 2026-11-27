@@ -1,0 +1,19 @@
+<app-card [title]="'participants.heroSignups.title' | translate">
+  @if (signups; as list) {
+  <!-- Infosys shows no rows when the participant has no signups -->
+  <table class="hero-table">
+    <tbody>
+      @for (signup of list; track $index) {
+      <tr>
+        <td class="category">
+          <strong>{{ signup.category }}</strong>
+        </td>
+        <td class="period">{{ periodText(signup) }}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  } @else {
+  <p class="not-ported">{{ 'participants.heroForceNotPorted' | translate }}</p>
+  }
+</app-card>

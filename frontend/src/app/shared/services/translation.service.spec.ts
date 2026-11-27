@@ -12,7 +12,7 @@ describe('TranslationService', () => {
     nav: {
       brand: 'Fastasys',
       participants: 'Participants',
-      userManagement: 'User Management',
+      management: 'Management',
     },
     common: {
       actions: 'Actions',
@@ -31,7 +31,7 @@ describe('TranslationService', () => {
     nav: {
       brand: 'Fastasys',
       participants: 'Deltagere',
-      userManagement: 'Brugerstyring',
+      management: 'Administration',
     },
     common: {
       actions: 'Handlinger',
@@ -69,7 +69,7 @@ describe('TranslationService', () => {
   it('should initialize and load default English dictionary', () => {
     expect(service.currentLang()).toBe('en');
     expect(service.translate('nav.participants')).toBe('Participants');
-    expect(service.translate('nav.userManagement')).toBe('User Management');
+    expect(service.translate('nav.management')).toBe('Management');
     expect(service.translate('roles.title')).toBe('Role & Access Control');
     expect(service.translate('roles.subtitle')).toBe(
       'Configure system roles and fine-grained domain permissions for FastaSys.',
@@ -88,7 +88,7 @@ describe('TranslationService', () => {
     req.flush(mockDaDict);
 
     expect(service.currentLang()).toBe('da');
-    expect(service.translate('nav.userManagement')).toBe('Brugerstyring');
+    expect(service.translate('nav.management')).toBe('Administration');
     expect(service.translate('roles.title')).toBe('Roller & Rettigheder');
     expect(service.translate('roles.subtitle')).toBe('Konfigurer systemroller og domænerettigheder i FastaSys.');
     expect(service.translate('roles.addRole')).toBe('Tilføj ny rolle');

@@ -1,0 +1,180 @@
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+  }
+}
+
+.flash.error {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+// Infosys: the editor on the left, the templates and category templates on the right
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 1.5rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sidebar > * {
+  margin-bottom: 1.5rem;
+}
+
+.name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .template-name {
+    font-size: 1.1rem;
+    padding: 0.3rem 0.5rem;
+    min-width: 16rem;
+  }
+
+  .render-size {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+}
+
+.preview-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+// The card at its own size; it scrolls when it is larger than the page
+.preview {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  max-height: 75vh;
+  border: 1px solid #e5e7eb;
+}
+
+.canvas {
+  position: relative;
+
+  .background,
+  .items {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .item {
+    cursor: move;
+    stroke: rgba(0, 0, 0, 0.4);
+    stroke-width: 2;
+
+    &.selected {
+      stroke: #000;
+      stroke-width: 4;
+      stroke-dasharray: 8 4;
+    }
+  }
+}
+
+.no-background {
+  margin: 1rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.controls {
+  width: 11rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .item-type {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .pair {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  input[type='number'] {
+    width: 4.5rem;
+  }
+}
+
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.templates,
+.categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.templates li.active .template-name-button {
+  font-weight: 700;
+}
+
+.template-name-button {
+  flex: 1;
+  text-align: left;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.25rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.add-template input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+}
+
+.categories li {
+  padding: 0.25rem 0;
+
+  label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+}

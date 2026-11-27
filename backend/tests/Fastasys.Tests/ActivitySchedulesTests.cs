@@ -1,3 +1,4 @@
+using Fastasys.ApiService.Services;
 using Fastasys.ApiService.Controllers;
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
@@ -28,7 +29,7 @@ public class ActivitySchedulesTests
     }
 
     private static ActivitiesController CreateController(InfosysDbContext db) =>
-        new(db, NullLogger<ActivitiesController>.Instance);
+        new(db, NullLogger<ActivitiesController>.Instance, new KarmaService(db));
 
     private static async Task<Activity> AddActivityAsync(InfosysDbContext db, string title = "Testscenarie")
     {
@@ -536,6 +537,24 @@ public class ActivitySchedulesTests
         Assert.IsType<ConflictObjectResult>(result);
         Assert.Single(db.Schedules);
         Assert.Single(db.Runs);
+    }
+
+    [Fact]
+    public async Task DeleteSchedule_WithSignupWishes_IsRefused_AndSaysWhy()
+    {
+        // Infosys: deltagere_tilmeldinger's foreign key has no ON DELETE CASCADE either (agreed 2026-11-13)
+        using var db = CreateDbContext();
+        var activity = await AddActivityAsync(db);
+        var schedule = await AddScheduleAsync(db, activity, Start, End);
+        db.Participants.Add(new Participant { Id = 1, FirstName = "Testa", LastName = "Testesen" });
+        db.ScheduleSignups.Add(new ScheduleSignup { ParticipantId = 1, ScheduleId = schedule.Id, Role = RunSeatRole.Player, Priority = 1 });
+        await db.SaveChangesAsync(Ct);
+
+        var result = Assert.IsType<ConflictObjectResult>(await CreateController(db).DeleteSchedule(activity.Id, schedule.Id));
+
+        Assert.Equal("signups", result.Value?.GetType().GetProperty("reason")?.GetValue(result.Value));
+        Assert.Single(db.Schedules);
+        Assert.Single(db.ScheduleSignups);
     }
 
     [Fact]

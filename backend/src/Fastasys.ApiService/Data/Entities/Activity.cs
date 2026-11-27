@@ -128,22 +128,36 @@ public class Schedule
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 
+    // When the schedule was cancelled; null means it isn't. This is the only cancellation state (no separate flag to
+    // keep in sync), so queries filter on CancelledAt == null / != null.
+    public DateTimeOffset? CancelledAt { get; set; }
+
     // Meeting room; null means none (Infosys shows "Mødested: spørg venligst i informationen.")
     public int? RoomId { get; set; }
     public virtual Room? Room { get; set; }
 
     public virtual ICollection<Run> Runs { get; set; } = new List<Run>();
 
-    public virtual ICollection<ParticipantSchedule> ParticipantSchedules { get; set; } = new List<ParticipantSchedule>();
+    public virtual ICollection<ScheduleSignup> Signups { get; set; } = new List<ScheduleSignup>();
 }
 
-[Table("participant_schedules")]
-public class ParticipantSchedule
+/// <summary>
+/// A participant's wish to play or run a schedule (Infosys: deltagere_tilmeldinger). Agreed on 2026-11-13: one wish
+/// per participant, schedule and role, so a participant can wish to both run and play the same schedule, as the
+/// Infosys signup's "SL + 1. prioritet" does.
+/// </summary>
+[Table("schedule_signups")]
+public class ScheduleSignup
 {
     public int ParticipantId { get; set; }
     public virtual Participant Participant { get; set; } = null!;
     public int ScheduleId { get; set; }
     public virtual Schedule Schedule { get; set; } = null!;
-    public string Role { get; set; } = "Player";
-    public DateTime SignedUpAt { get; set; } = DateTime.UtcNow;
+
+    // Infosys tilmeldingstype: spiller, spilleder
+    public RunSeatRole Role { get; set; }
+
+    // Infosys prioritet: 1-4 for players. Game master wishes have no real priority: the Infosys signup gives them 0,
+    // the participant page 1.
+    public int Priority { get; set; }
 }

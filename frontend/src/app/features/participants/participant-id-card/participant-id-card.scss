@@ -1,0 +1,45 @@
+:host {
+  display: block;
+}
+
+.photo {
+  display: block;
+  max-width: 100%;
+}
+
+// Infosys: the two buttons spread out under the photo
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+// Infosys puts the template's name at the right of "Skabelon:"
+.template {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.template-name.editable {
+  cursor: pointer;
+  border-bottom: 1px dashed #9ca3af;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.template-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.error {
+  margin: 0.5rem 0 0;
+  color: #991b1b;
+}

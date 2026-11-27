@@ -7,7 +7,7 @@ using Fastasys.Tests.testHelpers;
 namespace Fastasys.Tests;
 
 // Infosys: every activity admin page requires a logged-in user whose role grants the Activity controller method.
-// Fastasys maps that onto the activities_view / activities_edit privileges.
+// Fastasys maps that onto the activity_view / activity_edit privileges.
 public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : IClassFixture<TestWebApplicationFactory>
 {
     private readonly TestHelper _testHelper = new(factory);
@@ -45,7 +45,7 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
     [Fact]
     public async Task UserWithoutActivityPrivilege_IsForbidden()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync("participants_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("participant_view");
 
         var response = await client.GetAsync("/api/activities", TestContext.Current.CancellationToken);
 
@@ -55,7 +55,7 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
     [Fact]
     public async Task ViewPrivilege_CanRead_ButNotWrite()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync("activities_view");
+        var client = await _testHelper.CreateClientWithPrivilegeAsync("activity_view");
         var ct = TestContext.Current.CancellationToken;
 
         var list = await client.GetAsync("/api/activities", ct);
@@ -72,7 +72,7 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
     [Fact]
     public async Task EditPrivilege_CanCreateReadUpdateAndDelete()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activities_edit", "activities_view"]);
+        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activity_edit", "activity_view"]);
         var ct = TestContext.Current.CancellationToken;
 
         var create = await client.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Redigerbar"), ct);
@@ -96,7 +96,7 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
     [Fact]
     public async Task Activity_EnumsAreSerializedAsNames()
     {
-        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activities_view", "activities_edit"]);
+        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activity_view", "activity_edit"]);
         var ct = TestContext.Current.CancellationToken;
 
         var getActivities = await client.GetAsync("/api/activities", ct);
@@ -123,7 +123,7 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
     public async Task Activity_HasNoMaximumAge()
     {
         // Agreed deviation: Infosys had a maximum age (activityageranges 'max'); Fastasys only keeps the minimum.
-        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activities_edit", "activities_view"]);
+        var client = await _testHelper.CreateClientWithPrivilegeAsync(["activity_edit", "activity_view"]);
         var ct = TestContext.Current.CancellationToken;
         var body = JsonSerializer
             .SerializeToNode(
@@ -142,5 +142,21 @@ public class ActivitiesAuthorizationTests(TestWebApplicationFactory factory) : I
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         Assert.Equal(12, json.RootElement.GetProperty("minAge").GetInt32());
         Assert.False(json.RootElement.TryGetProperty("maxAge", out _));
+    }
+
+    // Infosys shows the activity page's signup tables to everyone who may see the activity page
+    [Fact]
+    public async Task SignupTables_AreOpenToTheActivityViewRight()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var viewer = await _testHelper.CreateClientWithPrivilegeAsync("activity_view");
+        var other = await _testHelper.CreateClientWithPrivilegeAsync("participant_view");
+        var editor = await _testHelper.CreateClientWithPrivilegeAsync("activity_edit");
+        var created = await (await editor.PostAsJsonAsync("/api/activities", NewActivity<CreateActivityDto>("Tilmeldinger"), ct)).Content.ReadFromJsonAsync<ActivityDto>(ct);
+        Assert.NotNull(created);
+
+        Assert.Equal(HttpStatusCode.OK, (await viewer.GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await factory.CreateClient().GetAsync($"/api/activities/{created.Id}/signups", ct)).StatusCode);
     }
 }

@@ -57,23 +57,33 @@
       <mat-icon>chat</mat-icon> {{ 'nav.communications' | translate }}
     </a>
 
-    <!-- User Management Dropdown Submenu -->
-    <div class="menu-hover-wrapper" (mouseenter)="openMenu(userMgmtTrigger)" (mouseleave)="closeMenu(userMgmtTrigger)">
+    <!-- Management Dropdown Submenu -->
+    <div
+      class="menu-hover-wrapper"
+      (mouseenter)="openMenu(managementTrigger)"
+      (mouseleave)="closeMenu(managementTrigger)"
+    >
       <button
         mat-button
-        [matMenuTriggerFor]="userMgmtMenu"
-        [class.active-link]="isUserMgmtActive()"
-        #userMgmtTrigger="matMenuTrigger"
+        [matMenuTriggerFor]="managementMenu"
+        [class.active-link]="isManagementActive()"
+        #managementTrigger="matMenuTrigger"
       >
-        <mat-icon>manage_accounts</mat-icon> {{ 'nav.userManagement' | translate }}
+        <mat-icon>manage_accounts</mat-icon> {{ 'nav.management' | translate }}
         <mat-icon>arrow_drop_down</mat-icon>
       </button>
-      <mat-menu #userMgmtMenu="matMenu" [hasBackdrop]="false">
-        <div (mouseenter)="cancelClose()" (mouseleave)="closeMenu(userMgmtTrigger)">
+      <mat-menu #managementMenu="matMenu" [hasBackdrop]="false">
+        <div (mouseenter)="cancelClose()" (mouseleave)="closeMenu(managementTrigger)">
           <a mat-menu-item routerLink="/user-management/users">
             <mat-icon>people</mat-icon>
             <span>{{ 'nav.users' | translate }}</span>
           </a>
+          @if (authService.hasPrivilege('activity_edit')) {
+          <a mat-menu-item routerLink="/management/activity-settings">
+            <mat-icon>tune</mat-icon>
+            <span>{{ 'activitySettings.title' | translate }}</span>
+          </a>
+          }
           <a mat-menu-item routerLink="/user-management/roles">
             <mat-icon>security</mat-icon>
             <span>{{ 'nav.roles' | translate }}</span>
@@ -83,6 +93,10 @@
     </div>
   </nav>
   <span class="spacer"></span>
+
+  @if (authService.hasPrivilege('participant_view', 'participant_edit')) {
+  <app-participant-quick-search />
+  }
 
   <!-- Language Switcher Dropdown next to Logout -->
   <div class="menu-hover-wrapper" (mouseenter)="openMenu(langTrigger)" (mouseleave)="closeMenu(langTrigger)">

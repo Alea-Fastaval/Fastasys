@@ -8,13 +8,13 @@ export interface RunSeat {
   seatNumber: number;
   participantId: number;
   participantName: string;
-  // Karma is not ported yet and is always null
-  karma: number | null;
+  karma: number;
   role: RunSeatRole;
 }
 
 // Infosys: hold
 export interface Run {
+  isCancelled: boolean;
   id: number;
   number: number;
   scheduleId: number;
@@ -31,6 +31,7 @@ export interface Run {
 }
 
 export interface RunSummary {
+  isCancelled: boolean;
   id: number;
   number: number;
   activityId: number;

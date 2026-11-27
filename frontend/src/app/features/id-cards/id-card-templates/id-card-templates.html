@@ -1,0 +1,216 @@
+<div class="page-container">
+  <header class="page-header">
+    <a mat-button routerLink="/participants"><mat-icon>arrow_back</mat-icon> {{ 'nav.participants' | translate }}</a>
+    <h1>{{ 'idCardTemplates.title' | translate }}</h1>
+  </header>
+
+  @if (message(); as key) {
+  <p class="flash error">{{ 'idCardTemplates.messages.' + key | translate }}</p>
+  }
+
+  <div class="layout">
+    <section class="editor">
+      @if (active(); as template) {
+      <app-card>
+        <div class="name-row">
+          <input
+            type="text"
+            class="template-name"
+            [attr.aria-label]="'idCardTemplates.name' | translate"
+            [ngModel]="template.name"
+            (ngModelChange)="rename($event)"
+          />
+          @if (size(); as s) {
+          <span class="render-size"
+            >{{ 'idCardTemplates.renderSize' | translate : { widthCm: s.widthCm.toString(), widthMm:
+            s.widthMm.toString(), heightCm: s.heightCm.toString(), heightMm: s.heightMm.toString(), } }}</span
+          >
+          }
+        </div>
+
+        <div class="preview-row">
+          <!-- The card at its own size, with the items drawn over the background -->
+          <div class="preview">
+            @if (template.hasBackground) {
+            <div class="canvas" [style.width.px]="template.width" [style.height.px]="template.height">
+              @if (backgroundUrl(); as url) {
+              <img class="background" [src]="url" alt="" [width]="template.width" [height]="template.height" />
+              }
+              <svg class="items" [attr.width]="template.width" [attr.height]="template.height">
+                @for (item of template.items; track $index) {
+                <rect
+                  class="item"
+                  [class.selected]="selectedIndex() === $index"
+                  [attr.x]="item.x"
+                  [attr.y]="item.y"
+                  [attr.width]="item.width"
+                  [attr.height]="item.height"
+                  [attr.transform]="itemTransform(item)"
+                  [attr.fill]="itemFill($index)"
+                  (mousedown)="startDrag($index, $event)"
+                >
+                  <title>{{ itemTypeKey(item.type) | translate }}</title>
+                </rect>
+                }
+              </svg>
+            </div>
+            } @else {
+            <p class="no-background">{{ 'idCardTemplates.noBackground' | translate }}</p>
+            }
+          </div>
+
+          <!-- The selected item (Infosys idTemplate_edit_controls) -->
+          <div class="controls">
+            @if (selected(); as item) {
+            <p class="item-type">{{ 'idCardTemplates.type' | translate }}: {{ itemTypeKey(item.type) | translate }}</p>
+            <div class="pair">
+              <label
+                >X: <input type="number" [ngModel]="item.x" (change)="setPosition('x', $any($event.target).value)"
+              /></label>
+              <label
+                >Y: <input type="number" [ngModel]="item.y" (change)="setPosition('y', $any($event.target).value)"
+              /></label>
+            </div>
+            <div class="pair">
+              <label
+                >W:
+                <input type="number" [ngModel]="item.width" (change)="setPosition('width', $any($event.target).value)"
+              /></label>
+              <label
+                >H:
+                <input
+                  type="number"
+                  [ngModel]="item.height"
+                  (change)="setPosition('height', $any($event.target).value)"
+              /></label>
+            </div>
+            <label
+              >{{ 'idCardTemplates.rotation' | translate }}:
+              <input
+                type="number"
+                [ngModel]="item.rotation"
+                (change)="setPosition('rotation', $any($event.target).value)"
+            /></label>
+            @if (item.type === 'Text') {
+            <select
+              class="data-source"
+              [attr.aria-label]="'idCardTemplates.dataSource' | translate"
+              [ngModel]="item.dataSource"
+              (ngModelChange)="setDataSource($event)"
+            >
+              @for (source of dataSources; track source) {
+              <option [ngValue]="source">{{ 'idCardTemplates.dataSources.' + source | translate }}</option>
+              }
+            </select>
+            }
+            <button mat-button type="button" class="remove-item" (click)="removeSelected()">
+              <mat-icon>remove_circle</mat-icon> {{ 'idCardTemplates.removeItem' | translate }}
+            </button>
+            }
+          </div>
+        </div>
+
+        <div class="add-row">
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-photo"
+            [disabled]="!template.hasBackground"
+            (click)="addItem('Photo')"
+          >
+            <mat-icon>add_circle</mat-icon> {{ 'idCardTemplates.addPhoto' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-barcode"
+            [disabled]="!template.hasBackground"
+            (click)="addItem('Barcode')"
+          >
+            <mat-icon>add_circle</mat-icon> {{ 'idCardTemplates.addBarcode' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            class="add-text"
+            [disabled]="!template.hasBackground"
+            (click)="addItem('Text')"
+          >
+            <mat-icon>add_circle</mat-icon> {{ 'idCardTemplates.addText' | translate }}
+          </button>
+          <label class="background-input"
+            >{{ 'idCardTemplates.background' | translate }}:
+            <input type="file" accept="image/png,image/jpeg,image/gif" (change)="setBackground($event)"
+          /></label>
+        </div>
+      </app-card>
+      }
+    </section>
+
+    <aside class="sidebar">
+      <app-card [title]="'idCardTemplates.templates' | translate">
+        <ul class="templates">
+          @for (template of templates(); track template.id) {
+          <li [class.active]="activeId() === template.id">
+            <button
+              mat-icon-button
+              type="button"
+              class="remove-template"
+              [title]="'idCardTemplates.removeTemplate' | translate"
+              (click)="remove(template)"
+            >
+              <mat-icon>remove_circle</mat-icon>
+            </button>
+            <button type="button" class="template-name-button" (click)="activate(template)">{{ template.name }}</button>
+            <button
+              mat-icon-button
+              type="button"
+              class="copy-template"
+              [title]="'idCardTemplates.copyTemplate' | translate"
+              (click)="copy(template)"
+            >
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </li>
+          }
+          <li class="add-template">
+            <input
+              type="text"
+              name="newName"
+              [attr.aria-label]="'idCardTemplates.newTemplate' | translate"
+              [(ngModel)]="newName"
+              (keyup.enter)="add()"
+            />
+            <button
+              mat-icon-button
+              type="button"
+              class="add-template-button"
+              [title]="'idCardTemplates.newTemplate' | translate"
+              (click)="add()"
+            >
+              <mat-icon>add_circle</mat-icon>
+            </button>
+          </li>
+        </ul>
+      </app-card>
+
+      <app-card [title]="'idCardTemplates.categoryTemplates' | translate">
+        <ul class="categories">
+          @for (category of categories(); track category.categoryId) {
+          <li>
+            <label
+              >{{ category.name }}
+              <select [ngModel]="category.templateId" (ngModelChange)="setCategoryTemplate(category, $event)">
+                <option [ngValue]="null"></option>
+                @for (template of templates(); track template.id) {
+                <option [ngValue]="template.id">{{ template.name }}</option>
+                }
+              </select>
+            </label>
+          </li>
+          }
+        </ul>
+      </app-card>
+    </aside>
+  </div>
+</div>

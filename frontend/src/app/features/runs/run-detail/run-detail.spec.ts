@@ -18,10 +18,11 @@ const run: Run = {
   roomName: 'Lokale 1',
   needsPlayers: true,
   needsGameMasters: false,
+  isCancelled: false,
   canUsePlayers: true,
   seats: [
-    { seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: null, role: 'GameMaster' },
-    { seatNumber: 2, participantId: 12, participantName: 'Test Spiller', karma: null, role: 'Player' },
+    { seatNumber: 1, participantId: 11, participantName: 'Test Spilleder', karma: 0, role: 'GameMaster' },
+    { seatNumber: 2, participantId: 12, participantName: 'Test Spiller', karma: 0, role: 'Player' },
   ],
 };
 
@@ -67,7 +68,7 @@ describe('RunDetailComponent', () => {
     expect(missing).toEqual(['activities.yes']);
   });
 
-  it('lists the participants with id, name, a blank karma and their role', () => {
+  it('lists the participants with id, name, zero karma and their role', () => {
     const fixture = render();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -77,9 +78,25 @@ describe('RunDetailComponent', () => {
         .map(td => td.textContent?.trim()),
     );
     expect(rows).toEqual([
-      ['11', 'Test Spilleder', '', 'runs.roles.GameMaster'],
-      ['12', 'Test Spiller', '', 'runs.roles.Player'],
+      ['11', 'Test Spilleder', '0', 'runs.roles.GameMaster'],
+      ['12', 'Test Spiller', '0', 'runs.roles.Player'],
     ]);
+    expect(element.querySelector('th.karma mat-icon')?.textContent).toBe('balance');
+    expect(element.querySelector('th.karma')?.getAttribute('aria-label')).toBe('runs.fields.karma');
+    expect(element.querySelector('a[href*="karma"]')).toBeNull();
+  });
+
+  it('shows negative karma as plain numbers without participant karma links', () => {
+    const fixture = render({
+      ...run,
+      seats: run.seats.map((seat, index) => ({ ...seat, karma: index === 0 ? -27 : -42 })),
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    expect(Array.from(element.querySelectorAll('td.karma')).map(cell => cell.textContent?.trim())).toEqual([
+      '-27',
+      '-42',
+    ]);
+    expect(element.querySelector('a[href*="karma"]')).toBeNull();
   });
 
   it('only offers the roles the run has room for, like Infosys', () => {
@@ -90,6 +107,20 @@ describe('RunDetailComponent', () => {
     expect(component.canAdd(run, 'GameMaster')).toBe(false);
     expect(component.canAdd({ ...run, canUsePlayers: false, needsGameMasters: true }, 'Player')).toBe(false);
     expect(component.canAdd({ ...run, canUsePlayers: false, needsGameMasters: true }, 'GameMaster')).toBe(true);
+  });
+
+  it('shows retained seats on a cancelled occurrence without offering new allocations', () => {
+    const cancelled = { ...run, isCancelled: true };
+    const fixture = render(cancelled);
+    const component = fixture.componentInstance;
+    expect(fixture.nativeElement.textContent).toContain('activities.messages.cancelledHelp');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.add-participant')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.seats-table tbody tr')).toHaveLength(2);
+    expect(component.canAdd(cancelled, 'Player')).toBe(false);
+    component.participantId = 99;
+    component.role = 'Player';
+    component.create();
+    httpMock.expectNone('/api/runs/7/seats');
   });
 
   it('adds a participant and shows the updated run', () => {
@@ -107,7 +138,7 @@ describe('RunDetailComponent', () => {
       ...run,
       seats: [
         ...run.seats,
-        { seatNumber: 3, participantId: 13, participantName: 'Ny Deltager', karma: null, role: 'Player' },
+        { seatNumber: 3, participantId: 13, participantName: 'Ny Deltager', karma: 0, role: 'Player' },
       ],
     };
     req.flush(updated);

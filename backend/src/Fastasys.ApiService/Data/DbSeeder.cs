@@ -97,23 +97,23 @@ public static class DbSeeder
 
         // Default Roles with default privileges
 
-        seedRole(db, "Infonaut", "Member of the Info", []);
-        seedRole(db, "Infoboss", "Manager of the Info", []);
-        seedRole(db, "Food distribution", "Food distribution role", []);
-        seedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
-        seedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
-        seedRole(db, "Signup", "Sign up", []);
-        seedRole(db, "Hero Force", "Hero Force management", []);
-        seedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
-        seedRole(db, "Boardgame jury", "Jury member for boardgames", []);
-        seedRole(db, "Scenario jury", "Jury member for scenarios", []);
-        seedRole(
+        SeedRole(db, "Infonaut", "Member of the Info", []);
+        SeedRole(db, "Infoboss", "Manager of the Info", []);
+        SeedRole(db, "Food distribution", "Food distribution role", []);
+        SeedRole(db, "Activity planner", "Activity planner, Scenario responsible, boardgame responsible", []);
+        SeedRole(db, "Boardgame distribution", "Boardgame distribution role", []);
+        SeedRole(db, "Signup", "Sign up", []);
+        SeedRole(db, "Hero Force", "Hero Force management", []);
+        SeedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
+        SeedRole(db, "Boardgame jury", "Jury member for boardgames", []);
+        SeedRole(db, "Scenario jury", "Jury member for scenarios", []);
+        SeedRole(
             db,
             "Full Read-only",
             "All reading privileges",
             [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]
         );
-        seedRole(db, "Accounting", "Accounting and budget", []);
+        SeedRole(db, "Accounting", "Accounting and budget", []);
 
         // Default Admin User with the special admin role
         var adminUser = db.Users.FirstOrDefault(u => u.Username == "admin");
@@ -149,15 +149,14 @@ public static class DbSeeder
             {
                 FirstName = "Mads",
                 LastName = "Hansen",
-                Email = "mads@fastaval.dk",
-                PhoneNumber = "+4512345678",
-                BirthDate = new DateTime(1995, 5, 12, 0, 0, 0, DateTimeKind.Utc),
-                Address = "Vestergade 12",
+                Email = "mads@example.invalid",
+                PhoneNumber = "12345678",
+                BirthDate = new DateOnly(1995, 5, 12),
+                AddressLine1 = "Vestergade 12",
                 ZipCode = "8000",
                 City = "Aarhus",
-                Country = "Denmark",
-                Barcode = "FAST-2026-0001",
-                IsCheckedIn = true,
+                CountryCode = "DK",
+                CategoryId = ParticipantCategory.ParticipantId,
                 CheckedInAt = DateTime.UtcNow.AddHours(-2),
             };
 
@@ -165,15 +164,13 @@ public static class DbSeeder
             {
                 FirstName = "Sofie",
                 LastName = "Nielsen",
-                Email = "sofie@fastaval.dk",
-                PhoneNumber = "+4587654321",
-                BirthDate = new DateTime(1998, 9, 24, 0, 0, 0, DateTimeKind.Utc),
-                Address = "Nørrebrogade 45",
+                Email = "sofie@example.invalid",
+                PhoneNumber = "87654321",
+                BirthDate = new DateOnly(1998, 9, 24),
+                AddressLine1 = "Nørrebrogade 45",
                 ZipCode = "2200",
                 City = "København N",
-                Country = "Denmark",
-                Barcode = "FAST-2026-0002",
-                IsCheckedIn = false,
+                CategoryId = ParticipantCategory.OrganizerId,
             };
 
             db.Participants.AddRange(p1, p2);
@@ -423,7 +420,10 @@ public static class DbSeeder
         }
     }
 
-    private static void seedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
+    // If there is already a role named `roleName` then do nothing.
+    // Else we create it, and populate it with the privileges found in privilegeKeys.
+    // the privileges found in privilegeKeys must already exist in the database.
+    private static void SeedRole(InfosysDbContext db, string roleName, string roleDescription, string[] privilegeKeys)
     {
         var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
         if (role == null)

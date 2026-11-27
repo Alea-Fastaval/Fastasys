@@ -18,8 +18,14 @@ if (builder.Environment.IsEnvironment("Testing"))
 
 builder.Services.AddHealthChecks();
 
-builder.Services.AddDbContext<InfosysDbContext>(options =>
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<AmountPaidLogInterceptor>();
+
+builder.Services.AddDbContext<InfosysDbContext>((services, options) =>
 {
+    // Logs every saved change to a participant's amount paid
+    options.AddInterceptors(services.GetRequiredService<AmountPaidLogInterceptor>());
+
     if (builder.Environment.IsEnvironment("Testing"))
     {
         options.UseInMemoryDatabase("InfosysDbFallback");
@@ -35,8 +41,12 @@ builder.Services.AddDbContext<InfosysDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 
+// The convention's dates (Infosys con.*)
+builder.Services.Configure<ConventionOptions>(builder.Configuration.GetSection(ConventionOptions.Section));
+
 // Register custom services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<KarmaService>();
 builder.Services.AddSingleton<IMockPaymentService, MockPaymentService>();
 builder.Services.AddSingleton<IMockNotificationService, MockNotificationService>();
 
@@ -68,9 +78,12 @@ builder.Services.AddAuthentication(options =>
 // Every instance of "Authorize(Policy = x)" in the program, also need x to be in this list
 // The first parameter must be unique across the policy object
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("ActivityView", "activities_view")
-    .AddPolicy("ActivityManagement", "activities_edit")
-    .AddPolicy("ParticipantManagement", "participant_management")
+    // Infosys: the Read-only role may view and search participants; Infonaut, Participant admin and the other
+    // roles with ParticipantController/* may also change them
+    .AddPolicy("ParticipantView", "participant_view", "participant_edit")
+    .AddPolicy("ParticipantManagement", "participant_edit")
+    .AddPolicy("ActivityView", "activity_view", "activity_edit")
+    .AddPolicy("ActivityManagement", "activity_edit")
     .AddPolicy("HeroForceManagement", "hero_force_management")
     .AddPolicy("ShopManagement", "shop_management");
 

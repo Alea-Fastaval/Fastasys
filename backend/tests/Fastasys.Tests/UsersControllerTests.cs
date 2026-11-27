@@ -38,6 +38,7 @@ public class UsersControllerTests
         using var db = CreateDbContext();
         var controller = new UsersController(db);
 
+
         var adminRole = await db.Roles.FirstAsync(r => r.Name == "Admin", TestContext.Current.CancellationToken);
 
         var createDto = new CreateUserRequestDto(
@@ -47,7 +48,7 @@ public class UsersControllerTests
             FirstName: "New",
             LastName: "User",
             IsActive: true,
-            RoleIds: new List<int> { adminRole.Id }
+            RoleIds: [adminRole.Id]
         );
 
         var actionResult = await controller.Create(createDto);
