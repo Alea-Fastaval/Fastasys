@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -15,26 +15,24 @@ namespace Fastasys.ApiService.Data.Migrations
                 table: "Rooms",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsSleepingRoom",
                 table: "Rooms",
                 type: "boolean",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: false
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "CanBook",
-                table: "Rooms");
+            migrationBuilder.DropColumn(name: "CanBook", table: "Rooms");
 
-            migrationBuilder.DropColumn(
-                name: "IsSleepingRoom",
-                table: "Rooms");
+            migrationBuilder.DropColumn(name: "IsSleepingRoom", table: "Rooms");
         }
     }
 }
