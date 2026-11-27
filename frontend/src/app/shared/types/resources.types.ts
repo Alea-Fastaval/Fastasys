@@ -1,3 +1,5 @@
+import { ActivitySchedule } from './activities.types';
+
 export interface FoodType {
   id: number;
   name: string;
@@ -20,8 +22,29 @@ export interface Room {
   name: string;
   location: string;
   capacity: number;
+  isSleepingRoom: boolean;
+  canBook: boolean;
   description: string;
   size?: number;
+  schedules: ActivitySchedule[];
+}
+
+export interface CreateRoomDto {
+  name: string;
+  location: string;
+  capacity: number;
+  isSleepingRoom: boolean;
+  canBook: boolean;
+  description: string;
+}
+
+export interface UpdateRoomDto {
+  name: string | undefined;
+  location: string | undefined;
+  capacity: number | undefined;
+  isSleepingRoom: boolean | undefined;
+  canBook: boolean | undefined;
+  description: string | undefined;
 }
 
 export interface OrderFoodDto {

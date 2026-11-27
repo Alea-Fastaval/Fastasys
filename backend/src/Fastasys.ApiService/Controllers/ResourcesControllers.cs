@@ -3,7 +3,6 @@ using Fastasys.ApiService.Data.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -98,7 +97,7 @@ public class WearController(InfosysDbContext db) : ControllerBase
 
 [ApiController]
 [Route("api/[controller]")]
-public class RoomsController(InfosysDbContext db) : ControllerBase
+public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetRooms()
@@ -138,14 +137,29 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateRoom(int id, [FromBody] UpdateRoomDto dto)
     {
-        // todo : implement this
-        return Ok();
+        var originalRoom = db.Rooms.FirstOrDefault(x => x.Id == id);
+        if (originalRoom == null)
+        {
+            return NotFound();
+        }
+
+        var entity = db.Rooms.Update(originalRoom).Entity;
+        entity.Name = dto.Name ?? entity.Name;
+        entity.Location = dto.Location ?? entity.Location;
+        entity.Capacity = dto.Capacity ?? entity.Capacity;
+        entity.IsSleepingRoom = dto.IsSleepingRoom ?? entity.IsSleepingRoom;
+        entity.CanBook = dto.CanBook ?? entity.CanBook;
+        entity.Description = dto.Description ?? entity.Description;
+
+        await db.SaveChangesAsync();
+        return Ok(entity);
     }
 
     [HttpDelete("delete/{id:int}")]
     [Authorize]
     public async Task<IActionResult> DeleteRoom(int id)
     {
+        logger.LogDebug("Called Delete on " + id);
         await db.Rooms.Where(room => room.Id == id).ExecuteDeleteAsync();
         return Ok();
     }

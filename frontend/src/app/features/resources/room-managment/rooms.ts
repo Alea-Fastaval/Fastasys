@@ -1,7 +1,7 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Room } from '@shared/types';
+import { CreateRoomDto, Room, UpdateRoomDto } from '@shared/types';
 import { Card } from '@shared/components';
 import { TranslatePipe } from '@shared/pipes';
 
@@ -24,17 +24,27 @@ export class RoomsComponent implements OnInit {
     this.http.get<Room[]>('/api/rooms').subscribe(data => this.rooms.set(data));
   }
 
-  private createRoom(): void {}
+  private getRoomDetails(id: number) {
+    this.http.get<Room>(`/api/rooms/details/${id}`).subscribe();
+  }
 
-  private deleteRoom(id: number): void {}
+  private createRoom(body: CreateRoomDto): void {
+    this.http.post<Room>('/api/rooms', body).subscribe();
+  }
 
-  private updateRoom(): void {}
+  private deleteRoom(id: number): void {
+    this.http.delete<any>(`/api/rooms/delete/${id}`).subscribe();
+  }
+
+  private updateRoom(body: UpdateRoomDto, id: number): void {
+    this.http.patch<Room>(`/api/rooms/update/${id}`, body).subscribe();
+  }
 
   //todo:
   // Display a list of all rooms, with their "static" information
-  // Make a create room display
-  // Make a delete room display, with some sort of accident protection
-  // Make an edit room display
+  // Make a create room button/input box
+  // Make a delete room button, with some sort of accident protection
+  // Make an edit room button/box
 
   // Additional room‑specific actions can be added here
 }
