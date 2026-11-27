@@ -110,7 +110,13 @@ public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logge
     [Authorize]
     public async Task<IActionResult> GetRoomDetails(int id)
     {
-        var room = db.Rooms.Where(x => x.Id == id).Include(r => r.Schedules);
+        var roomNotFound = db.Rooms.FirstOrDefault(x => x.Id == id) == null;
+        if (roomNotFound)
+        {
+            return NotFound();
+        }
+
+        var room = db.Rooms.Where(x => x.Id == id).Include(r => r.Schedules).First();
         return Ok(room);
     }
 
@@ -133,7 +139,7 @@ public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logge
         return Ok(room);
     }
 
-    [HttpPatch("update/{id: int}")]
+    [HttpPatch("update/{id:int}")]
     [Authorize]
     public async Task<IActionResult> UpdateRoom(int id, [FromBody] UpdateRoomDto dto)
     {

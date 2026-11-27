@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>{{room.name}}</h2>
+<mat-dialog-content>
+  <mat-form-field>
+    <mat-label>{{ 'resources.name' | translate }}</mat-label>
+    <input matInput [(ngModel)]="name" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'resources.location' | translate }}</mat-label>
+    <input matInput [(ngModel)]="location" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'resources.capacity' | translate }}</mat-label>
+    <input matInput [(ngModel)]="capacity" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'resources.isSleepingRoom' | translate }}</mat-label>
+    <input matInput [(ngModel)]="isSleepingRoom" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'resources.canBook' | translate }}</mat-label>
+    <input matInput [(ngModel)]="canBook" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>{{ 'resources.description' | translate }}</mat-label>
+    <input matInput [(ngModel)]="description" />
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <button matButton (click)="close()">Exit</button>
+  <button matButton (click)="gatherAndUpdateRoom()">Update</button>
+  <button matButton (click)="deleteRoom(room.id)">Delete</button>
+</mat-dialog-actions>

@@ -24,5 +24,8 @@
       "source.organizeImports": "explicit"
     }
   },
-  "FSharp.suggestGitignore": false
+  "FSharp.suggestGitignore": false,
+  "cSpell.words": [
+    "hoverable"
+  ]
 }

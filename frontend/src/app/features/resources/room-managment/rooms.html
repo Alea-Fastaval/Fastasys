@@ -10,13 +10,7 @@
     @for (room of rooms(); track room.id) {
     <app-card [title]="room.name" [subtitle]="room.location" [hoverable]="true">
       <div class="card-footer">
-        <span class="capacity">{{ 'resources.capacity' | translate }}: {{ room.capacity }}</span>
-        <span class="description">{{ 'resources.description' | translate }}: {{ room.description }}</span>
-        <span class="isSleepingRoom">{{ 'resources.isSleepingRoom' | translate }}: {{ room.isSleepingRoom }}</span>
-        <span class="canBook">{{ 'resources.canBook' | translate }}: {{ room.canBook }}</span>
-        <button>Details</button>
-        <button>Update</button>
-        <button>Delete</button>
+        <button matButton="elevated" (click)="openPopup(room.id)">View Details</button>
       </div>
     </app-card>
     }

@@ -1,12 +1,11 @@
 using System.Text;
 using Fastasys.ApiService.Data;
+using Fastasys.ApiService.helpers;
 using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using Fastasys.ApiService.helpers;
-
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,25 +20,29 @@ builder.Services.AddHealthChecks();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<AmountPaidLogInterceptor>();
 
-builder.Services.AddDbContext<InfosysDbContext>((services, options) =>
-{
-    // Logs every saved change to a participant's amount paid
-    options.AddInterceptors(services.GetRequiredService<AmountPaidLogInterceptor>());
-
-    if (builder.Environment.IsEnvironment("Testing"))
+builder.Services.AddDbContext<InfosysDbContext>(
+    (services, options) =>
     {
-        options.UseInMemoryDatabase("InfosysDbFallback");
-        return;
-    }
+        // Logs every saved change to a participant's amount paid
+        options.AddInterceptors(services.GetRequiredService<AmountPaidLogInterceptor>());
 
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString))
-    {
-        throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured outside the Testing environment.");
-    }
+        if (builder.Environment.IsEnvironment("Testing"))
+        {
+            options.UseInMemoryDatabase("InfosysDbFallback");
+            return;
+        }
 
-    options.UseNpgsql(connectionString);
-});
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "ConnectionStrings:DefaultConnection must be configured outside the Testing environment."
+            );
+        }
+
+        options.UseNpgsql(connectionString);
+    }
+);
 
 // The convention's dates (Infosys con.*)
 builder.Services.Configure<ConventionOptions>(builder.Configuration.GetSection(ConventionOptions.Section));
@@ -54,30 +57,32 @@ builder.Services.AddSingleton<IMockNotificationService, MockNotificationService>
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "FastasysSuperSecretSecurityKey2026!FormatLengthForHS256";
 var key = Encoding.UTF8.GetBytes(jwtSecret);
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
-    options.TokenValidationParameters = new TokenValidationParameters
+builder
+    .Services.AddAuthentication(options =>
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ClockSkew = TimeSpan.Zero,
+        };
+    });
 
 // Authorization Policies
 // There should be a binding between every Privilege in the DBseeder, and a policy name this builder
 // Every instance of "Authorize(Policy = x)" in the program, also need x to be in this list
 // The first parameter must be unique across the policy object
-builder.Services.AddAuthorizationBuilder()
+builder
+    .Services.AddAuthorizationBuilder()
     // Infosys: the Read-only role may view and search participants; Infonaut, Participant admin and the other
     // roles with ParticipantController/* may also change them
     .AddPolicy("ParticipantView", "participant_view", "participant_edit")
@@ -88,49 +93,55 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("ShopManagement", "shop_management");
 
 // Add Controllers, EndpointsApiExplorer & SwaggerGen documentation metadata
-builder.Services.AddControllers()
+builder
+    .Services.AddControllers()
     .AddApplicationPart(typeof(Fastasys.ApiService.Controllers.ParticipantsController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddOpenApi(options =>
 {
-    options.AddDocumentTransformer((document, context, cancellationToken) =>
-    {
-        document.Info = new OpenApiInfo
+    options.AddDocumentTransformer(
+        (document, context, cancellationToken) =>
         {
-            Title = "Fastasys API",
-            Version = "v1",
-            Description = "Fastaval Convention Management System - ASP.NET Core Web API"
-        };
+            document.Info = new OpenApiInfo
+            {
+                Title = "Fastasys API",
+                Version = "v1",
+                Description = "Fastaval Convention Management System - ASP.NET Core Web API",
+            };
 
-        var securityScheme = new OpenApiSecurityScheme
-        {
-            Name = "Authorization",
-            Description = "Enter JWT Bearer token format: `Bearer {your_token}`",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT"
-        };
+            var securityScheme = new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Description = "Enter JWT Bearer token format: `Bearer {your_token}`",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+            };
 
-        document.Components ??= new OpenApiComponents();
-        var schemes = document.Components.SecuritySchemes ?? new Dictionary<string, IOpenApiSecurityScheme>();
-        schemes["Bearer"] = securityScheme;
-        document.Components.SecuritySchemes = schemes;
+            document.Components ??= new OpenApiComponents();
+            var schemes = document.Components.SecuritySchemes ?? new Dictionary<string, IOpenApiSecurityScheme>();
+            schemes["Bearer"] = securityScheme;
+            document.Components.SecuritySchemes = schemes;
 
-        return Task.CompletedTask;
-    });
+            return Task.CompletedTask;
+        }
+    );
 });
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Fastasys API",
-        Version = "v1",
-        Description = "Fastaval Convention Management System - ASP.NET Core Web API"
-    });
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
+        {
+            Title = "Fastasys API",
+            Version = "v1",
+            Description = "Fastaval Convention Management System - ASP.NET Core Web API",
+        }
+    );
 
     var jwtSecurityScheme = new OpenApiSecurityScheme
     {
@@ -139,17 +150,13 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
-        BearerFormat = "JWT"
+        BearerFormat = "JWT",
     };
 
     options.AddSecurityDefinition("Bearer", jwtSecurityScheme);
-    options.AddSecurityRequirement((doc) => new OpenApiSecurityRequirement
-    {
-        { new OpenApiSecuritySchemeReference("Bearer"), new List<string>() }
-    });
-
-
-
+    options.AddSecurityRequirement(
+        (doc) => new OpenApiSecurityRequirement { { new OpenApiSecuritySchemeReference("Bearer"), new List<string>() } }
+    );
 });
 
 var app = builder.Build();
@@ -183,12 +190,10 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
-
 // Friendly redirects so visiting /, /scalar, or /docs takes you straight to Scalar UI
 app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 app.MapGet("/scalar", () => Results.Redirect("/scalar/v1"));
 app.MapGet("/docs", () => Results.Redirect("/scalar/v1"));
-
 
 if (app.Environment.IsDevelopment())
 {
