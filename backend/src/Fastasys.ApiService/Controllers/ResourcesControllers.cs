@@ -1,8 +1,10 @@
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -10,7 +12,23 @@ public record OrderFoodDto(int ParticipantId, int FoodTypeId, DateTime Date, int
 
 public record OrderWearDto(int ParticipantId, int WearItemId, int Quantity = 1);
 
-public record CreateRoomDto(string Name, string Location, int Capacity, string Description);
+public record CreateRoomDto(
+    string Name,
+    string Location,
+    int Capacity,
+    bool IsSleepingRoom,
+    bool CanBook,
+    string Description
+);
+
+public record UpdateRoomDto(
+    string? Name,
+    string? Location,
+    int? Capacity,
+    bool? IsSleepingRoom,
+    bool? CanBook,
+    string? Description
+);
 
 [ApiController]
 [Route("api/[controller]")]
@@ -86,8 +104,26 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetRooms()
     {
-        var rooms = await db.Rooms.AsNoTracking().ToListAsync();
+        var rooms = await db.Rooms.Include(r => r.Schedules).ThenInclude(s => s.Signups).AsNoTracking().ToListAsync();
         return Ok(rooms);
+    }
+
+    [HttpGet("details/{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> GetRoomDetails(int id)
+    {
+        var roomNotFound = db.Rooms.FirstOrDefault(x => x.Id == id) == null;
+        if (roomNotFound)
+        {
+            return NotFound();
+        }
+
+        var room = await db
+            .Rooms.Where(x => x.Id == id)
+            .Include(r => r.Schedules)
+                .ThenInclude(s => s.Signups)
+            .FirstAsync();
+        return Ok(room);
     }
 
     [HttpPost]
@@ -99,11 +135,83 @@ public class RoomsController(InfosysDbContext db) : ControllerBase
             Name = dto.Name,
             Location = dto.Location,
             Capacity = dto.Capacity,
+            IsSleepingRoom = dto.IsSleepingRoom,
+            CanBook = dto.CanBook,
             Description = dto.Description,
         };
 
         db.Rooms.Add(room);
         await db.SaveChangesAsync();
         return Ok(room);
+    }
+
+    [HttpPatch("update/{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateRoom(int id, [FromBody] UpdateRoomDto dto)
+    {
+        var originalRoom = db.Rooms.FirstOrDefault(x => x.Id == id);
+        if (originalRoom == null)
+        {
+            return NotFound();
+        }
+
+        var entity = db.Rooms.Update(originalRoom).Entity;
+        entity.Name = dto.Name ?? entity.Name;
+        entity.Location = dto.Location ?? entity.Location;
+        entity.Capacity = dto.Capacity ?? entity.Capacity;
+        entity.IsSleepingRoom = dto.IsSleepingRoom ?? entity.IsSleepingRoom;
+        entity.CanBook = dto.CanBook ?? entity.CanBook;
+        entity.Description = dto.Description ?? entity.Description;
+
+        await db.SaveChangesAsync();
+        return Ok(entity);
+    }
+
+    [HttpDelete("delete/{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteRoom(int id)
+    {
+        await db.Rooms.Where(room => room.Id == id).ExecuteDeleteAsync();
+        return Ok();
+    }
+}
+
+[ApiController]
+[Route("api/[controller]")]
+public class ConventionOptionsController(IOptions<ConventionOptions> convention) : ControllerBase
+{
+    [HttpGet("openingDate")]
+    public async Task<IActionResult> GetConventionStart()
+    {
+        if (convention.Value.Start == null)
+        {
+            return NotFound();
+        }
+        return Ok(convention.Value.Start.Value);
+    }
+
+    [HttpGet("allDates")]
+    public async Task<IActionResult> GetAllEasterDates()
+    {
+        if (convention.Value.Start == null)
+        {
+            return NotFound();
+        }
+
+        var date = convention.Value.Start.Value;
+
+        DateOnly[] dates =
+        [
+            date.AddDays(-2), // monday, setup
+            date.AddDays(-1), // tuesday, setup
+            date.AddDays(0), // wednesday, setup/event
+            date.AddDays(1), // thursday, event
+            date.AddDays(2), // friday, event
+            date.AddDays(3), // saturday event
+            date.AddDays(4), // sunday, event
+            date.AddDays(5), // monday, teardown
+        ];
+
+        return Ok(dates);
     }
 }

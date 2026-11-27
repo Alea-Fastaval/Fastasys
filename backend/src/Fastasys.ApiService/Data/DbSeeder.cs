@@ -10,11 +10,7 @@ public static class DbSeeder
         var adminRole = db.Roles.FirstOrDefault(r => r.Name == "Admin");
         if (adminRole == null)
         {
-            adminRole = new Role
-            {
-                Name = "Admin",
-                Description = "Administrator with full system access"
-            };
+            adminRole = new Role { Name = "Admin", Description = "Administrator with full system access" };
             db.Roles.Add(adminRole);
             db.SaveChanges();
         }
@@ -25,8 +21,8 @@ public static class DbSeeder
             ("Assign Food to Participant", "food_participant_edit"),
             ("Assign Hero Force to Participant", "hero_force_participant_edit"),
             ("Assign Run to Participant", "run_participant_edit"),
-            ("Assign Payment to Participant","payment_participant_edit"),
-            ("Assign Sleeping to participant","sleeping_participant_edit"),
+            ("Assign Payment to Participant", "payment_participant_edit"),
+            ("Assign Sleeping to participant", "sleeping_participant_edit"),
             ("Assign Wear to Participant", "wear_participant_edit"),
             ("Distribute Boardgame", "boardgame_distribute_edit"),
             ("Distribute Food", "food_distribute_edit"),
@@ -49,8 +45,8 @@ public static class DbSeeder
             ("Edit Wear", "wear_edit"),
             ("Reset Entrance Assignments", "entrance_assignment_reset_edit"),
             ("Reset Food Distribution", "food_distribute_reset_edit"),
-            ("Send email to participant","send_participant_email_edit"),
-            ("Send notification to participant","send_participant_notification_edit"),
+            ("Send email to participant", "send_participant_email_edit"),
+            ("Send notification to participant", "send_participant_notification_edit"),
             ("Start run", "run_start_edit"),
             ("View Activity", "activity_view"),
             ("View Boardgames", "boardgame_view"),
@@ -64,13 +60,13 @@ public static class DbSeeder
             ("View Hero Force Assignments", "hero_force_participant_list_view"),
             ("View Hero Force", "hero_force_view"),
             ("View Participant", "participant_view"),
-            ("View Payments For Participant","payment_participant_view"),
+            ("View Payments For Participant", "payment_participant_view"),
             ("View Roles and privileges", "role_view"),
-            ("View Room Assignments","room_assignment_view"),
+            ("View Room Assignments", "room_assignment_view"),
             ("View Room", "room_view"),
             ("View Run", "run_view"),
             ("View Signup Statistics", "signup_stats_view"),
-            ("View sleeping assignments","sleeping_assignment_view"),
+            ("View sleeping assignments", "sleeping_assignment_view"),
             ("View System Log", "syslog_view"),
             ("View Users", "users_view"),
             ("View wear for Participant", "wear_participant_view"),
@@ -111,7 +107,12 @@ public static class DbSeeder
         SeedRole(db, "Activity Leader", "Game master, rule communicator, activity leader", []);
         SeedRole(db, "Boardgame jury", "Jury member for boardgames", []);
         SeedRole(db, "Scenario jury", "Jury member for scenarios", []);
-        SeedRole(db, "Full Read-only", "All reading privileges", [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]);
+        SeedRole(
+            db,
+            "Full Read-only",
+            "All reading privileges",
+            [.. requiredPrivileges.Select(x => x.Item2).Where(x => x.EndsWith("_view"))]
+        );
         SeedRole(db, "Accounting", "Accounting and budget", []);
 
         // Default Admin User with the special admin role
@@ -126,7 +127,7 @@ public static class DbSeeder
                 FirstName = "Admin",
                 LastName = "User",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             db.Users.Add(adminUser);
@@ -154,7 +155,9 @@ public static class DbSeeder
                 AddressLine1 = "Vestergade 12",
                 ZipCode = "8000",
                 City = "Aarhus",
-                CheckedInAt = DateTime.UtcNow.AddHours(-2)
+                CountryCode = "DK",
+                CategoryId = ParticipantCategory.ParticipantId,
+                CheckedInAt = DateTime.UtcNow.AddHours(-2),
             };
 
             var p2 = new Participant
@@ -167,7 +170,7 @@ public static class DbSeeder
                 AddressLine1 = "Nørrebrogade 45",
                 ZipCode = "2200",
                 City = "København N",
-                CategoryId = ParticipantCategory.OrganizerId
+                CategoryId = ParticipantCategory.OrganizerId,
             };
 
             db.Participants.AddRange(p1, p2);
@@ -189,7 +192,7 @@ public static class DbSeeder
                 MinAge = 15,
                 KarmaType = KarmaType.Big,
                 PlayerLanguage = ActivityLanguage.Danish,
-                GameMasterLanguage = ActivityLanguage.DanishAndEnglish
+                GameMasterLanguage = ActivityLanguage.DanishAndEnglish,
             };
 
             var act2 = new Activity
@@ -209,17 +212,31 @@ public static class DbSeeder
                 IsReplayable = true,
                 KarmaType = KarmaType.Small,
                 PlayerLanguage = ActivityLanguage.DanishAndEnglish,
-                GameMasterLanguage = ActivityLanguage.DanishAndEnglish
+                GameMasterLanguage = ActivityLanguage.DanishAndEnglish,
             };
 
-            db.Activities.AddRange(act1, act2);
+            var sleepActivity = new Activity
+            {
+                Title = "Overnatning",
+                TitleEnglish = "Accommodation",
+                Type = ActivityType.System,
+                DurationHours = 24,
+                Price = 500,
+                MaxSignups = 0,
+                IsHidden = true,
+                IsRoomExclusive = true,
+                IsTimeExclusive = false,
+                IsReplayable = true,
+            };
+
+            db.Activities.AddRange(act1, act2, sleepActivity);
 
             // Demo Hero Force Shifts
             var heroForceCategory = new HeroForceCategory
             {
                 Name = "Info Desk",
                 Description = "Information desk and check-in shifts",
-                ColorHex = "#3f51b5"
+                ColorHex = "#3f51b5",
             };
             db.HeroForceCategories.Add(heroForceCategory);
             db.SaveChanges();
@@ -231,62 +248,173 @@ public static class DbSeeder
                 Description = "Help participants check in and answer questions.",
                 StartTime = DateTime.UtcNow.AddDays(1).AddHours(8),
                 EndTime = DateTime.UtcNow.AddDays(1).AddHours(12),
-                MaxParticipants = 2
+                MaxParticipants = 2,
             };
 
             db.HeroForceShifts.Add(shift1);
 
             // Demo Boardgames
             db.Boardgames.AddRange(
-                new Boardgame { Title = "Catan", Author = "Klaus Teuber", Publisher = "Kosmos", MinPlayers = 3, MaxPlayers = 4, PlayingTimeMinutes = 90, Barcode = "BG001", IsPresent = true },
-                new Boardgame { Title = "Ticket to Ride", Author = "Alan R. Moon", Publisher = "Days of Wonder", MinPlayers = 2, MaxPlayers = 5, PlayingTimeMinutes = 60, Barcode = "BG002", IsPresent = true },
-                new Boardgame { Title = "Codenames", Author = "Vlaada Chvátil", Publisher = "CGE", MinPlayers = 2, MaxPlayers = 8, PlayingTimeMinutes = 15, Barcode = "BG003", IsPresent = true }
+                new Boardgame
+                {
+                    Title = "Catan",
+                    Author = "Klaus Teuber",
+                    Publisher = "Kosmos",
+                    MinPlayers = 3,
+                    MaxPlayers = 4,
+                    PlayingTimeMinutes = 90,
+                    Barcode = "BG001",
+                    IsPresent = true,
+                },
+                new Boardgame
+                {
+                    Title = "Ticket to Ride",
+                    Author = "Alan R. Moon",
+                    Publisher = "Days of Wonder",
+                    MinPlayers = 2,
+                    MaxPlayers = 5,
+                    PlayingTimeMinutes = 60,
+                    Barcode = "BG002",
+                    IsPresent = true,
+                },
+                new Boardgame
+                {
+                    Title = "Codenames",
+                    Author = "Vlaada Chvátil",
+                    Publisher = "CGE",
+                    MinPlayers = 2,
+                    MaxPlayers = 8,
+                    PlayingTimeMinutes = 15,
+                    Barcode = "BG003",
+                    IsPresent = true,
+                }
             );
 
             // Demo Shop Products
             db.Products.AddRange(
-                new Product { Name = "Fastaval 2026 T-Shirt", Description = "Official Fastaval 2026 cotton t-shirt", Price = 150.00m, Stock = 50, Category = "Wear", IsActive = true },
-                new Product { Name = "Dice Set (7 pcs)", Description = "Polyhedral dice set with Fastaval logo", Price = 60.00m, Stock = 100, Category = "Merchandise", IsActive = true },
-                new Product { Name = "Soda / Soft Drink", Description = "Cold 33cl soft drink", Price = 20.00m, Stock = 200, Category = "Kiosk", IsActive = true }
+                new Product
+                {
+                    Name = "Fastaval 2026 T-Shirt",
+                    Description = "Official Fastaval 2026 cotton t-shirt",
+                    Price = 150.00m,
+                    Stock = 50,
+                    Category = "Wear",
+                    IsActive = true,
+                },
+                new Product
+                {
+                    Name = "Dice Set (7 pcs)",
+                    Description = "Polyhedral dice set with Fastaval logo",
+                    Price = 60.00m,
+                    Stock = 100,
+                    Category = "Merchandise",
+                    IsActive = true,
+                },
+                new Product
+                {
+                    Name = "Soda / Soft Drink",
+                    Description = "Cold 33cl soft drink",
+                    Price = 20.00m,
+                    Stock = 200,
+                    Category = "Kiosk",
+                    IsActive = true,
+                }
             );
 
             // Demo Food Types
             db.FoodTypes.AddRange(
-                new FoodType { Name = "Morgenmad", NameEnglish = "Breakfast", Price = 45.00m, IsActive = true },
-                new FoodType { Name = "Aftensmad (Kød)", NameEnglish = "Dinner (Meat)", Price = 85.00m, IsActive = true },
-                new FoodType { Name = "Aftensmad (Vegansk)", NameEnglish = "Dinner (Vegan)", Price = 85.00m, IsActive = true }
+                new FoodType
+                {
+                    Name = "Morgenmad",
+                    NameEnglish = "Breakfast",
+                    Price = 45.00m,
+                    IsActive = true,
+                },
+                new FoodType
+                {
+                    Name = "Aftensmad (Kød)",
+                    NameEnglish = "Dinner (Meat)",
+                    Price = 85.00m,
+                    IsActive = true,
+                },
+                new FoodType
+                {
+                    Name = "Aftensmad (Vegansk)",
+                    NameEnglish = "Dinner (Vegan)",
+                    Price = 85.00m,
+                    IsActive = true,
+                }
             );
 
             // Demo Wear Items
             db.WearItems.AddRange(
-                new WearItem { Name = "Fastaval Hoodie", Description = "Warm hoodie with embroidered logo", Price = 350.00m, Size = "L", Stock = 25 },
-                new WearItem { Name = "Fastaval Cap", Description = "Adjustable snapback cap", Price = 120.00m, Size = "One Size", Stock = 40 }
+                new WearItem
+                {
+                    Name = "Fastaval Hoodie",
+                    Description = "Warm hoodie with embroidered logo",
+                    Price = 350.00m,
+                    Size = "L",
+                    Stock = 25,
+                },
+                new WearItem
+                {
+                    Name = "Fastaval Cap",
+                    Description = "Adjustable snapback cap",
+                    Price = 120.00m,
+                    Size = "One Size",
+                    Stock = 40,
+                }
             );
 
             // Demo Rooms
             db.Rooms.AddRange(
-                new Room { Name = "Lokale A1", Location = "Bygning A, 1. sal", Capacity = 10, Description = "Quiet RPG room with 1 table and 8 chairs." },
-                new Room { Name = "Brætspilshallen", Location = "Hovedbygningen", Capacity = 100, Description = "Large open hall for board games." }
+                new Room
+                {
+                    Name = "Lokale A1",
+                    Location = "Bygning A, 1. sal",
+                    Capacity = 10,
+                    Description = "Quiet RPG room with 1 table and 8 chairs.",
+                },
+                new Room
+                {
+                    Name = "Brætspilshallen",
+                    Location = "Hovedbygningen",
+                    Capacity = 100,
+                    Description = "Large open hall for board games.",
+                },
+                new Room
+                {
+                    Name = "Arrangørsovesal",
+                    Location = "Hovedbygningen",
+                    Capacity = 75,
+                    Description = "Sovesal for alle Arrangører",
+                    IsSleepingRoom = true,
+                    CanBook = false,
+                }
             );
 
             // Demo Communication: Newsletters & Tickets
-            db.Newsletters.Add(new Newsletter
-            {
-                Subject = "Velkommen til Fastaval 2026!",
-                Body = "Information om program, spilafvikling og Hero Force / Heltestyrken vagter.",
-                CreatedAt = DateTime.UtcNow.AddDays(-5),
-                SentAt = DateTime.UtcNow.AddDays(-5),
-                RecipientCount = 2
-            });
+            db.Newsletters.Add(
+                new Newsletter
+                {
+                    Subject = "Velkommen til Fastaval 2026!",
+                    Body = "Information om program, spilafvikling og Hero Force / Heltestyrken vagter.",
+                    CreatedAt = DateTime.UtcNow.AddDays(-5),
+                    SentAt = DateTime.UtcNow.AddDays(-5),
+                    RecipientCount = 2,
+                }
+            );
 
-            db.Tickets.Add(new Ticket
-            {
-                Title = "Glemt kodeord til tilmelding",
-                Description = "Kan ikke nulstille min adgangskode via email.",
-                Status = TicketStatus.Open,
-                CreatedById = adminUser.Id,
-                CreatedAt = DateTime.UtcNow.AddHours(-6)
-            });
+            db.Tickets.Add(
+                new Ticket
+                {
+                    Title = "Glemt kodeord til tilmelding",
+                    Description = "Kan ikke nulstille min adgangskode via email.",
+                    Status = TicketStatus.Open,
+                    CreatedById = adminUser.Id,
+                    CreatedAt = DateTime.UtcNow.AddHours(-6),
+                }
+            );
 
             db.SaveChanges();
         }
@@ -300,11 +428,7 @@ public static class DbSeeder
         var role = db.Roles.FirstOrDefault(r => r.Name == roleName);
         if (role == null)
         {
-            role = new Role
-            {
-                Name = roleName,
-                Description = roleDescription
-            };
+            role = new Role { Name = roleName, Description = roleDescription };
             db.Roles.Add(role);
             db.SaveChanges();
 
@@ -319,6 +443,5 @@ public static class DbSeeder
             }
         }
         db.SaveChanges();
-
     }
 }

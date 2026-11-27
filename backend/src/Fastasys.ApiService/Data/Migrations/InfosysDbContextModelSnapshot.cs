@@ -2774,12 +2774,18 @@ namespace Fastasys.ApiService.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CanBook")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsSleepingRoom")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Location")
                         .IsRequired()

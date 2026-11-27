@@ -10,8 +10,7 @@
     @for (room of rooms(); track room.id) {
     <app-card [title]="room.name" [subtitle]="room.location" [hoverable]="true">
       <div class="card-footer">
-        <span class="capacity">{{ 'resources.capacity' | translate }}: {{ room.capacity }}</span>
-        <span class="size">{{ 'resources.size' | translate }}: {{ room.size }}</span>
+        <button matButton="elevated" (click)="openPopup(room.id)">View Details</button>
       </div>
     </app-card>
     }

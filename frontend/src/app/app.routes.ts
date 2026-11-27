@@ -18,7 +18,7 @@ import { ParticipantPhotoComponent } from './features/participants/participant-p
 import { IdCardTemplatesComponent } from './features/id-cards/id-card-templates/id-card-templates';
 import { IdCardsPrintComponent } from './features/id-cards/id-cards-print/id-cards-print';
 import { FoodComponent } from './features/resources/food/food';
-import { RoomsComponent } from './features/resources/rooms/rooms';
+import { RoomsComponent } from './features/resources/room-managment/rooms';
 import { WearComponent } from './features/resources/wear/wear';
 import { ShopComponent } from './features/shop/shop';
 import { SignupComponent } from './features/signup/signup';
@@ -27,6 +27,7 @@ import { RunFormComponent } from './features/runs/run-form/run-form';
 import { RunsComponent } from './features/runs/runs';
 import { RolesComponent } from './features/user-management/roles/roles';
 import { UsersComponent } from './features/user-management/users/users';
+import { AccommodationComponent } from '@features/resources/accommodation/accommodation';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'participants', pathMatch: 'full' },
@@ -54,6 +55,7 @@ export const routes: Routes = [
   { path: 'shop', component: ShopComponent, canActivate: [authGuard] },
   { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },
   { path: 'resources/wear', component: WearComponent, canActivate: [authGuard] },
+  { path: 'resources/accommodation', component: AccommodationComponent, canActivate: [authGuard] },
   { path: 'resources/rooms', component: RoomsComponent, canActivate: [authGuard] },
   { path: 'resources', redirectTo: 'resources/food', pathMatch: 'full' },
   { path: 'boardgames', component: BoardgamesComponent, canActivate: [authGuard] },
