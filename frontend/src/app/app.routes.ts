@@ -27,6 +27,7 @@ import { RunFormComponent } from './features/runs/run-form/run-form';
 import { RunsComponent } from './features/runs/runs';
 import { RolesComponent } from './features/user-management/roles/roles';
 import { UsersComponent } from './features/user-management/users/users';
+import { AccommodationComponent } from '@features/resources/accommodation/accommodation';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'participants', pathMatch: 'full' },
@@ -54,6 +55,7 @@ export const routes: Routes = [
   { path: 'shop', component: ShopComponent, canActivate: [authGuard] },
   { path: 'resources/food', component: FoodComponent, canActivate: [authGuard] },
   { path: 'resources/wear', component: WearComponent, canActivate: [authGuard] },
+  { path: 'resources/accommodation', component: AccommodationComponent, canActivate: [authGuard] },
   { path: 'resources/rooms', component: RoomsComponent, canActivate: [authGuard] },
   { path: 'resources', redirectTo: 'resources/food', pathMatch: 'full' },
   { path: 'boardgames', component: BoardgamesComponent, canActivate: [authGuard] },

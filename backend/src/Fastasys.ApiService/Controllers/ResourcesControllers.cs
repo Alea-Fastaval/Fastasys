@@ -1,8 +1,10 @@
 using Fastasys.ApiService.Data;
 using Fastasys.ApiService.Data.Entities;
+using Fastasys.ApiService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Fastasys.ApiService.Controllers;
 
@@ -97,12 +99,12 @@ public class WearController(InfosysDbContext db) : ControllerBase
 
 [ApiController]
 [Route("api/[controller]")]
-public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logger) : ControllerBase
+public class RoomsController(InfosysDbContext db) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetRooms()
     {
-        var rooms = await db.Rooms.AsNoTracking().ToListAsync();
+        var rooms = await db.Rooms.Include(r => r.Schedules).ThenInclude(s => s.Signups).AsNoTracking().ToListAsync();
         return Ok(rooms);
     }
 
@@ -116,7 +118,11 @@ public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logge
             return NotFound();
         }
 
-        var room = db.Rooms.Where(x => x.Id == id).Include(r => r.Schedules).First();
+        var room = await db
+            .Rooms.Where(x => x.Id == id)
+            .Include(r => r.Schedules)
+                .ThenInclude(s => s.Signups)
+            .FirstAsync();
         return Ok(room);
     }
 
@@ -165,8 +171,47 @@ public class RoomsController(InfosysDbContext db, ILogger<RoomsController> logge
     [Authorize]
     public async Task<IActionResult> DeleteRoom(int id)
     {
-        logger.LogDebug("Called Delete on " + id);
         await db.Rooms.Where(room => room.Id == id).ExecuteDeleteAsync();
         return Ok();
+    }
+}
+
+[ApiController]
+[Route("api/[controller]")]
+public class ConventionOptionsController(IOptions<ConventionOptions> convention) : ControllerBase
+{
+    [HttpGet("openingDate")]
+    public async Task<IActionResult> GetConventionStart()
+    {
+        if (convention.Value.Start == null)
+        {
+            return NotFound();
+        }
+        return Ok(convention.Value.Start.Value);
+    }
+
+    [HttpGet("allDates")]
+    public async Task<IActionResult> GetAllEasterDates()
+    {
+        if (convention.Value.Start == null)
+        {
+            return NotFound();
+        }
+
+        var date = convention.Value.Start.Value;
+
+        DateOnly[] dates =
+        [
+            date.AddDays(-2), // monday, setup
+            date.AddDays(-1), // tuesday, setup
+            date.AddDays(0), // wednesday, setup/event
+            date.AddDays(1), // thursday, event
+            date.AddDays(2), // friday, event
+            date.AddDays(3), // saturday event
+            date.AddDays(4), // sunday, event
+            date.AddDays(5), // monday, teardown
+        ];
+
+        return Ok(dates);
     }
 }

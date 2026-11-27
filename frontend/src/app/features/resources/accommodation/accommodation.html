@@ -1,0 +1,20 @@
+<table>
+  <thead>
+    <tr>
+      <th>{{'accommodation' | translate}}</th>
+      @for (date of dates(); track $index) {
+      <th>{{date}}</th>
+      }
+    </tr>
+  </thead>
+  <tbody>
+    @for (room of rooms(); track $index) {
+    <tr>
+      <th scope="row">{{room.name}}</th>
+      @for (date of dates(); track $index) {
+      <th>{{occupants(room, date)}} / {{room.capacity}}</th>
+      }
+    </tr>
+    }
+  </tbody>
+</table>
